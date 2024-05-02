@@ -1,0 +1,15 @@
+[tool.black]
+force-exclude = '''/(diffusion_original|lpw).py'''
+
+[tool.isort]
+profile = "black"
+force_to_top = ".logging"
+skip_glob = ["*/lpw.py"]
+
+[tool.mypy]
+# ignore_missing_imports = true
+exclude = []
+
+[[tool.mypy.overrides]]
+module = []
+ignore_missing_imports = true
