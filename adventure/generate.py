@@ -101,7 +101,7 @@ def generate_actor(
     )
 
 
-def generate_world(agent: Agent, theme: str) -> World:
+def generate_world(agent: Agent, name: str, theme: str) -> World:
     room_count = randint(3, 5)
     logger.info(f"Generating a {theme} with {room_count} rooms")
 
@@ -177,4 +177,4 @@ def generate_world(agent: Agent, theme: str) -> World:
                 room.portals[direction] = dest_room.name
                 dest_room.portals[opposite_directions[direction]] = room.name
 
-    return World(rooms=rooms, theme=theme)
+    return World(name=name, rooms=rooms, theme=theme)

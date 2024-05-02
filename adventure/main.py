@@ -1,3 +1,4 @@
+from importlib import import_module
 from json import load
 from os import path
 
@@ -53,7 +54,7 @@ def world_result_parser(value, agent, **kwargs):
     return multi_function_or_str_result(value, agent=agent, **kwargs)
 
 
-def simulate_world(world: World, steps: int = 10, callback=None):
+def simulate_world(world: World, steps: int = 10, callback=None, extra_actions=[]):
     logger.info("Simulating the world")
 
     # collect actors, so they are only processed once
@@ -68,6 +69,7 @@ def simulate_world(world: World, steps: int = 10, callback=None):
             action_move,
             action_take,
             action_tell,
+            *extra_actions,
         ]
     )
 
@@ -105,6 +107,7 @@ def simulate_world(world: World, steps: int = 10, callback=None):
                     "What will you do next? Reply with a JSON function call, calling one of the actions."
                 ),
                 context={
+                    # TODO: add custom action names or remove this list entirely
                     "actions": [
                         "ask",
                         "give",
@@ -147,7 +150,7 @@ def simulate_world(world: World, steps: int = 10, callback=None):
         if callback:
             callback(world, current_step)
 
-        current_step += 1
+        set_step(current_step + 1)
 
 
 # main
@@ -158,6 +161,9 @@ def parse_args():
         description="Generate and simulate a fantasy world"
     )
     parser.add_argument(
+        "--actions", type=str, help="Extra actions to include in the simulation"
+    )
+    parser.add_argument(
         "--steps", type=int, default=10, help="The number of simulation steps to run"
     )
     parser.add_argument(
@@ -166,13 +172,13 @@ def parse_args():
     parser.add_argument(
         "--world",
         type=str,
-        default="world.json",
+        default="world",
         help="The file to save the generated world to",
     )
     parser.add_argument(
-        "--world-state",
+        "--state",
         type=str,
-        default="world-state.json",
+        # default="world-state.json",
         help="The file to save the world state to",
     )
     return parser.parse_args()
@@ -181,18 +187,23 @@ def parse_args():
 def main():
     args = parse_args()
 
-    if args.world_state and path.exists(args.world_state):
-        logger.info(f"Loading world state from {args.world_state}")
-        with open(args.world_state, "r") as f:
+    world_file = args.world + ".json"
+    world_state_file = args.state or (args.world + ".state.json")
+
+    if path.exists(world_state_file):
+        logger.info(f"Loading world state from {world_state_file}")
+        with open(world_state_file, "r") as f:
             state = WorldState(**load(f))
 
         set_step(state.step)
         create_agents(state.world, state.memory)
+
         world = state.world
-    elif args.world and path.exists(args.world):
-        logger.info(f"Loading world from {args.world}")
-        with open(args.world, "r") as f:
-            world = World(**load(f))
+        world.name = args.world
+    elif path.exists(world_file):
+        logger.info(f"Loading world from {world_file}")
+        with open(world_file, "r") as f:
+            world = World(**load(f), name=args.world)
             create_agents(world)
     else:
         logger.info(f"Generating a new {args.theme} world")
@@ -203,18 +214,29 @@ def main():
             {},
             llm,
         )
-        world = generate_world(agent, args.theme)
+        world = generate_world(agent, args.world, args.theme)
         create_agents(world)
+        save_world(world, world_file)
 
-    logger.debug("Loaded world: %s", world)
+    # load extra actions
+    extra_actions = []
+    if args.actions:
+        logger.info(f"Loading extra actions from {args.actions}")
+        action_module, action_function = args.actions.rsplit(":", 1)
+        action_module = import_module(action_module)
+        action_function = getattr(action_module, action_function)
+        module_actions = action_function()
+        logger.info(
+            f"Loaded extra actions: {[action.__name__ for action in module_actions]}"
+        )
+        extra_actions.append(module_actions)
 
-    if args.world:
-        save_world(world, args.world)
-
+    logger.debug("Simulating world: %s", world)
     simulate_world(
         world,
         steps=args.steps,
-        callback=lambda w, s: save_world_state(w, s, args.world_state),
+        callback=lambda w, s: save_world_state(w, s, world_state_file),
+        extra_actions=extra_actions,
     )
 
 

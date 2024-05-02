@@ -40,6 +40,7 @@ class Room:
 
 @dataclass
 class World:
+    name: str
     rooms: List[Room]
     theme: str
 

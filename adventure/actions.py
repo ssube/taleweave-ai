@@ -163,9 +163,3 @@ def action_give(character: str, item_name: str) -> str:
     destination_actor.items.append(item)
 
     return f"You give the {item_name} item to {character}."
-
-
-def action_stop() -> str:
-    _, _, action_actor = get_current_context()
-    logger.info(f"{action_actor.name} end their turn")
-    return "You stop your actions and end your turn."

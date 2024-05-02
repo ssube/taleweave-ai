@@ -1,5 +1,6 @@
 from collections import deque
 from json import dump
+from os import path
 from typing import Dict, List, Sequence
 
 from langchain_core.messages import AIMessage, BaseMessage, HumanMessage, SystemMessage
@@ -27,11 +28,12 @@ def graph_world(world: World, step: int):
     graph = graphviz.Digraph(f"{world.theme}-{step}", format="png")
     for room in world.rooms:
         room_label = "\n".join([room.name, *[actor.name for actor in room.actors]])
-        graph.node(room.name, room_label)  # , room.description)
+        graph.node(room.name, room_label)
         for direction, destination in room.portals.items():
             graph.edge(room.name, destination, label=direction)
 
-    graph.render(directory="worlds", view=True)
+    graph_path = path.dirname(world.name)
+    graph.render(directory=graph_path)
 
 
 def snapshot_world(world: World, step: int):
