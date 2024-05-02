@@ -134,7 +134,7 @@ def simulate_world(world: World, steps: int = 10, callback=None):
                 result=result,
             )
 
-            logger.info(f"{actor.name} step response: '{response}'")
+            logger.debug(f"{actor.name} step response: '{response}'")
             if response.strip().lower() not in ["end", ""]:
                 logger.warning(
                     f"{actor.name} responded after the end of their turn: %s", response
@@ -142,7 +142,7 @@ def simulate_world(world: World, steps: int = 10, callback=None):
                 response = agent(
                     "Your turn is over, no further actions will be accepted. Do not reply."
                 )
-                logger.info(f"{actor.name} warning response: {response}")
+                logger.debug(f"{actor.name} warning response: {response}")
 
         if callback:
             callback(world, current_step)
