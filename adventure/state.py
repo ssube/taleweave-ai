@@ -9,23 +9,34 @@ from pydantic import RootModel
 
 from adventure.context import get_all_actor_agents, set_actor_agent_for_name
 from adventure.models import World
+from adventure.player import LocalPlayer
 
 
-def create_agents(world: World, memory: Dict[str, List[str | Dict[str, str]]] = {}):
+def create_agents(
+    world: World,
+    memory: Dict[str, List[str | Dict[str, str]]] = {},
+    players: List[str] = [],
+):
     # set up agents for each actor
     llm = agent_easy_connect()
 
     for room in world.rooms:
         for actor in room.actors:
-            agent = Agent(actor.name, actor.backstory, {}, llm)
-            agent.memory = restore_memory(memory.get(actor.name, []))
+            if actor.name in players:
+                agent = LocalPlayer(actor.name, actor.backstory)
+                agent_memory = restore_memory(memory.get(actor.name, []))
+                agent.load_history(agent_memory)
+            else:
+                agent = Agent(actor.name, actor.backstory, {}, llm)
+                agent.memory = restore_memory(memory.get(actor.name, []))
             set_actor_agent_for_name(actor.name, actor, agent)
 
 
 def graph_world(world: World, step: int):
     import graphviz
 
-    graph = graphviz.Digraph(f"{world.theme}-{step}", format="png")
+    graph_name = f"{path.basename(world.name)}-{step}"
+    graph = graphviz.Digraph(graph_name, format="png")
     for room in world.rooms:
         room_label = "\n".join([room.name, *[actor.name for actor in room.actors]])
         graph.node(room.name, room_label)

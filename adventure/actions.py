@@ -84,7 +84,7 @@ def action_ask(character: str, question: str) -> str:
 
     # sanity checks
     if character == action_actor.name:
-        return "You cannot ask yourself a question. Stop talking to yourself."
+        return "You cannot ask yourself a question. You have wasted your turn. Stop talking to yourself."
 
     question_actor, question_agent = get_actor_agent_for_name(character)
     if not question_actor:
@@ -95,8 +95,8 @@ def action_ask(character: str, question: str) -> str:
 
     logger.info(f"{action_actor.name} asks {character}: {question}")
     answer = question_agent(
-        f"{action_actor.name} asks you: {question}. Reply with your response. "
-        f"Do not include the question or any other text, only your reply to {action_actor.name}."
+        f"{action_actor.name} asks you: {question}. Reply with your response to them. "
+        f"Do not include the question or any JSON. Only include your answer for {action_actor.name}."
     )
 
     if could_be_json(answer) and action_tell.__name__ in answer:
@@ -120,7 +120,7 @@ def action_tell(character: str, message: str) -> str:
 
     # sanity checks
     if character == action_actor.name:
-        return "You cannot tell yourself a message. Stop talking to yourself."
+        return "You cannot tell yourself a message. You have wasted your turn. Stop talking to yourself."
 
     question_actor, question_agent = get_actor_agent_for_name(character)
     if not question_actor:
@@ -131,8 +131,8 @@ def action_tell(character: str, message: str) -> str:
 
     logger.info(f"{action_actor.name} tells {character}: {message}")
     answer = question_agent(
-        f"{action_actor.name} tells you: {message}. Reply with your response. "
-        f"Do not include the message or any other text, only your reply to {action_actor.name}."
+        f"{action_actor.name} tells you: {message}. Reply with your response to them. "
+        f"Do not include the message or any JSON. Only include your reply to {action_actor.name}."
     )
 
     if could_be_json(answer) and action_tell.__name__ in answer:

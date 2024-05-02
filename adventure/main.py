@@ -72,6 +72,7 @@ def simulate_world(world: World, steps: int = 10, callback=None, extra_actions=[
             *extra_actions,
         ]
     )
+    action_names = action_tools.list_tools()
 
     # create a result parser that will memorize the actor and room
     set_current_world(world)
@@ -105,17 +106,11 @@ def simulate_world(world: World, steps: int = 10, callback=None, extra_actions=[
                     "You can take the following actions: {actions}. "
                     "You can move in the following directions: {directions}. "
                     "What will you do next? Reply with a JSON function call, calling one of the actions."
+                    "You can only take one action per turn. Pick the most important action and save the rest for later."
+                    "What is your action?"
                 ),
                 context={
-                    # TODO: add custom action names or remove this list entirely
-                    "actions": [
-                        "ask",
-                        "give",
-                        "look",
-                        "move",
-                        "take",
-                        "tell",
-                    ],  # , "use"],
+                    "actions": action_names,
                     "actors": room_actors,
                     "directions": room_directions,
                     "items": room_items,
@@ -127,25 +122,7 @@ def simulate_world(world: World, steps: int = 10, callback=None, extra_actions=[
             )
 
             logger.info(f"{actor.name} step result: {result}")
-
-            # if result was JSON, it has already been parsed and executed. anything remaining is flavor text
-            # that should be presented back to the actor
-            # TODO: inject this directly in the agent's memory rather than reprompting them
-            response = agent(
-                "The result of your last action was: {result}. Your turn is over, no further actions will be accepted. "
-                'If you understand, reply with the word "end".',
-                result=result,
-            )
-
-            logger.debug(f"{actor.name} step response: '{response}'")
-            if response.strip().lower() not in ["end", ""]:
-                logger.warning(
-                    f"{actor.name} responded after the end of their turn: %s", response
-                )
-                response = agent(
-                    "Your turn is over, no further actions will be accepted. Do not reply."
-                )
-                logger.debug(f"{actor.name} warning response: {response}")
+            agent.memory.append(result)
 
         if callback:
             callback(world, current_step)
@@ -164,6 +141,18 @@ def parse_args():
         "--actions", type=str, help="Extra actions to include in the simulation"
     )
     parser.add_argument(
+        "--flavor", type=str, help="Some additional flavor text for the generated world"
+    )
+    parser.add_argument(
+        "--player", type=str, help="The name of the character to play as"
+    )
+    parser.add_argument(
+        "--state",
+        type=str,
+        # default="world.state.json",
+        help="The file to save the world state to. Defaults to $world.state.json, if not set",
+    )
+    parser.add_argument(
         "--steps", type=int, default=10, help="The number of simulation steps to run"
     )
     parser.add_argument(
@@ -175,12 +164,6 @@ def parse_args():
         default="world",
         help="The file to save the generated world to",
     )
-    parser.add_argument(
-        "--state",
-        type=str,
-        # default="world-state.json",
-        help="The file to save the world state to",
-    )
     return parser.parse_args()
 
 
@@ -190,33 +173,38 @@ def main():
     world_file = args.world + ".json"
     world_state_file = args.state or (args.world + ".state.json")
 
+    players = []
+    if args.player:
+        players.append(args.player)
+
+    memory = {}
     if path.exists(world_state_file):
         logger.info(f"Loading world state from {world_state_file}")
         with open(world_state_file, "r") as f:
             state = WorldState(**load(f))
 
         set_step(state.step)
-        create_agents(state.world, state.memory)
 
+        memory = state.memory
         world = state.world
         world.name = args.world
     elif path.exists(world_file):
         logger.info(f"Loading world from {world_file}")
         with open(world_file, "r") as f:
-            world = World(**load(f), name=args.world)
-            create_agents(world)
+            world = World(**load(f))
     else:
         logger.info(f"Generating a new {args.theme} world")
         llm = agent_easy_connect()
         agent = Agent(
-            "world builder",
-            f"You are an experienced game master creating a visually detailed {args.theme} world for a new adventure.",
+            "World Builder",
+            f"You are an experienced game master creating a visually detailed {args.theme} world for a new adventure. {args.flavor}",
             {},
             llm,
         )
         world = generate_world(agent, args.world, args.theme)
-        create_agents(world)
         save_world(world, world_file)
+
+    create_agents(world, memory=memory, players=players)
 
     # load extra actions
     extra_actions = []
@@ -229,7 +217,7 @@ def main():
         logger.info(
             f"Loaded extra actions: {[action.__name__ for action in module_actions]}"
         )
-        extra_actions.append(module_actions)
+        extra_actions.extend(module_actions)
 
     logger.debug("Simulating world: %s", world)
     simulate_world(
