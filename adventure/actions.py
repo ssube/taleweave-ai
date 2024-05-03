@@ -84,7 +84,7 @@ def action_ask(character: str, question: str) -> str:
 
     # sanity checks
     if character == action_actor.name:
-        return "You cannot ask yourself a question. You have wasted your turn. Stop talking to yourself."
+        return "You cannot ask yourself a question. Stop talking to yourself. Try another action."
 
     question_actor, question_agent = get_actor_agent_for_name(character)
     if not question_actor:
@@ -120,7 +120,7 @@ def action_tell(character: str, message: str) -> str:
 
     # sanity checks
     if character == action_actor.name:
-        return "You cannot tell yourself a message. You have wasted your turn. Stop talking to yourself."
+        return "You cannot tell yourself a message. Stop talking to yourself. Try another action."
 
     question_actor, question_agent = get_actor_agent_for_name(character)
     if not question_actor:

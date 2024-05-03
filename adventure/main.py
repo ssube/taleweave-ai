@@ -1,9 +1,10 @@
 from importlib import import_module
 from json import load
-from os import path
+from os import environ, path
 
+from dotenv import load_dotenv
 from packit.agent import Agent, agent_easy_connect
-from packit.loops import loop_tool
+from packit.loops import loop_retry
 from packit.results import multi_function_or_str_result
 from packit.toolbox import Toolbox
 from packit.utils import logger_with_colors
@@ -31,6 +32,8 @@ from adventure.models import World, WorldState
 from adventure.state import create_agents, save_world, save_world_state
 
 logger = logger_with_colors(__name__)
+
+load_dotenv(environ.get("ADVENTURE_ENV", ".env"), override=True)
 
 
 # simulation
@@ -97,7 +100,7 @@ def simulate_world(world: World, steps: int = 10, callback=None, extra_actions=[
             room_directions = list(room.portals.keys())
 
             logger.info("starting actor %s turn", actor.name)
-            result = loop_tool(
+            result = loop_retry(
                 agent,
                 (
                     "You are currently in {room_name}. {room_description}. "
@@ -121,7 +124,7 @@ def simulate_world(world: World, steps: int = 10, callback=None, extra_actions=[
                 toolbox=action_tools,
             )
 
-            logger.info(f"{actor.name} step result: {result}")
+            logger.debug(f"{actor.name} step result: {result}")
             agent.memory.append(result)
 
         if callback:
@@ -145,6 +148,12 @@ def parse_args():
     )
     parser.add_argument(
         "--player", type=str, help="The name of the character to play as"
+    )
+    parser.add_argument(
+        "--rooms", type=int, default=5, help="The number of rooms to generate"
+    )
+    parser.add_argument(
+        "--max-rooms", type=int, help="The maximum number of rooms to generate"
     )
     parser.add_argument(
         "--state",
@@ -201,7 +210,9 @@ def main():
             {},
             llm,
         )
-        world = generate_world(agent, args.world, args.theme)
+        world = generate_world(
+            agent, args.world, args.theme, rooms=args.rooms, max_rooms=args.max_rooms
+        )
         save_world(world, world_file)
 
     create_agents(world, memory=memory, players=players)

@@ -1,3 +1,4 @@
 adventure/custom_actions.py
 worlds/
 __pycache__/
+.env

@@ -80,7 +80,8 @@ def generate_actor(
     logger.info(f"Generating actor: {name}")
     description = agent(
         "Generate a detailed description of the {name} character. What do they look like? What are they wearing? "
-        "What are they doing? Describe their appearance from the perspective of an outside observer.",
+        "What are they doing? Describe their appearance from the perspective of an outside observer."
+        "Do not include the room or any other characters in the description, because they will move around.",
         name=name,
     )
     backstory = agent(
@@ -101,8 +102,10 @@ def generate_actor(
     )
 
 
-def generate_world(agent: Agent, name: str, theme: str) -> World:
-    room_count = randint(3, 5)
+def generate_world(
+    agent: Agent, name: str, theme: str, rooms: int | None = None, max_rooms: int = 5
+) -> World:
+    room_count = rooms or randint(3, max_rooms)
     logger.info(f"Generating a {theme} with {room_count} rooms")
 
     existing_actors: List[str] = []
