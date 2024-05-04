@@ -2,3 +2,6 @@ adventure/custom_actions.py
 worlds/
 __pycache__/
 .env
+venv/
+client/node_modules/
+client/out/

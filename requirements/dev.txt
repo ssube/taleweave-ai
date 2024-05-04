@@ -1,0 +1,27 @@
+# build
+build
+twine
+wheel
+
+# debug
+debugpy
+
+# docs
+mkdocs
+mdx-truly-sane-lists
+
+# lint
+black
+flake8
+isort
+mypy
+
+# testing
+coverage
+hypothesis
+
+# types
+types-Flask-Cors
+types-jsonschema
+types-Pillow
+types-PyYAML
