@@ -1,4 +1,3 @@
-from importlib import import_module
 from json import load
 from logging.config import dictConfig
 from os import environ, path
@@ -12,6 +11,7 @@ from packit.toolbox import Toolbox
 from packit.utils import logger_with_colors
 
 from adventure.context import set_current_broadcast
+from adventure.plugins import load_plugin
 
 # Configure logging
 LOG_PATH = "logging.json"
@@ -210,6 +210,9 @@ def parse_args():
         "--max-rooms", type=int, help="The maximum number of rooms to generate"
     )
     parser.add_argument(
+        "--optional-actions", type=bool, help="Whether to include optional actions"
+    )
+    parser.add_argument(
         "--server", type=str, help="The address on which to run the server"
     )
     parser.add_argument(
@@ -326,6 +329,16 @@ def main():
         )
         extra_actions.extend(module_actions)
 
+    if args.optional_actions:
+        logger.info("Loading optional actions")
+        from adventure.optional_actions import init as init_optional_actions
+
+        optional_actions = init_optional_actions()
+        logger.info(
+            f"Loaded optional actions: {[action.__name__ for action in optional_actions]}"
+        )
+        extra_actions.extend(optional_actions)
+
     # load extra systems
     def snapshot_system(world: World, step: int) -> None:
         logger.debug("Snapshotting world state")
@@ -354,13 +367,6 @@ def main():
         input_callbacks=input_callbacks,
         result_callbacks=result_callbacks,
     )
-
-
-def load_plugin(name):
-    module_name, function_name = name.rsplit(":", 1)
-    plugin_module = import_module(module_name)
-    plugin_entry = getattr(plugin_module, function_name)
-    return plugin_entry()
 
 
 if __name__ == "__main__":

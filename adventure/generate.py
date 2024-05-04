@@ -9,6 +9,13 @@ from adventure.models import Actor, Item, Room, World
 
 logger = getLogger(__name__)
 
+OPPOSITE_DIRECTIONS = {
+    "north": "south",
+    "south": "north",
+    "east": "west",
+    "west": "east",
+}
+
 
 def generate_room(
     agent: Agent, world_theme: str, existing_rooms: List[str], callback
@@ -147,13 +154,14 @@ def generate_world(
 
     existing_actors: List[str] = []
     existing_items: List[str] = []
+    existing_rooms: List[str] = []
 
     # generate the rooms
     rooms = []
     for i in range(room_count):
-        existing_rooms = [room.name for room in rooms]
         room = generate_room(agent, theme, existing_rooms, callback=callback)
         rooms.append(room)
+        existing_rooms.append(room.name)
 
         item_count = randint(0, 3)
         callback(f"Generating {item_count} items for room: {room.name}")
@@ -198,13 +206,6 @@ def generate_world(
                 actor.items.append(item)
                 existing_items.append(item.name)
 
-    opposite_directions = {
-        "north": "south",
-        "south": "north",
-        "east": "west",
-        "west": "east",
-    }
-
     # generate portals to link the rooms together
     for room in rooms:
         directions = ["north", "south", "east", "west"]
@@ -213,7 +214,7 @@ def generate_world(
                 logger.debug(f"Room {room.name} already has a {direction} portal")
                 continue
 
-            opposite_direction = opposite_directions[direction]
+            opposite_direction = OPPOSITE_DIRECTIONS[direction]
 
             if randint(0, 1):
                 dest_room = choice([r for r in rooms if r.name != room.name])
@@ -233,7 +234,7 @@ def generate_world(
 
                 # create bidirectional links
                 room.portals[direction] = dest_room.name
-                dest_room.portals[opposite_directions[direction]] = room.name
+                dest_room.portals[OPPOSITE_DIRECTIONS[direction]] = room.name
 
     # ensure actors act in a stable order
     order = [actor.name for room in rooms for actor in room.actors]
