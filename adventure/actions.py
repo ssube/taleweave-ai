@@ -9,6 +9,12 @@ logger = getLogger(__name__)
 
 
 def action_look(target: str) -> str:
+    """
+    Look at a target in the room or your inventory.
+
+    Args:
+        target: The name of the target to look at.
+    """
     _, action_room, action_actor = get_current_context()
     logger.info(f"{action_actor.name} looks at {target}")
 
@@ -41,6 +47,12 @@ def action_look(target: str) -> str:
 
 
 def action_move(direction: str) -> str:
+    """
+    Move into another room.
+
+    Args:
+        direction: The direction to move in.
+    """
     action_world, action_room, action_actor = get_current_context()
 
     destination_name = action_room.portals.get(direction)
@@ -61,6 +73,12 @@ def action_move(direction: str) -> str:
 
 
 def action_take(item_name: str) -> str:
+    """
+    Take an item from the room and put it in your inventory.
+
+    Args:
+        item_name: The name of the item to take.
+    """
     _, action_room, action_actor = get_current_context()
 
     item = next((item for item in action_room.items if item.name == item_name), None)
@@ -74,6 +92,13 @@ def action_take(item_name: str) -> str:
 
 
 def action_ask(character: str, question: str) -> str:
+    """
+    Ask another character a question.
+
+    Args:
+        character: The name of the character to ask.
+        question: The question to ask them.
+    """
     # capture references to the current actor and room, because they will be overwritten
     _, action_room, action_actor = get_current_context()
 
@@ -110,6 +135,13 @@ def action_ask(character: str, question: str) -> str:
 
 
 def action_tell(character: str, message: str) -> str:
+    """
+    Tell another character a message.
+
+    Args:
+        character: The name of the character to tell.
+        message: The message to tell them.
+    """
     # capture references to the current actor and room, because they will be overwritten
     _, action_room, action_actor = get_current_context()
 
@@ -146,6 +178,13 @@ def action_tell(character: str, message: str) -> str:
 
 
 def action_give(character: str, item_name: str) -> str:
+    """
+    Give an item to another character in the room.
+
+    Args:
+        character: The name of the character to give the item to.
+        item_name: The name of the item to give.
+    """
     _, action_room, action_actor = get_current_context()
 
     destination_actor = next(
@@ -163,3 +202,24 @@ def action_give(character: str, item_name: str) -> str:
     destination_actor.items.append(item)
 
     return f"You give the {item_name} item to {character}."
+
+
+def action_drop(item_name: str) -> str:
+    """
+    Drop an item from your inventory into the room.
+
+    Args:
+        item_name: The name of the item to drop.
+    """
+
+    _, action_room, action_actor = get_current_context()
+
+    item = next((item for item in action_actor.items if item.name == item_name), None)
+    if not item:
+        return f"You do not have the {item_name} item in your inventory."
+
+    logger.info(f"{action_actor.name} drops the {item_name} item")
+    action_actor.items.remove(item)
+    action_room.items.append(item)
+
+    return f"You drop the {item_name} item."
