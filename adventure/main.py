@@ -313,10 +313,12 @@ def main():
         save_world(world, world_file)
 
     create_agents(world, memory=memory, players=players)
+    if args.server:
+        server_system(world, 0)
 
     # load extra actions
     extra_actions = []
-    for action_name in args.actions:
+    for action_name in args.actions or []:
         logger.info(f"Loading extra actions from {action_name}")
         module_actions = load_plugin(action_name)
         logger.info(
@@ -330,7 +332,7 @@ def main():
         save_world_state(world, step, world_state_file)
 
     extra_systems = [(snapshot_system, None)]
-    for system_name in args.systems:
+    for system_name in args.systems or []:
         logger.info(f"Loading extra systems from {system_name}")
         module_systems = load_plugin(system_name)
         logger.info(

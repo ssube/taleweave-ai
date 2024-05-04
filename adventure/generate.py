@@ -3,6 +3,7 @@ from random import choice, randint
 from typing import Callable, List
 
 from packit.agent import Agent
+from packit.loops import loop_retry
 
 from adventure.models import Actor, Item, Room, World
 
@@ -12,12 +13,22 @@ logger = getLogger(__name__)
 def generate_room(
     agent: Agent, world_theme: str, existing_rooms: List[str], callback
 ) -> Room:
-    name = agent(
+    def unique_name(name: str, **kwargs):
+        if name in existing_rooms:
+            raise ValueError(f"A room named {name} already exists")
+
+        return name
+
+    name = loop_retry(
+        agent,
         "Generate one room, area, or location that would make sense in the world of {world_theme}. "
         "Only respond with the room name, do not include the description or any other text. "
         'Do not prefix the name with "the", do not wrap it in quotes. The existing rooms are: {existing_rooms}',
-        world_theme=world_theme,
-        existing_rooms=existing_rooms,
+        context={
+            "world_theme": world_theme,
+            "existing_rooms": existing_rooms,
+        },
+        result_parser=unique_name,
     )
     callback(f"Generating room: {name}")
     desc = agent(
@@ -50,14 +61,24 @@ def generate_item(
     else:
         dest_note = "The item will be placed in the world"
 
-    name = agent(
+    def unique_name(name: str, **kwargs):
+        if name in existing_items:
+            raise ValueError(f"An item named {name} already exists")
+
+        return name
+
+    name = loop_retry(
+        agent,
         "Generate one item or object that would make sense in the world of {world_theme}. {dest_note}. "
         "Only respond with the item name, do not include a description or any other text. Do not prefix the "
         'name with "the", do not wrap it in quotes. Do not include the name of the room. '
         "Do not create any duplicate items in the same room. Do not give characters any duplicate items. The existing items are: {existing_items}",
-        dest_note=dest_note,
-        existing_items=existing_items,
-        world_theme=world_theme,
+        context={
+            "dest_note": dest_note,
+            "existing_items": existing_items,
+            "world_theme": world_theme,
+        },
+        result_parser=unique_name,
     )
     callback(f"Generating item: {name}")
     desc = agent(
@@ -73,14 +94,24 @@ def generate_item(
 def generate_actor(
     agent: Agent, world_theme: str, dest_room: str, existing_actors: List[str], callback
 ) -> Actor:
-    name = agent(
+    def unique_name(name: str, **kwargs):
+        if name in existing_actors:
+            raise ValueError(f"An actor named {name} already exists")
+
+        return name
+
+    name = loop_retry(
+        agent,
         "Generate one person or creature that would make sense in the world of {world_theme}. The character will be placed in the {dest_room} room. "
         'Only respond with the character name, do not include a description or any other text. Do not prefix the name with "the", do not wrap it in quotes. '
         "Do not include the name of the room. Do not give characters any duplicate names."
         "Do not create any duplicate characters. The existing characters are: {existing_actors}",
-        dest_room=dest_room,
-        existing_actors=existing_actors,
-        world_theme=world_theme,
+        context={
+            "dest_room": dest_room,
+            "existing_actors": existing_actors,
+            "world_theme": world_theme,
+        },
+        result_parser=unique_name,
     )
     callback(f"Generating actor: {name}")
     description = agent(
@@ -125,7 +156,7 @@ def generate_world(
         rooms.append(room)
 
         item_count = randint(0, 3)
-        callback(f"Generating {item_count} items for room {room.name}")
+        callback(f"Generating {item_count} items for room: {room.name}")
 
         for j in range(item_count):
             item = generate_item(
@@ -139,7 +170,7 @@ def generate_world(
             existing_items.append(item.name)
 
         actor_count = randint(0, 3)
-        callback(f"Generating {actor_count} actors for room {room.name}")
+        callback(f"Generating {actor_count} actors for room: {room.name}")
 
         for j in range(actor_count):
             actor = generate_actor(
