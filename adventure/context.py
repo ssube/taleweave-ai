@@ -1,12 +1,13 @@
-from typing import Dict, Tuple
+from typing import Callable, Dict, Tuple
 
 from packit.agent import Agent
 
-from adventure.models import Actor
+from adventure.models import Actor, Room, World
 
-current_world = None
-current_room = None
-current_actor = None
+current_broadcast: Callable[[str], None] | None = None
+current_world: World | None = None
+current_room: Room | None = None
+current_actor: Actor | None = None
 current_step = 0
 
 
@@ -39,6 +40,20 @@ def get_current_room():
 
 def get_current_actor():
     return current_actor
+
+
+def get_current_broadcast():
+    return current_broadcast
+
+
+def broadcast(message):
+    if current_broadcast:
+        current_broadcast(message)
+
+
+def set_current_broadcast(broadcast):
+    global current_broadcast
+    current_broadcast = broadcast
 
 
 def set_current_world(world):

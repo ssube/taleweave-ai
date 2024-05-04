@@ -3,7 +3,7 @@ from logging import getLogger
 
 from packit.utils import could_be_json
 
-from adventure.context import get_actor_agent_for_name, get_current_context
+from adventure.context import broadcast, get_actor_agent_for_name, get_current_context
 
 logger = getLogger(__name__)
 
@@ -16,29 +16,29 @@ def action_look(target: str) -> str:
         target: The name of the target to look at.
     """
     _, action_room, action_actor = get_current_context()
-    logger.info(f"{action_actor.name} looks at {target}")
+    broadcast(f"{action_actor.name} looks at {target}")
 
     if target == action_room.name:
-        logger.info(f"{action_actor.name} saw the {action_room.name} room")
+        broadcast(f"{action_actor.name} saw the {action_room.name} room")
         return action_room.description
 
     for actor in action_room.actors:
         if actor.name == target:
-            logger.info(
+            broadcast(
                 f"{action_actor.name} saw the {actor.name} actor in the {action_room.name} room"
             )
             return actor.description
 
     for item in action_room.items:
         if item.name == target:
-            logger.info(
+            broadcast(
                 f"{action_actor.name} saw the {item.name} item in the {action_room.name} room"
             )
             return item.description
 
     for item in action_actor.items:
         if item.name == target:
-            logger.info(
+            broadcast(
                 f"{action_actor.name} saw the {item.name} item in their inventory"
             )
             return item.description
@@ -65,7 +65,7 @@ def action_move(direction: str) -> str:
     if not destination_room:
         return f"The {destination_name} room does not exist."
 
-    logger.info(f"{action_actor.name} moves {direction} to {destination_name}")
+    broadcast(f"{action_actor.name} moves {direction} to {destination_name}")
     action_room.actors.remove(action_actor)
     destination_room.actors.append(action_actor)
 
@@ -83,7 +83,7 @@ def action_take(item_name: str) -> str:
 
     item = next((item for item in action_room.items if item.name == item_name), None)
     if item:
-        logger.info(f"{action_actor.name} takes the {item_name} item")
+        broadcast(f"{action_actor.name} takes the {item_name} item")
         action_room.items.remove(item)
         action_actor.items.append(item)
         return "You take the {item_name} item and put it in your inventory."
@@ -118,7 +118,7 @@ def action_ask(character: str, question: str) -> str:
     if not question_agent:
         return f"The {character} character does not exist."
 
-    logger.info(f"{action_actor.name} asks {character}: {question}")
+    broadcast(f"{action_actor.name} asks {character}: {question}")
     answer = question_agent(
         f"{action_actor.name} asks you: {question}. Reply with your response to them. "
         f"Do not include the question or any JSON. Only include your answer for {action_actor.name}."
@@ -128,7 +128,7 @@ def action_ask(character: str, question: str) -> str:
         answer = loads(answer).get("parameters", {}).get("message", "")
 
     if len(answer.strip()) > 0:
-        logger.info(f"{character} responds to {action_actor.name}: {answer}")
+        broadcast(f"{character} responds to {action_actor.name}: {answer}")
         return f"{character} responds: {answer}"
 
     return f"{character} does not respond."
@@ -161,7 +161,7 @@ def action_tell(character: str, message: str) -> str:
     if not question_agent:
         return f"The {character} character does not exist."
 
-    logger.info(f"{action_actor.name} tells {character}: {message}")
+    broadcast(f"{action_actor.name} tells {character}: {message}")
     answer = question_agent(
         f"{action_actor.name} tells you: {message}. Reply with your response to them. "
         f"Do not include the message or any JSON. Only include your reply to {action_actor.name}."
@@ -171,7 +171,7 @@ def action_tell(character: str, message: str) -> str:
         answer = loads(answer).get("parameters", {}).get("message", "")
 
     if len(answer.strip()) > 0:
-        logger.info(f"{character} responds to {action_actor.name}: {answer}")
+        broadcast(f"{character} responds to {action_actor.name}: {answer}")
         return f"{character} responds: {answer}"
 
     return f"{character} does not respond."
@@ -197,7 +197,7 @@ def action_give(character: str, item_name: str) -> str:
     if not item:
         return f"You do not have the {item_name} item in your inventory."
 
-    logger.info(f"{action_actor.name} gives {character} the {item_name} item")
+    broadcast(f"{action_actor.name} gives {character} the {item_name} item")
     action_actor.items.remove(item)
     destination_actor.items.append(item)
 
@@ -218,7 +218,7 @@ def action_drop(item_name: str) -> str:
     if not item:
         return f"You do not have the {item_name} item in your inventory."
 
-    logger.info(f"{action_actor.name} drops the {item_name} item")
+    broadcast(f"{action_actor.name} drops the {item_name} item")
     action_actor.items.remove(item)
     action_room.items.append(item)
 

@@ -1,5 +1,6 @@
 from importlib import import_module
 from json import load
+from logging.config import dictConfig
 from os import environ, path
 from typing import Callable, Dict, Sequence, Tuple
 
@@ -10,29 +11,46 @@ from packit.results import multi_function_or_str_result
 from packit.toolbox import Toolbox
 from packit.utils import logger_with_colors
 
-from adventure.actions import (
-    action_ask,
-    action_give,
-    action_look,
-    action_move,
-    action_take,
-    action_tell,
-)
-from adventure.context import (
-    get_actor_agent_for_name,
-    get_actor_for_agent,
-    get_current_world,
-    get_step,
-    set_current_actor,
-    set_current_room,
-    set_current_world,
-    set_step,
-)
-from adventure.generate import generate_world
-from adventure.models import Actor, Room, World, WorldState
-from adventure.state import create_agents, save_world, save_world_state
+from adventure.context import set_current_broadcast
 
-logger = logger_with_colors(__name__)
+# Configure logging
+LOG_PATH = "logging.json"
+# LOG_PATH = "dev-logging.json"
+try:
+    if path.exists(LOG_PATH):
+        with open(LOG_PATH, "r") as f:
+            config_logging = load(f)
+            dictConfig(config_logging)
+    else:
+        print("logging config not found")
+
+except Exception as err:
+    print("error loading logging config: %s" % (err))
+
+if True:
+    from adventure.actions import (
+        action_ask,
+        action_give,
+        action_look,
+        action_move,
+        action_take,
+        action_tell,
+    )
+    from adventure.context import (
+        get_actor_agent_for_name,
+        get_actor_for_agent,
+        get_current_world,
+        get_step,
+        set_current_actor,
+        set_current_room,
+        set_current_world,
+        set_step,
+    )
+    from adventure.generate import generate_world
+    from adventure.models import Actor, Room, World, WorldState
+    from adventure.state import create_agents, save_world, save_world_state
+
+logger = logger_with_colors(__name__, level="INFO")
 
 load_dotenv(environ.get("ADVENTURE_ENV", ".env"), override=True)
 
@@ -65,11 +83,20 @@ def simulate_world(
     systems: Sequence[
         Tuple[Callable[[World, int], None], Callable[[Dict[str, str]], str] | None]
     ] = [],
+    event_callbacks: Sequence[Callable[[str], None]] = [],
     input_callbacks: Sequence[Callable[[Room, Actor, str], None]] = [],
     result_callbacks: Sequence[Callable[[Room, Actor, str], None]] = [],
 ):
     logger.info("Simulating the world")
     set_current_world(world)
+
+    # set up a broadcast callback
+    def broadcast_callback(message):
+        logger.info(message)
+        for callback in event_callbacks:
+            callback(message)
+
+    set_current_broadcast(broadcast_callback)
 
     # build a toolbox for the actions
     action_tools = Toolbox(
@@ -222,6 +249,25 @@ def main():
     if args.player:
         players.append(args.player)
 
+    # set up callbacks
+    event_callbacks = []
+    input_callbacks = []
+    result_callbacks = []
+
+    if args.server:
+        from adventure.server import (
+            launch_server,
+            server_action,
+            server_event,
+            server_result,
+            server_system,
+        )
+
+        launch_server()
+        event_callbacks.append(server_event)
+        input_callbacks.append(server_action)
+        result_callbacks.append(server_result)
+
     memory = {}
     if path.exists(world_state_file):
         logger.info(f"Loading world state from {world_state_file}")
@@ -246,12 +292,23 @@ def main():
             {},
             llm,
         )
+
+        world = None
+
+        def broadcast_callback(message):
+            logger.info(message)
+            for callback in event_callbacks:
+                callback(message)
+            if args.server and world:
+                server_system(world, 0)
+
         world = generate_world(
             agent,
             args.world,
             args.theme,
             room_count=args.rooms,
             max_rooms=args.max_rooms,
+            callback=broadcast_callback,
         )
         save_world(world, world_file)
 
@@ -281,22 +338,9 @@ def main():
         )
         extra_systems.append(module_systems)
 
-    # make sure the server system is last
-    input_callbacks = []
-    result_callbacks = []
-
+    # make sure the server system runs after any updates
     if args.server:
-        from adventure.server import (
-            launch_server,
-            server_input,
-            server_result,
-            server_system,
-        )
-
-        launch_server()
         extra_systems.append((server_system, None))
-        input_callbacks.append(server_input)
-        result_callbacks.append(server_result)
 
     # start the sim
     logger.debug("Simulating world: %s", world)
