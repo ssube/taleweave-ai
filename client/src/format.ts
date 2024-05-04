@@ -26,7 +26,7 @@ export function formatWorld(data: any) {
 }
 
 export const formatters: Record<string, any> = {
-  input: formatInput,
+  action: formatInput,
   result: formatResult,
   world: formatWorld,
 };
