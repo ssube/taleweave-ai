@@ -95,14 +95,14 @@ def save_world_state(world, step, filename):
     graph_world(world, step)
     json_state = snapshot_world(world, step)
     with open(filename, "w") as f:
+        dump(json_state, f, default=world_json, indent=2)
 
-        def dumper(obj):
-            if isinstance(obj, BaseMessage):
-                return {
-                    "content": obj.content,
-                    "type": obj.type,
-                }
 
-            raise ValueError(f"Cannot serialize {obj}")
+def world_json(obj):
+    if isinstance(obj, BaseMessage):
+        return {
+            "content": obj.content,
+            "type": obj.type,
+        }
 
-        dump(json_state, f, default=dumper, indent=2)
+    raise ValueError(f"Cannot serialize {obj}")

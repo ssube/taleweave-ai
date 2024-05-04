@@ -49,7 +49,8 @@ def generate_item(
 
     name = agent(
         "Generate one item or object that would make sense in the world of {world_theme}. {dest_note}. "
-        'Only respond with the item name, do not include a description or any other text. Do not prefix the name with "the", do not wrap it in quotes. '
+        "Only respond with the item name, do not include a description or any other text. Do not prefix the "
+        'name with "the", do not wrap it in quotes. Do not include the name of the room. '
         "Do not create any duplicate items in the same room. Do not give characters any duplicate items. The existing items are: {existing_items}",
         dest_note=dest_note,
         existing_items=existing_items,
@@ -72,7 +73,8 @@ def generate_actor(
     name = agent(
         "Generate one person or creature that would make sense in the world of {world_theme}. The character will be placed in the {dest_room} room. "
         'Only respond with the character name, do not include a description or any other text. Do not prefix the name with "the", do not wrap it in quotes. '
-        "Do not create any duplicate characters in the same room. The existing characters are: {existing_actors}",
+        "Do not include the name of the room. Do not give characters any duplicate names."
+        "Do not create any duplicate characters. The existing characters are: {existing_actors}",
         dest_room=dest_room,
         existing_actors=existing_actors,
         world_theme=world_theme,
@@ -90,22 +92,22 @@ def generate_actor(
         name=name,
     )
 
-    health = 100
-    actions = {}
-
     return Actor(
         name=name,
         backstory=backstory,
         description=description,
-        health=health,
-        actions=actions,
+        actions={},
     )
 
 
 def generate_world(
-    agent: Agent, name: str, theme: str, rooms: int | None = None, max_rooms: int = 5
+    agent: Agent,
+    name: str,
+    theme: str,
+    room_count: int | None = None,
+    max_rooms: int = 5,
 ) -> World:
-    room_count = rooms or randint(3, max_rooms)
+    room_count = room_count or randint(3, max_rooms)
     logger.info(f"Generating a {theme} with {room_count} rooms")
 
     existing_actors: List[str] = []
@@ -150,7 +152,7 @@ def generate_world(
         "west": "east",
     }
 
-    # TODO: generate portals to link the rooms together
+    # generate portals to link the rooms together
     for room in rooms:
         directions = ["north", "south", "east", "west"]
         for direction in directions:
@@ -180,4 +182,6 @@ def generate_world(
                 room.portals[direction] = dest_room.name
                 dest_room.portals[opposite_directions[direction]] = room.name
 
-    return World(name=name, rooms=rooms, theme=theme)
+    # ensure actors act in a stable order
+    order = [actor.name for room in rooms for actor in room.actors]
+    return World(name=name, rooms=rooms, theme=theme, order=order)
