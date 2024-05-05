@@ -82,8 +82,7 @@ export function App(props: AppProps) {
   const { lastMessage, readyState, sendMessage } = useWebSocket(props.socketUrl);
 
   function setPlayer(actor: Maybe<Actor>) {
-    setCharacter(actor);
-
+    // do not setCharacter until the server confirms the player change
     if (doesExist(actor)) {
       sendMessage(JSON.stringify({ type: 'player', become: actor.name }));
     }
@@ -92,6 +91,7 @@ export function App(props: AppProps) {
   function sendInput(input: string) {
     if (doesExist(character)) {
       sendMessage(JSON.stringify({ type: 'input', input }));
+      setActiveTurn(false);
     }
   }
 

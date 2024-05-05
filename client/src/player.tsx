@@ -25,15 +25,17 @@ export function PlayerPanel(props: PlayerPanelProps) {
 
   return <Card>
     <CardContent>
-      {activeTurn && <Alert severity="warning">It's your turn!</Alert>}
-      <Typography variant="h6">Playing as: {actor.name}</Typography>
-      <Typography variant="body1">{actor.backstory}</Typography>
-      <Stack direction="row" spacing={2}>
-        <TextField label="Input" variant="outlined" fullWidth value={input} onChange={(event) => setInput(event.target.value)} />
-        <Button variant="contained" onClick={() => {
-          setInput('');
-          sendInput(input);
-        }}>Send</Button>
+      <Stack direction="column" spacing={2}>
+        {activeTurn && <Alert severity="warning">It's your turn!</Alert>}
+        <Typography variant="h6">Playing as: {actor.name}</Typography>
+        <Typography variant="body1">{actor.backstory}</Typography>
+        <Stack direction="row" spacing={2}>
+          <TextField label="Input" variant="outlined" fullWidth value={input} onChange={(event) => setInput(event.target.value)} />
+          <Button variant="contained" onClick={() => {
+            setInput('');
+            sendInput(input);
+          }}>Send</Button>
+        </Stack>
       </Stack>
     </CardContent>
   </Card>;

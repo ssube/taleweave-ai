@@ -59,7 +59,7 @@ export function ItemItem(props: { item: Item } & BaseEntityItemProps) {
 export function ActorItem(props: { actor: Actor } & BaseEntityItemProps) {
   const { actor, activeCharacter, setDetails, setPlayer } = props;
 
-  const active = doesExist(activeCharacter) && actor === activeCharacter;
+  const active = doesExist(activeCharacter) && actor.name === activeCharacter.name;
   const label = formatLabel(actor.name, active);
 
   let playButton;
@@ -79,7 +79,7 @@ export function ActorItem(props: { actor: Actor } & BaseEntityItemProps) {
 export function RoomItem(props: { room: Room } & BaseEntityItemProps) {
   const { room, activeCharacter, setDetails, setPlayer } = props;
 
-  const active = doesExist(activeCharacter) && room.actors.some((it) => it === activeCharacter);
+  const active = doesExist(activeCharacter) && room.actors.some((it) => it.name === activeCharacter.name);
   const label = formatLabel(room.name, active);
 
   return <TreeItem itemId={room.name} label={label}>

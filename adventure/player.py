@@ -5,6 +5,7 @@ from readline import add_history
 from typing import Any, Callable, Dict, List, Sequence
 
 from langchain_core.messages import AIMessage, BaseMessage, HumanMessage
+from packit.agent import Agent
 from packit.utils import could_be_json
 
 logger = getLogger(__name__)
@@ -111,13 +112,15 @@ class LocalPlayer(BasePlayer):
 
 
 class RemotePlayer(BasePlayer):
+    fallback_agent: Agent | None
     input_queue: Queue[str]
     send_prompt: Callable[[str, str], bool]
 
     def __init__(
-        self, name: str, backstory: str, send_prompt: Callable[[str, str], bool]
+        self, name: str, backstory: str, send_prompt: Callable[[str, str], bool], fallback_agent = None
     ) -> None:
         super().__init__(name, backstory)
+        self.fallback_agent = fallback_agent
         self.input_queue = Queue()
         self.send_prompt = send_prompt
 
@@ -137,5 +140,8 @@ class RemotePlayer(BasePlayer):
                 return self.parse_input(reply)
         except Exception:
             logger.exception("error getting reply from remote player")
+
+        if self.fallback_agent:
+            return self.fallback_agent(prompt, **kwargs)
 
         return ""

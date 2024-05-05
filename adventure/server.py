@@ -7,7 +7,6 @@ from typing import Dict
 from uuid import uuid4
 
 import websockets
-from packit.agent import Agent
 
 from adventure.context import get_actor_agent_for_name, set_actor_agent_for_name
 from adventure.models import Actor, Room, World
@@ -18,7 +17,6 @@ logger = getLogger(__name__)
 
 connected = set()
 characters: Dict[str, RemotePlayer] = {}
-previous_agents: Dict[str, Agent] = {}
 recent_events = deque(maxlen=100)
 recent_world = None
 
@@ -63,7 +61,7 @@ async def handler(websocket):
         try:
             # if this socket is attached to a character and that character's turn is active, wait for input
             message = await websocket.recv()
-            logger.info(f"Received message: {message}")
+            logger.info(f"Received message for {id}: {message}")
 
             try:
                 data = loads(message)
@@ -86,13 +84,12 @@ async def handler(websocket):
                         continue
 
                     # player_name = data["player"]
-                    player = RemotePlayer(actor.name, actor.backstory, sync_turn)
+                    player = RemotePlayer(actor.name, actor.backstory, sync_turn, fallback_agent=llm_agent)
                     characters[id] = player
                     logger.info(f"Client {websocket} is now character {character_name}")
 
                     # swap out the LLM agent
                     set_actor_agent_for_name(actor.name, actor, player)
-                    previous_agents[actor.name] = llm_agent
 
                     # notify all clients that this character is now active
                     send_and_append(
@@ -117,7 +114,7 @@ async def handler(websocket):
 
         actor, _ = get_actor_agent_for_name(player.name)
         if actor:
-            set_actor_agent_for_name(player.name, actor, previous_agents[player.name])
+            set_actor_agent_for_name(player.name, actor, player.fallback_agent)
 
     logger.info("Client disconnected")
 
