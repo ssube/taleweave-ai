@@ -1,12 +1,13 @@
 from json import dumps
 from readline import add_history
-from typing import Any, Dict, List, Sequence
+from queue import Queue
+from typing import Any, Callable, Dict, List, Sequence
 
 from langchain_core.messages import AIMessage, BaseMessage, HumanMessage
 from packit.utils import could_be_json
 
 
-class LocalPlayer:
+class BasePlayer:
     """
     A human agent that can interact with the world.
     """
@@ -40,18 +41,7 @@ class LocalPlayer:
 
         return self(prompt, **context)
 
-    def __call__(self, prompt: str, **kwargs) -> str:
-        """
-        Ask the player for input.
-        """
-
-        formatted_prompt = prompt.format(**kwargs)
-        self.memory.append(HumanMessage(content=formatted_prompt))
-        print(formatted_prompt)
-
-        reply = input(">>> ")
-        reply = reply.strip()
-
+    def parse_input(self, reply: str):
         # if the reply starts with a tilde, it is a literal response and should be returned without the tilde
         if reply.startswith("~"):
             reply = reply[1:]
@@ -94,3 +84,50 @@ class LocalPlayer:
         )
         self.memory.append(AIMessage(content=reply_json))
         return reply_json
+
+    def __call__(self, prompt: str, **kwargs) -> str:
+        raise NotImplementedError("Subclasses must implement this method")
+
+
+class LocalPlayer(BasePlayer):
+    def __call__(self, prompt: str, **kwargs) -> str:
+        """
+        Ask the player for input.
+        """
+
+        formatted_prompt = prompt.format(**kwargs)
+        self.memory.append(HumanMessage(content=formatted_prompt))
+        print(formatted_prompt)
+
+        reply = input(">>> ")
+        reply = reply.strip()
+
+        return self.parse_input(reply)
+
+
+class RemotePlayer(BasePlayer):
+    input_queue: Queue[str]
+    send_prompt: Callable[[str, str], bool]
+
+    def __init__(self, name: str, backstory: str, send_prompt: Callable[[str, str], bool]) -> None:
+        super().__init__(name, backstory)
+        self.input_queue = Queue()
+        self.send_prompt = send_prompt
+
+    def __call__(self, prompt: str, **kwargs) -> str:
+        """
+        Ask the player for input.
+        """
+
+        formatted_prompt = prompt.format(**kwargs)
+        self.memory.append(HumanMessage(content=formatted_prompt))
+
+        try:
+            if self.send_prompt(self.name, formatted_prompt):
+                reply = self.input_queue.get(timeout=60)
+                return self.parse_input(reply)
+        except Exception:
+            pass
+
+        # logger.warning("Failed to send prompt to remote player")
+        return ""

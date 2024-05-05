@@ -17,8 +17,14 @@ OPPOSITE_DIRECTIONS = {
 }
 
 
+GenerateCallback = Callable[[str], None]
+
+
 def generate_room(
-    agent: Agent, world_theme: str, existing_rooms: List[str], callback
+    agent: Agent,
+    world_theme: str,
+    callback: GenerateCallback | None = None,
+    existing_rooms: List[str] = [],
 ) -> Room:
     def unique_name(name: str, **kwargs):
         if name in existing_rooms:
@@ -37,7 +43,10 @@ def generate_room(
         },
         result_parser=unique_name,
     )
-    callback(f"Generating room: {name}")
+
+    if callable(callback):
+        callback(f"Generating room: {name}")
+
     desc = agent(
         "Generate a detailed description of the {name} area. What does it look like? "
         "What does it smell like? What can be seen or heard?",
@@ -56,10 +65,10 @@ def generate_room(
 def generate_item(
     agent: Agent,
     world_theme: str,
-    existing_items: List[str],
-    callback,
+    callback: Callable[[str], None] | None = None,
     dest_room: str | None = None,
     dest_actor: str | None = None,
+    existing_items: List[str] = [],
 ) -> Item:
     if dest_actor:
         dest_note = "The item will be held by the {dest_actor} character"
@@ -87,7 +96,10 @@ def generate_item(
         },
         result_parser=unique_name,
     )
-    callback(f"Generating item: {name}")
+
+    if callable(callback):
+        callback(f"Generating item: {name}")
+
     desc = agent(
         "Generate a detailed description of the {name} item. What does it look like? What is it made of? What does it do?",
         name=name,
@@ -99,7 +111,11 @@ def generate_item(
 
 
 def generate_actor(
-    agent: Agent, world_theme: str, dest_room: str, existing_actors: List[str], callback
+    agent: Agent,
+    world_theme: str,
+    dest_room: str,
+    callback: GenerateCallback | None = None,
+    existing_actors: List[str] = [],
 ) -> Actor:
     def unique_name(name: str, **kwargs):
         if name in existing_actors:
@@ -120,7 +136,10 @@ def generate_actor(
         },
         result_parser=unique_name,
     )
-    callback(f"Generating actor: {name}")
+
+    if callable(callback):
+        callback(f"Generating actor: {name}")
+
     description = agent(
         "Generate a detailed description of the {name} character. What do they look like? What are they wearing? "
         "What are they doing? Describe their appearance from the perspective of an outside observer."
@@ -147,10 +166,12 @@ def generate_world(
     theme: str,
     room_count: int | None = None,
     max_rooms: int = 5,
-    callback: Callable[[str], None] = lambda x: None,
+    callback: Callable[[str], None] | None = None,
 ) -> World:
     room_count = room_count or randint(3, max_rooms)
-    callback(f"Generating a {theme} with {room_count} rooms")
+
+    if callable(callback):
+        callback(f"Generating a {theme} with {room_count} rooms")
 
     existing_actors: List[str] = []
     existing_items: List[str] = []
@@ -159,12 +180,16 @@ def generate_world(
     # generate the rooms
     rooms = []
     for i in range(room_count):
-        room = generate_room(agent, theme, existing_rooms, callback=callback)
+        room = generate_room(
+            agent, theme, existing_rooms=existing_rooms, callback=callback
+        )
         rooms.append(room)
         existing_rooms.append(room.name)
 
         item_count = randint(0, 3)
-        callback(f"Generating {item_count} items for room: {room.name}")
+
+        if callable(callback):
+            callback(f"Generating {item_count} items for room: {room.name}")
 
         for j in range(item_count):
             item = generate_item(
@@ -178,7 +203,9 @@ def generate_world(
             existing_items.append(item.name)
 
         actor_count = randint(0, 3)
-        callback(f"Generating {actor_count} actors for room: {room.name}")
+
+        if callable(callback):
+            callback(f"Generating {actor_count} actors for room: {room.name}")
 
         for j in range(actor_count):
             actor = generate_actor(
@@ -193,7 +220,9 @@ def generate_world(
 
             # generate the actor's inventory
             item_count = randint(0, 3)
-            callback(f"Generating {item_count} items for actor {actor.name}")
+
+            if callable(callback):
+                callback(f"Generating {item_count} items for actor {actor.name}")
 
             for k in range(item_count):
                 item = generate_item(

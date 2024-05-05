@@ -1,24 +1,42 @@
 import asyncio
 from collections import deque
-from json import dumps
+from json import dumps, loads
 from logging import getLogger
 from threading import Thread
+from typing import Dict, Tuple
 
 import websockets
 
+from adventure.context import get_actor_agent_for_name
 from adventure.models import Actor, Room, World
+from adventure.player import RemotePlayer
 from adventure.state import snapshot_world, world_json
 
 logger = getLogger(__name__)
 
 connected = set()
-recent_events = deque(maxlen=10)
+characters: Dict[str, RemotePlayer] = {}
+recent_events = deque(maxlen=100)
 recent_world = None
 
 
 async def handler(websocket):
     logger.info("Client connected")
     connected.add(websocket)
+
+    async def next_turn(character: str, prompt: str) -> None:
+        await websocket.send(connected, dumps({
+            "type": "turn",
+            "character": character,
+            "prompt": prompt,
+        }))
+
+    def sync_turn(character: str, prompt: str) -> bool:
+        if websocket not in characters:
+            return False
+
+        asyncio.run(next_turn(character, prompt))
+        return True
 
     try:
         if recent_world:
@@ -31,12 +49,44 @@ async def handler(websocket):
 
     while True:
         try:
+            # if this socket is attached to a character and that character's turn is active, wait for input
             message = await websocket.recv()
-            print(message)
+            logger.info(f"Received message: {message}")
+
+            try:
+                data = loads(message)
+                if "become" in data:
+                    character = characters.get(websocket)
+                    if character:
+                        del characters[websocket]
+
+                    character_name = data["become"]
+                    actor, _ = get_actor_agent_for_name(character_name)
+                    if not actor:
+                        logger.error(f"Failed to find actor {character_name}")
+                        continue
+
+                    if character_name in [player.name for player in characters.values()]:
+                        logger.error(f"Character {character_name} is already in use")
+                        continue
+
+                    characters[websocket] = RemotePlayer(actor.name, actor.backstory, sync_turn)
+                    logger.info(f"Client {websocket} is now character {character_name}")
+                elif websocket in characters:
+                    player = characters[websocket]
+                    player.input_queue.put(message)
+
+            except Exception:
+                logger.exception("Failed to parse message")
         except websockets.ConnectionClosedOK:
             break
 
     connected.remove(websocket)
+
+    # TODO: swap out the character for the original agent
+    if websocket in characters:
+        del characters[websocket]
+
     logger.info("Client disconnected")
 
 

@@ -228,7 +228,7 @@ def parse_args():
         "--systems",
         type=str,
         nargs="*",
-        help="Extra logic systems to run in the simulation",
+        help="Extra systems to run in the simulation",
     )
     parser.add_argument(
         "--theme", type=str, default="fantasy", help="The theme of the generated world"
