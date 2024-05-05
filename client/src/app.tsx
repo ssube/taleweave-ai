@@ -18,11 +18,15 @@ import {
   Stack,
   Alert,
   Switch,
- } from '@mui/material';
+} from '@mui/material';
+import { Allotment } from 'allotment';
 
 import { Room, Actor, Item, World, WorldPanel, SetDetails } from './world.js';
 import { EventItem } from './events.js';
 import { PlayerPanel } from './player.js';
+
+import 'allotment/dist/style.css';
+import './main.css';
 
 const useWebSocket = (useWebSocketModule as any).default;
 
@@ -160,16 +164,18 @@ export function App(props: AppProps) {
             />
           </Stack>
         </Alert>
-        <Stack direction="row">
-          <Stack direction="column" spacing={2} sx={{ minWidth: 600 }}>
-            <WorldPanel world={world} activeCharacter={character} setDetails={setDetailEntity} setPlayer={setPlayer} />
-            <PlayerPanel actor={character} activeTurn={activeTurn} setDetails={setDetailEntity} sendInput={sendInput}  />
-          </Stack>
-          <Stack direction="column" sx={{ minWidth: 800 }}>
-            <List sx={{ width: '100%', bgcolor: 'background.paper' }}>
-              {interleave(items)}
-            </List>
-          </Stack>
+        <Stack direction="row" spacing={2}>
+          <Allotment className='body-allotment'>
+            <Stack direction="column" spacing={2} sx={{ minWidth: 400 }} className="scroll-history">
+              <WorldPanel world={world} activeCharacter={character} setDetails={setDetailEntity} setPlayer={setPlayer} />
+              <PlayerPanel actor={character} activeTurn={activeTurn} setDetails={setDetailEntity} sendInput={sendInput}  />
+            </Stack>
+            <Stack direction="column" sx={{ minWidth: 600 }}>
+              <List sx={{ width: '100%', bgcolor: 'background.paper' }} className="scroll-history">
+                {interleave(items)}
+              </List>
+            </Stack>
+          </Allotment>
         </Stack>
       </Stack>
     </Container>

@@ -1,0 +1,8 @@
+.body-allotment {
+  height: 90vb;
+}
+
+.scroll-history {
+  max-height: 90vh;
+  overflow-y: auto;
+}
