@@ -39,12 +39,12 @@ if True:
     from adventure.context import (
         get_actor_agent_for_name,
         get_actor_for_agent,
+        get_current_step,
         get_current_world,
-        get_step,
         set_current_actor,
         set_current_room,
+        set_current_step,
         set_current_world,
-        set_step,
     )
     from adventure.generate import generate_world
     from adventure.models import Actor, Room, World, WorldState
@@ -114,7 +114,7 @@ def simulate_world(
 
     # simulate each actor
     for i in range(steps):
-        current_step = get_step()
+        current_step = get_current_step()
         logger.info(f"Simulating step {current_step}")
         for actor_name in world.order:
             actor, agent = get_actor_agent_for_name(actor_name)
@@ -155,8 +155,8 @@ def simulate_world(
                     "You can take the following actions: {actions}. "
                     "You can move in the following directions: {directions}. "
                     "What will you do next? Reply with a JSON function call, calling one of the actions."
-                    "You can only take one action per turn. Pick the most important action and save the rest for later."
-                    "What is your action?"
+                    "You can only perform one action per turn. What is your next action?"
+                    # Pick the most important action and save the rest for later."
                 ),
                 context={
                     "actions": action_names,
@@ -181,7 +181,7 @@ def simulate_world(
         for system_update, _ in systems:
             system_update(world, current_step)
 
-        set_step(current_step + 1)
+        set_current_step(current_step + 1)
 
 
 # main
@@ -277,7 +277,7 @@ def main():
         with open(world_state_file, "r") as f:
             state = WorldState(**load(f))
 
-        set_step(state.step)
+        set_current_step(state.step)
 
         memory = state.memory
         world = state.world

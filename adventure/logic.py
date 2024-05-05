@@ -7,7 +7,15 @@ from pydantic import Field
 from rule_engine import Rule
 from yaml import Loader, load
 
-from adventure.models import Actor, Item, Room, World, dataclass
+from adventure.models import (
+    Actor,
+    Attributes,
+    AttributeValue,
+    Item,
+    Room,
+    World,
+    dataclass,
+)
 from adventure.plugins import get_plugin_function
 
 logger = getLogger(__name__)
@@ -16,46 +24,44 @@ logger = getLogger(__name__)
 @dataclass
 class LogicLabel:
     backstory: str
-    description: str
+    description: str | None = None
 
 
 @dataclass
 class LogicRule:
     chance: float = 1.0
     group: Optional[str] = None
-    match: Optional[Dict[str, str]] = None
+    match: Optional[Attributes] = None
     remove: Optional[List[str]] = None
     rule: Optional[str] = None
-    set: Optional[Dict[str, str]] = None
+    set: Optional[Attributes] = None
     trigger: Optional[List[str]] = None
 
 
 @dataclass
 class LogicTable:
     rules: List[LogicRule]
-    labels: Dict[str, Dict[str, LogicLabel]] = Field(default_factory=dict)
+    labels: Dict[str, Dict[AttributeValue, LogicLabel]] = Field(default_factory=dict)
 
 
-LogicTrigger = Callable[[Room | Actor | Item, Dict[str, str]], Dict[str, str]]
+LogicTrigger = Callable[[Room | Actor | Item, Attributes], Attributes]
 TriggerTable = Dict[LogicRule, List[LogicTrigger]]
 
 
 def update_attributes(
     entity: Room | Actor | Item,
-    attributes: Dict[str, str],
+    attributes: Attributes,
     rules: LogicTable,
     triggers: TriggerTable,
-) -> Dict[str, str]:
+) -> Attributes:
     entity_type = entity.__class__.__name__.lower()
     skip_groups = set()
 
     for rule in rules.rules:
         if rule.group:
             if rule.group in skip_groups:
-                logger.debug("skipping logic group: %s", rule.group)
+                logger.debug("already ran a rule from group %s, skipping", rule.group)
                 continue
-
-            skip_groups.add(rule.group)
 
         typed_attributes = {
             **attributes,
@@ -82,6 +88,9 @@ def update_attributes(
             if random() > rule.chance:
                 logger.info("logic skipped by chance: %s", rule.chance)
                 continue
+
+        if rule.group:
+            skip_groups.add(rule.group)
 
         for key in rule.remove or []:
             attributes.pop(key, None)
@@ -120,7 +129,7 @@ def update_logic(
     logger.info("updated world attributes")
 
 
-def format_logic(attributes: Dict[str, str], rules: LogicTable, self=True) -> str:
+def format_logic(attributes: Attributes, rules: LogicTable, self=True) -> str:
     labels = []
 
     for attribute, value in attributes.items():
@@ -128,8 +137,10 @@ def format_logic(attributes: Dict[str, str], rules: LogicTable, self=True) -> st
             label = rules.labels[attribute][value]
             if self:
                 labels.append(label.backstory)
-            else:
+            elif label.description:
                 labels.append(label.description)
+            else:
+                logger.debug("label has no relevant description: %s", label)
 
     if len(labels) > 0:
         logger.info("adding labels: %s", labels)

@@ -117,7 +117,11 @@ class RemotePlayer(BasePlayer):
     send_prompt: Callable[[str, str], bool]
 
     def __init__(
-        self, name: str, backstory: str, send_prompt: Callable[[str, str], bool], fallback_agent = None
+        self,
+        name: str,
+        backstory: str,
+        send_prompt: Callable[[str, str], bool],
+        fallback_agent=None,
     ) -> None:
         super().__init__(name, backstory)
         self.fallback_agent = fallback_agent

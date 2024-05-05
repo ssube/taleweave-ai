@@ -77,6 +77,13 @@ async def handler(websocket):
                         logger.error(f"Failed to find actor {character_name}")
                         continue
 
+                    # prevent any recursive fallback bugs
+                    if isinstance(llm_agent, RemotePlayer):
+                        logger.warning(
+                            "patching recursive fallback for %s", character_name
+                        )
+                        llm_agent = llm_agent.fallback_agent
+
                     if character_name in [
                         player.name for player in characters.values()
                     ]:
@@ -84,7 +91,9 @@ async def handler(websocket):
                         continue
 
                     # player_name = data["player"]
-                    player = RemotePlayer(actor.name, actor.backstory, sync_turn, fallback_agent=llm_agent)
+                    player = RemotePlayer(
+                        actor.name, actor.backstory, sync_turn, fallback_agent=llm_agent
+                    )
                     characters[id] = player
                     logger.info(f"Client {id} is now character {character_name}")
 

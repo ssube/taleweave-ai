@@ -9,6 +9,8 @@ else:
 
 
 Actions = Dict[str, Callable]
+AttributeValue = bool | int | str
+Attributes = Dict[str, AttributeValue]
 
 
 @dataclass
@@ -16,7 +18,7 @@ class Item:
     name: str
     description: str
     actions: Actions = Field(default_factory=dict)
-    attributes: Dict[str, str] = Field(default_factory=dict)
+    attributes: Attributes = Field(default_factory=dict)
 
 
 @dataclass
@@ -26,7 +28,7 @@ class Actor:
     description: str
     actions: Actions = Field(default_factory=dict)
     items: List[Item] = Field(default_factory=list)
-    attributes: Dict[str, str] = Field(default_factory=dict)
+    attributes: Attributes = Field(default_factory=dict)
 
 
 @dataclass
@@ -37,7 +39,7 @@ class Room:
     items: List[Item] = Field(default_factory=list)
     actors: List[Actor] = Field(default_factory=list)
     actions: Actions = Field(default_factory=dict)
-    attributes: Dict[str, str] = Field(default_factory=dict)
+    attributes: Attributes = Field(default_factory=dict)
 
 
 @dataclass

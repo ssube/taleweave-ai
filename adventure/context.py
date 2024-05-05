@@ -9,13 +9,14 @@ current_world: World | None = None
 current_room: Room | None = None
 current_actor: Actor | None = None
 current_step = 0
+dungeon_master: Agent | None = None
 
 
 # TODO: where should this one go?
 actor_agents: Dict[str, Tuple[Actor, Agent]] = {}
 
 
-def get_current_context():
+def get_current_context() -> Tuple[World, Room, Actor]:
     if not current_world:
         raise ValueError(
             "The current world must be set before calling action functions"
@@ -30,15 +31,15 @@ def get_current_context():
     return (current_world, current_room, current_actor)
 
 
-def get_current_world():
+def get_current_world() -> World | None:
     return current_world
 
 
-def get_current_room():
+def get_current_room() -> Room | None:
     return current_room
 
 
-def get_current_actor():
+def get_current_actor() -> Actor | None:
     return current_actor
 
 
@@ -46,7 +47,7 @@ def get_current_broadcast():
     return current_broadcast
 
 
-def broadcast(message):
+def broadcast(message: str):
     if current_broadcast:
         current_broadcast(message)
 
@@ -56,26 +57,26 @@ def set_current_broadcast(broadcast):
     current_broadcast = broadcast
 
 
-def set_current_world(world):
+def set_current_world(world: World | None):
     global current_world
     current_world = world
 
 
-def set_current_room(room):
+def set_current_room(room: Room | None):
     global current_room
     current_room = room
 
 
-def set_current_actor(actor):
+def set_current_actor(actor: Actor | None):
     global current_actor
     current_actor = actor
 
 
-def get_step():
+def get_current_step() -> int:
     return current_step
 
 
-def set_step(step):
+def set_current_step(step: int):
     global current_step
     current_step = step
 
@@ -119,3 +120,17 @@ def set_actor_agent_for_name(name, actor, agent):
 
 def get_all_actor_agents():
     return list(actor_agents.values())
+
+
+def set_dungeon_master(agent):
+    global dungeon_master
+    dungeon_master = agent
+
+
+def get_dungeon_master() -> Agent:
+    if not dungeon_master:
+        raise ValueError(
+            "The dungeon master must be set before calling action functions"
+        )
+
+    return dungeon_master
