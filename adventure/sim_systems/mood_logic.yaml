@@ -1,0 +1,131 @@
+rules:
+  # mood logic
+  - group: mood
+    match:
+      type: actor
+      mood: happy
+    chance: 0.2
+    set:
+      mood: sad
+
+  - group: mood
+    match:
+      type: actor
+      mood: happy
+    chance: 0.2
+    set:
+      mood: neutral
+
+  - group: mood
+    match:
+      type: actor
+      mood: angry
+    chance: 0.2
+    set:
+      mood: neutral
+
+  - group: mood
+    match:
+      type: actor
+      mood: neutral
+    chance: 0.2
+    set:
+      mood: happy
+
+  - group: mood
+    match:
+      type: actor
+      mood: neutral
+    chance: 0.2
+    set:
+      mood: sad
+
+  - group: mood
+    match:
+      type: actor
+      mood: sad
+    chance: 0.2
+    set:
+      mood: angry
+
+  - group: mood
+    match:
+      type: actor
+      mood: sad
+    chance: 0.2
+    set:
+      mood: neutral
+
+  # mood interactions with other systems
+  - group: mood
+    match:
+      type: actor
+      mood: sad
+      sleep: rested
+    chance: 0.5
+    set:
+      sleep: tired
+
+  - group: mood
+    match:
+      type: actor
+      hunger: hungry
+    chance: 0.5
+    set:
+      mood: angry
+
+  - group: mood
+    match:
+      type: actor
+      mood: angry
+      hunger: full
+    chance: 0.5
+    set:
+      mood: neutral
+
+  - group: mood
+    match:
+      type: actor
+      mood: neutral
+      hunger: full
+    chance: 0.5
+    set:
+      mood: happy
+
+  - group: mood
+    match:
+      type: actor
+      mood: happy
+      hunger: hungry
+    chance: 0.5
+    set:
+      mood: neutral
+
+  - group: mood
+    match:
+      type: actor
+      mood: neutral
+      sleep: tired
+    chance: 0.5
+    set:
+      mood: sad
+
+  # mood initialization
+  - group: mood
+    rule: |
+      "mood" not in attributes
+    set:
+      mood: happy
+
+labels:
+  mood:
+    happy:
+      backstory: You are feeling happy.
+      description: They look happy.
+    # neutral intentionally left out
+    sad:
+      backstory: You are feeling sad.
+      description: They look sad.
+    angry:
+      backstory: You are feeling angry.
+      description: They look angry.

@@ -1,0 +1,23 @@
+rules:
+  # sleeping logic
+  - match:
+      type: actor
+      sleep: rested
+    chance: 0.2
+    set:
+      sleep: tired
+
+  # sleeping initialization
+  - rule: |
+      "sleep" not in attributes
+    set:
+      sleep: tired
+
+labels:
+  sleep:
+    rested:
+      backstory: You are well-rested.
+      description: They look well-rested.
+    tired:
+      backstory: You are tired.
+      description: They look tired.

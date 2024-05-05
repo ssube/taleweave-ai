@@ -1,0 +1,26 @@
+rules:
+  - match:
+      type: actor
+      hygiene: clean
+    chance: 0.2
+    set:
+      hygiene: dirty
+
+  - match:
+      type: actor
+      hygiene: dirty
+    chance: 0.2
+    set:
+      hygiene: filthy
+
+labels:
+  hygiene:
+    clean:
+      backstory: You are clean and smell fresh.
+      description: They look freshly washed and smell clean.
+    dirty:
+      backstory: You are dirty and smell bad.
+      description: They look dirty and smell bad.
+    filthy:
+      backstory: You are filthy and smell terrible.
+      description: They look filthy and smell terrible.

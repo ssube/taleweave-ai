@@ -1,4 +1,21 @@
 rules:
+  # cooking logic
+  - match:
+      type: item
+      edible: true
+      cooked: false
+    chance: 0.2
+    set:
+      spoiled: true
+
+  - match:
+      type: item
+      edible: true
+      cooked: true
+    chance: 0.1
+    set:
+      spoiled: true
+
   # hunger logic
   - match:
       type: actor
@@ -13,16 +30,53 @@ rules:
     set:
       hunger: hungry
 
-  # cooking logic
+  # thirst logic
   - match:
-      type: item
-      edible: raw
-    chance: 0.1
+      type: actor
+      thirst: hydrated
+    chance: 0.2
     set:
-      edible: cooked
-  - match:
-      type: item
-      edible: cooked
-    chance: 0.1
+      thirst: thirsty
+
+  # thirst initialization
+  - rule: |
+      "thirst" not in attributes
     set:
-      edible: rotten
+      thirst: hydrated
+
+labels:
+  edible:
+    true:
+      backstory: You are edible.
+      description: This item is edible.
+    false:
+      backstory: You are not edible.
+      description: This item is not edible.
+  cooked:
+    true:
+      backstory: You are cooked.
+      description: This item is cooked.
+    false:
+      backstory: You are raw.
+      description: This item is raw.
+  spoiled:
+    true:
+      backstory: You are rotten and inedible.
+      description: This item is rotten and inedible.
+    false:
+      backstory: You are fresh and edible.
+      description: This item is fresh and edible.
+  hunger:
+    full:
+      backstory: You are have eaten recently and are full.
+      description: ~
+    hungry:
+      backstory: You are hungry and need to eat.
+      description: They look hungry.
+  thirst:
+    hydrated:
+      backstory: You are hydrated.
+      description: ~
+    thirsty:
+      backstory: You are thirsty and need to drink.
+      description: They look thirsty.
