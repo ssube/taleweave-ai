@@ -13,8 +13,12 @@ export function formatAction(data: any) {
 }
 
 export function formatInput(data: any) {
-  const action = formatAction(JSON.parse(data.input));
-  return `Starting turn: ${action}`;
+  try {
+    const action = formatAction(JSON.parse(data.input));
+    return `Starting turn: ${action}`;
+  } catch (err) {
+    return `Error parsing input: ${err}`;
+  }
 }
 
 export function formatResult(data: any) {

@@ -1,10 +1,13 @@
 from json import dumps
-from readline import add_history
+from logging import getLogger
 from queue import Queue
+from readline import add_history
 from typing import Any, Callable, Dict, List, Sequence
 
 from langchain_core.messages import AIMessage, BaseMessage, HumanMessage
 from packit.utils import could_be_json
+
+logger = getLogger(__name__)
 
 
 class BasePlayer:
@@ -95,6 +98,8 @@ class LocalPlayer(BasePlayer):
         Ask the player for input.
         """
 
+        logger.info("prompting local player: {self.name}")
+
         formatted_prompt = prompt.format(**kwargs)
         self.memory.append(HumanMessage(content=formatted_prompt))
         print(formatted_prompt)
@@ -109,7 +114,9 @@ class RemotePlayer(BasePlayer):
     input_queue: Queue[str]
     send_prompt: Callable[[str, str], bool]
 
-    def __init__(self, name: str, backstory: str, send_prompt: Callable[[str, str], bool]) -> None:
+    def __init__(
+        self, name: str, backstory: str, send_prompt: Callable[[str, str], bool]
+    ) -> None:
         super().__init__(name, backstory)
         self.input_queue = Queue()
         self.send_prompt = send_prompt
@@ -123,11 +130,12 @@ class RemotePlayer(BasePlayer):
         self.memory.append(HumanMessage(content=formatted_prompt))
 
         try:
+            logger.info(f"prompting remote player: {self.name}")
             if self.send_prompt(self.name, formatted_prompt):
                 reply = self.input_queue.get(timeout=60)
+                logger.info(f"got reply from remote player: {reply}")
                 return self.parse_input(reply)
         except Exception:
-            pass
+            logger.exception("error getting reply from remote player")
 
-        # logger.warning("Failed to send prompt to remote player")
         return ""

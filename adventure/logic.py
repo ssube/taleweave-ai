@@ -1,10 +1,10 @@
+from functools import partial
 from logging import getLogger
 from random import random
 from typing import Callable, Dict, List, Optional
-from functools import partial
 
-from rule_engine import Rule
 from pydantic import Field
+from rule_engine import Rule
 from yaml import Loader, load
 
 from adventure.models import Actor, Item, Room, World, dataclass
@@ -65,13 +65,15 @@ def update_attributes(
         if rule.rule:
             # TODO: pre-compile rules
             rule_impl = Rule(rule.rule)
-            if not rule_impl.matches({
-                "attributes": typed_attributes,
-            }):
+            if not rule_impl.matches(
+                {
+                    "attributes": typed_attributes,
+                }
+            ):
                 logger.debug("logic rule did not match attributes: %s", rule.rule)
                 continue
 
-        if rule.match and not(rule.match.items() <= typed_attributes.items()):
+        if rule.match and not (rule.match.items() <= typed_attributes.items()):
             logger.debug("logic did not match attributes: %s", rule.match)
             continue
 
@@ -95,15 +97,25 @@ def update_attributes(
     return attributes
 
 
-def update_logic(world: World, step: int, rules: LogicTable, triggers: TriggerTable) -> None:
+def update_logic(
+    world: World, step: int, rules: LogicTable, triggers: TriggerTable
+) -> None:
     for room in world.rooms:
-        room.attributes = update_attributes(room, room.attributes, rules=rules, triggers=triggers)
+        room.attributes = update_attributes(
+            room, room.attributes, rules=rules, triggers=triggers
+        )
         for actor in room.actors:
-            actor.attributes = update_attributes(actor, actor.attributes, rules=rules, triggers=triggers)
+            actor.attributes = update_attributes(
+                actor, actor.attributes, rules=rules, triggers=triggers
+            )
             for item in actor.items:
-                item.attributes = update_attributes(item, item.attributes, rules=rules, triggers=triggers)
+                item.attributes = update_attributes(
+                    item, item.attributes, rules=rules, triggers=triggers
+                )
         for item in room.items:
-            item.attributes = update_attributes(item, item.attributes, rules=rules, triggers=triggers)
+            item.attributes = update_attributes(
+                item, item.attributes, rules=rules, triggers=triggers
+            )
 
     logger.info("updated world attributes")
 
@@ -138,5 +150,5 @@ def init_from_file(filename: str):
     logger.info("initialized logic system")
     return (
         partial(update_logic, rules=logic_rules, triggers=logic_triggers),
-        partial(format_logic, rules=logic_rules)
+        partial(format_logic, rules=logic_rules),
     )

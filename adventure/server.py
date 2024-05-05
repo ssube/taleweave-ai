@@ -3,11 +3,13 @@ from collections import deque
 from json import dumps, loads
 from logging import getLogger
 from threading import Thread
-from typing import Dict, Tuple
+from typing import Dict
+from uuid import uuid4
 
 import websockets
+from packit.agent import Agent
 
-from adventure.context import get_actor_agent_for_name
+from adventure.context import get_actor_agent_for_name, set_actor_agent_for_name
 from adventure.models import Actor, Room, World
 from adventure.player import RemotePlayer
 from adventure.state import snapshot_world, world_json
@@ -16,20 +18,28 @@ logger = getLogger(__name__)
 
 connected = set()
 characters: Dict[str, RemotePlayer] = {}
+previous_agents: Dict[str, Agent] = {}
 recent_events = deque(maxlen=100)
 recent_world = None
 
 
 async def handler(websocket):
-    logger.info("Client connected")
+    id = uuid4().hex
+    logger.info("Client connected, given id: %s", id)
     connected.add(websocket)
 
     async def next_turn(character: str, prompt: str) -> None:
-        await websocket.send(connected, dumps({
-            "type": "turn",
-            "character": character,
-            "prompt": prompt,
-        }))
+        await websocket.send(
+            dumps(
+                {
+                    "type": "prompt",
+                    "id": id,
+                    "character": character,
+                    "prompt": prompt,
+                    "actions": [],
+                }
+            ),
+        )
 
     def sync_turn(character: str, prompt: str) -> bool:
         if websocket not in characters:
@@ -39,6 +49,8 @@ async def handler(websocket):
         return True
 
     try:
+        await websocket.send(dumps({"type": "id", "id": id}))
+
         if recent_world:
             await websocket.send(recent_world)
 
@@ -55,26 +67,41 @@ async def handler(websocket):
 
             try:
                 data = loads(message)
-                if "become" in data:
+                message_type = data.get("type", None)
+                if message_type == "player":
                     character = characters.get(websocket)
                     if character:
-                        del characters[websocket]
+                        del characters[id]
 
                     character_name = data["become"]
-                    actor, _ = get_actor_agent_for_name(character_name)
+                    actor, llm_agent = get_actor_agent_for_name(character_name)
                     if not actor:
                         logger.error(f"Failed to find actor {character_name}")
                         continue
 
-                    if character_name in [player.name for player in characters.values()]:
+                    if character_name in [
+                        player.name for player in characters.values()
+                    ]:
                         logger.error(f"Character {character_name} is already in use")
                         continue
 
-                    characters[websocket] = RemotePlayer(actor.name, actor.backstory, sync_turn)
+                    # player_name = data["player"]
+                    player = RemotePlayer(actor.name, actor.backstory, sync_turn)
+                    characters[id] = player
                     logger.info(f"Client {websocket} is now character {character_name}")
-                elif websocket in characters:
-                    player = characters[websocket]
-                    player.input_queue.put(message)
+
+                    # swap out the LLM agent
+                    set_actor_agent_for_name(actor.name, actor, player)
+                    previous_agents[actor.name] = llm_agent
+
+                    # notify all clients that this character is now active
+                    send_and_append(
+                        {"type": "player", "name": character_name, "id": id}
+                    )
+                elif message_type == "input" and id in characters:
+                    player = characters[id]
+                    logger.info("queueing input for player %s: %s", player.name, data)
+                    player.input_queue.put(data["input"])
 
             except Exception:
                 logger.exception("Failed to parse message")
@@ -83,9 +110,14 @@ async def handler(websocket):
 
     connected.remove(websocket)
 
-    # TODO: swap out the character for the original agent
+    # swap out the character for the original agent when they disconnect
     if websocket in characters:
-        del characters[websocket]
+        player = characters[id]
+        del characters[id]
+
+        actor, _ = get_actor_agent_for_name(player.name)
+        if actor:
+            set_actor_agent_for_name(player.name, actor, previous_agents[player.name])
 
     logger.info("Client disconnected")
 

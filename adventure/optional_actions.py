@@ -89,7 +89,9 @@ def action_use(item: str, target: str) -> str:
     """
     _, action_room, action_actor = get_current_context()
 
-    available_items = [item.name for item in action_actor.items] + [item.name for item in action_room.items]
+    available_items = [item.name for item in action_actor.items] + [
+        item.name for item in action_room.items
+    ]
 
     if item not in available_items:
         return f"The {item} item is not available to use."
