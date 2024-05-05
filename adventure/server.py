@@ -40,7 +40,7 @@ async def handler(websocket):
         )
 
     def sync_turn(character: str, prompt: str) -> bool:
-        if websocket not in characters:
+        if id not in characters:
             return False
 
         asyncio.run(next_turn(character, prompt))
@@ -67,7 +67,7 @@ async def handler(websocket):
                 data = loads(message)
                 message_type = data.get("type", None)
                 if message_type == "player":
-                    character = characters.get(websocket)
+                    character = characters.get(id)
                     if character:
                         del characters[id]
 
@@ -86,7 +86,7 @@ async def handler(websocket):
                     # player_name = data["player"]
                     player = RemotePlayer(actor.name, actor.backstory, sync_turn, fallback_agent=llm_agent)
                     characters[id] = player
-                    logger.info(f"Client {websocket} is now character {character_name}")
+                    logger.info(f"Client {id} is now character {character_name}")
 
                     # swap out the LLM agent
                     set_actor_agent_for_name(actor.name, actor, player)
@@ -108,7 +108,7 @@ async def handler(websocket):
     connected.remove(websocket)
 
     # swap out the character for the original agent when they disconnect
-    if websocket in characters:
+    if id in characters:
         player = characters[id]
         del characters[id]
 
