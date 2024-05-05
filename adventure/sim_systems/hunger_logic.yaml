@@ -1,0 +1,28 @@
+rules:
+  # hunger logic
+  - match:
+      type: actor
+      hunger: full
+    chance: 0.2
+    set:
+      hunger: hungry
+
+  # hunger initialization
+  - rule: |
+      "hunger" not in attributes
+    set:
+      hunger: hungry
+
+  # cooking logic
+  - match:
+      type: item
+      edible: raw
+    chance: 0.1
+    set:
+      edible: cooked
+  - match:
+      type: item
+      edible: cooked
+    chance: 0.1
+    set:
+      edible: rotten
