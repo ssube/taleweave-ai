@@ -98,12 +98,16 @@ export function WorldPanel(props: { world: Maybe<World> } & BaseEntityItemProps)
 
   // eslint-disable-next-line no-restricted-syntax
   if (!doesExist(world)) {
-    return <Typography variant="h4">
-      No world data available
-    </Typography>;
+    return <Card style={{ minHeight: '6vh', overflow: 'auto' }}>
+      <CardContent>
+        <Typography variant="h6">
+          No world data available
+        </Typography>
+      </CardContent>
+    </Card>;
   }
 
-  return <Card>
+  return <Card style={{ minHeight: 200, overflow: 'auto' }}>
     <CardContent>
       <Typography gutterBottom variant="h5" component="div">{world.name}</Typography>
       <Typography variant="body1">

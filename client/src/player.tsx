@@ -16,24 +16,36 @@ export function PlayerPanel(props: PlayerPanelProps) {
 
   // eslint-disable-next-line no-restricted-syntax
   if (!actor) {
-    return <Card>
+    return <Card style={{ minHeight: '6vh', overflow: 'auto' }}>
       <CardContent>
         <Typography variant="h6">No player character</Typography>
       </CardContent>
     </Card>;
   }
 
-  return <Card>
+  return <Card style={{ minHeight: '6vh', overflow: 'auto' }}>
     <CardContent>
       <Stack direction="column" spacing={2}>
         {activeTurn && <Alert severity="warning">It's your turn!</Alert>}
         <Typography variant="h6">Playing as: {actor.name}</Typography>
         <Typography variant="body1">{actor.backstory}</Typography>
         <Stack direction="row" spacing={2}>
-          <TextField label="Input" variant="outlined" fullWidth value={input} onChange={(event) => setInput(event.target.value)} />
+          <TextField
+            fullWidth
+            label="Input"
+            variant="outlined"
+            value={input}
+            onChange={(event) => setInput(event.target.value)}
+            onKeyDown={(event) => {
+              if (event.key === 'Enter') {
+                sendInput(input);
+                setInput('');
+              }
+            }}
+          />
           <Button variant="contained" onClick={() => {
-            setInput('');
             sendInput(input);
+            setInput('');
           }}>Send</Button>
         </Stack>
       </Stack>

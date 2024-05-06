@@ -18,6 +18,8 @@ import {
   Stack,
   Alert,
   Switch,
+  FormGroup,
+  FormControlLabel,
 } from '@mui/material';
 import { Allotment } from 'allotment';
 
@@ -27,6 +29,7 @@ import { PlayerPanel } from './player.js';
 
 import 'allotment/dist/style.css';
 import './main.css';
+import { HistoryPanel } from './history.js';
 
 const useWebSocket = (useWebSocketModule as any).default;
 
@@ -37,11 +40,6 @@ const statusStrings = {
   [ReadyState.CLOSED]: 'Closed',
   [ReadyState.UNINSTANTIATED]: 'Unready',
 };
-
-export function interleave(arr: Array<any>) {
-  // eslint-disable-next-line @typescript-eslint/no-magic-numbers
-  return arr.reduce((acc, val, idx) => acc.concat(val, <Divider component='li' key={`sep-${idx}`} variant='inset' />), []).slice(0, -1);
-}
 
 export interface AppProps {
   socketUrl: string;
@@ -77,12 +75,14 @@ export function DetailDialog(props: { setDetails: SetDetails; details: Maybe<Ite
 
 export function App(props: AppProps) {
   const [ activeTurn, setActiveTurn ] = useState<boolean>(false);
+  const [ autoScroll, setAutoScroll ] = useState<boolean>(true);
   const [ detailEntity, setDetailEntity ] = useState<Maybe<Item | Actor | Room>>(undefined);
   const [ character, setCharacter ] = useState<Maybe<Actor>>(undefined);
   const [ clientId, setClientId ] = useState<string>('');
   const [ world, setWorld ] = useState<Maybe<World>>(undefined);
   const [ themeMode, setThemeMode ] = useState('light');
   const [ history, setHistory ] = useState<Array<string>>([]);
+  const [ players, setPlayers ] = useState<Record<string, string>>({});
   const { lastMessage, readyState, sendMessage } = useWebSocket(props.socketUrl);
 
   function setPlayer(actor: Maybe<Actor>) {
@@ -112,18 +112,25 @@ export function App(props: AppProps) {
       const data = JSON.parse(lastMessage.data);
 
       if (data.type === 'id') {
+        // unicast the client id to the player
         setClientId(data.id);
         return;
       }
 
       if (data.type === 'prompt') {
+        // prompts are broadcast to all players
         if (data.id === clientId) {
-          // notify the player and show the prompt
+          // only notify the active player
           setActiveTurn(true);
         } else {
           const message = `Waiting for ${data.character} to take their turn`;
           setHistory((prev) => prev.concat(message));
         }
+        return;
+      }
+
+      if (data.type === 'players') {
+        setPlayers(data.players);
         return;
       }
 
@@ -134,17 +141,15 @@ export function App(props: AppProps) {
         setWorld(data.world);
       }
 
-      if (data.type === 'player' && data.id === clientId) {
+      if (doesExist(world) && data.type === 'player' && data.id === clientId && data.event === 'join') {
         // find the actor that matches the player name
-        const { name } = data;
-        // eslint-disable-next-line no-restricted-syntax
-        const actor = world?.rooms.flatMap((room) => room.actors).find((a) => a.name === name);
+        const { character: characterName } = data;
+        const actor = world.rooms.flatMap((room) => room.actors).find((a) => a.name === characterName);
         setCharacter(actor);
       }
     }
   }, [lastMessage]);
 
-  const items = history.map((item, index) => <EventItem key={`item-${index}`} event={item} />);
 
   return <ThemeProvider theme={theme}>
     <CssBaseline />
@@ -156,24 +161,30 @@ export function App(props: AppProps) {
             <Typography>
               Status: {connectionStatus}
             </Typography>
-            <Switch
-              checked={themeMode === 'dark'}
-              onChange={() => setThemeMode(themeMode === 'dark' ? 'light' : 'dark')}
-              inputProps={{ 'aria-label': 'controlled' }}
-              sx={{ marginLeft: 'auto' }}
-            />
+            <FormGroup row>
+              <FormControlLabel control={<Switch
+                checked={themeMode === 'dark'}
+                onChange={() => setThemeMode(themeMode === 'dark' ? 'light' : 'dark')}
+                inputProps={{ 'aria-label': 'controlled' }}
+                sx={{ marginLeft: 'auto' }}
+              />} label="Dark Mode" />
+              <FormControlLabel control={<Switch
+                checked={autoScroll}
+                onChange={() => setAutoScroll(autoScroll === false)}
+                inputProps={{ 'aria-label': 'controlled' }}
+                sx={{ marginLeft: 'auto' }}
+              />} label="Auto Scroll" />
+            </FormGroup>
           </Stack>
         </Alert>
         <Stack direction="row" spacing={2}>
           <Allotment className='body-allotment'>
             <Stack direction="column" spacing={2} sx={{ minWidth: 400 }} className="scroll-history">
-              <WorldPanel world={world} activeCharacter={character} setDetails={setDetailEntity} setPlayer={setPlayer} />
               <PlayerPanel actor={character} activeTurn={activeTurn} setDetails={setDetailEntity} sendInput={sendInput}  />
+              <WorldPanel world={world} activeCharacter={character} setDetails={setDetailEntity} setPlayer={setPlayer} />
             </Stack>
-            <Stack direction="column" sx={{ minWidth: 600 }}>
-              <List sx={{ width: '100%', bgcolor: 'background.paper' }} className="scroll-history">
-                {interleave(items)}
-              </List>
+            <Stack direction="column" sx={{ minWidth: 600 }} className="scroll-history">
+              <HistoryPanel history={history} scroll={autoScroll ? 'instant' : false} />
             </Stack>
           </Allotment>
         </Stack>

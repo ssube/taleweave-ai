@@ -3,7 +3,7 @@ from collections import deque
 from json import dumps, loads
 from logging import getLogger
 from threading import Thread
-from typing import Dict
+from typing import Dict, Literal
 from uuid import uuid4
 
 import websockets
@@ -101,9 +101,8 @@ async def handler(websocket):
                     set_actor_agent_for_name(actor.name, actor, player)
 
                     # notify all clients that this character is now active
-                    send_and_append(
-                        {"type": "player", "name": character_name, "id": id}
-                    )
+                    player_event(character_name, id, "join")
+                    player_list()
                 elif message_type == "input" and id in characters:
                     player = characters[id]
                     logger.info("queueing input for player %s: %s", player.name, data)
@@ -121,11 +120,16 @@ async def handler(websocket):
         player = characters[id]
         del characters[id]
 
+        logger.info("Disconnecting player for %s", player.name)
+        player_event(player.name, id, "leave")
+        player_list()
+
         actor, _ = get_actor_agent_for_name(player.name)
-        if actor:
+        if actor and player.fallback_agent:
+            logger.info("Restoring LLM agent for %s", player.name)
             set_actor_agent_for_name(player.name, actor, player.fallback_agent)
 
-    logger.info("Client disconnected")
+    logger.info("Client disconnected: %s", id)
 
 
 socket_thread = None
@@ -198,5 +202,23 @@ def server_event(message: str):
     json_broadcast = {
         "message": message,
         "type": "event",
+    }
+    send_and_append(json_broadcast)
+
+
+def player_event(character: str, id: str, event: Literal["join", "leave"]):
+    json_broadcast = {
+        "type": "player",
+        "character": character,
+        "id": id,
+        "event": event,
+    }
+    send_and_append(json_broadcast)
+
+
+def player_list():
+    json_broadcast ={
+        "type": "players",
+        "players": {player.name: player_id for player_id, player in characters.items()},
     }
     send_and_append(json_broadcast)
