@@ -1,4 +1,4 @@
-from functools import partial
+from functools import partial, wraps
 from logging import getLogger
 from random import random
 from typing import Callable, Dict, List, Optional
@@ -45,7 +45,7 @@ class LogicTable:
 
 
 LogicTrigger = Callable[[Room | Actor | Item, Attributes], Attributes]
-TriggerTable = Dict[LogicRule, List[LogicTrigger]]
+TriggerTable = Dict[str, LogicTrigger]
 
 
 def update_attributes(
@@ -99,9 +99,10 @@ def update_attributes(
             attributes.update(rule.set)
             logger.info("logic set state: %s", rule.set)
 
-        if rule in triggers:
-            for trigger in triggers[rule]:
-                attributes = trigger(entity, attributes)
+        if rule.trigger:
+            for trigger in rule.trigger:
+                if trigger in triggers:
+                    attributes = triggers[trigger](entity, attributes)
 
     return attributes
 
@@ -143,7 +144,7 @@ def format_logic(attributes: Attributes, rules: LogicTable, self=True) -> str:
                 logger.debug("label has no relevant description: %s", label)
 
     if len(labels) > 0:
-        logger.info("adding labels: %s", labels)
+        logger.info("adding attribute labels: %s", labels)
 
     return " ".join(labels)
 
@@ -152,14 +153,17 @@ def init_from_file(filename: str):
     logger.info("loading logic from file: %s", filename)
     with open(filename) as file:
         logic_rules = LogicTable(**load(file, Loader=Loader))
-        logic_triggers = {
-            rule: [get_plugin_function(trigger) for trigger in rule.trigger]
-            for rule in logic_rules.rules
-            if rule.trigger
-        }
+        logic_triggers = {}
+
+        for rule in logic_rules.rules:
+            if rule.trigger:
+                for trigger in rule.trigger:
+                    logic_triggers[trigger] = get_plugin_function(trigger)
 
     logger.info("initialized logic system")
     return (
-        partial(update_logic, rules=logic_rules, triggers=logic_triggers),
-        partial(format_logic, rules=logic_rules),
+        wraps(update_logic)(
+            partial(update_logic, rules=logic_rules, triggers=logic_triggers)
+        ),
+        wraps(format_logic)(partial(format_logic, rules=logic_rules)),
     )

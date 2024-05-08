@@ -3,21 +3,29 @@ from typing import Callable, List
 
 from packit.agent import Agent, agent_easy_connect
 
-from adventure.context import broadcast, get_agent_for_actor, get_current_context
+from adventure.context import (
+    broadcast,
+    get_agent_for_actor,
+    get_current_context,
+    get_dungeon_master,
+    has_dungeon_master,
+    set_dungeon_master,
+)
 from adventure.generate import OPPOSITE_DIRECTIONS, generate_item, generate_room
 
 logger = getLogger(__name__)
 
-
-llm = agent_easy_connect()
-
-# TODO: provide dungeon master with the world theme
-dungeon_master = Agent(
-    "dungeon master",
-    "You are the dungeon master in charge of a fantasy world.",
-    {},
-    llm,
-)
+# this is the fallback dungeon master if none is set
+if not has_dungeon_master():
+    llm = agent_easy_connect()
+    set_dungeon_master(
+        Agent(
+            "dungeon master",
+            "You are the dungeon master in charge of a fantasy world.",
+            {},
+            llm,
+        )
+    )
 
 
 def action_explore(direction: str) -> str:
@@ -29,6 +37,7 @@ def action_explore(direction: str) -> str:
     """
 
     current_world, current_room, current_actor = get_current_context()
+    dungeon_master = get_dungeon_master()
 
     if not current_world:
         raise ValueError("No world found")
@@ -53,12 +62,13 @@ def action_explore(direction: str) -> str:
     return f"You explore {direction} and find a new room: {new_room.name}"
 
 
-def action_search() -> str:
+def action_search(unused: bool) -> str:
     """
     Search the room for hidden items.
     """
 
     action_world, action_room, action_actor = get_current_context()
+    dungeon_master = get_dungeon_master()
 
     if len(action_room.items) > 2:
         return "You find nothing hidden in the room."
@@ -88,12 +98,17 @@ def action_use(item: str, target: str) -> str:
         target: The name of the character to use the item on, or "self" to use the item on yourself.
     """
     _, action_room, action_actor = get_current_context()
+    dungeon_master = get_dungeon_master()
 
-    available_items = [item.name for item in action_actor.items] + [
-        item.name for item in action_room.items
-    ]
-
-    if item not in available_items:
+    action_item = next(
+        (
+            search_item
+            for search_item in (action_actor.items + action_room.items)
+            if search_item.name == item
+        ),
+        None,
+    )
+    if not action_item:
         return f"The {item} item is not available to use."
 
     if target == "self":
@@ -108,7 +123,10 @@ def action_use(item: str, target: str) -> str:
 
     broadcast(f"{action_actor.name} uses {item} on {target}")
     outcome = dungeon_master(
-        f"{action_actor.name} uses {item} on {target}. {action_actor.description}. {target_actor.description}. What happens? How does {target} react? "
+        f"{action_actor.name} uses {item} on {target}. "
+        f"{action_actor.description}. {target_actor.description}. {action_item.description}. "
+        f"What happens? How does {target} react? Be creative with the results. The outcome can be good, bad, or neutral."
+        "Decide based on the characters involved and the item being used."
         "Specify the outcome of the action. Do not include the question or any JSON. Only include the outcome of the action."
     )
     broadcast(f"The action resulted in: {outcome}")

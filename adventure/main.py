@@ -1,7 +1,7 @@
 from json import load
 from logging.config import dictConfig
 from os import environ, path
-from typing import Callable, Dict, Sequence, Tuple
+from typing import Callable, Sequence, Tuple
 
 from dotenv import load_dotenv
 from packit.agent import Agent, agent_easy_connect
@@ -10,7 +10,8 @@ from packit.results import multi_function_or_str_result
 from packit.toolbox import Toolbox
 from packit.utils import logger_with_colors
 
-from adventure.context import set_current_broadcast
+from adventure.context import set_current_broadcast, set_dungeon_master
+from adventure.models import Attributes
 from adventure.plugins import load_plugin
 
 # Configure logging
@@ -50,7 +51,7 @@ if True:
     from adventure.models import Actor, Room, World, WorldState
     from adventure.state import create_agents, save_world, save_world_state
 
-logger = logger_with_colors(__name__, level="INFO")
+logger = logger_with_colors(__name__, level="DEBUG")
 
 load_dotenv(environ.get("ADVENTURE_ENV", ".env"), override=True)
 
@@ -81,7 +82,7 @@ def simulate_world(
     steps: int = 10,
     actions: Sequence[Callable[..., str]] = [],
     systems: Sequence[
-        Tuple[Callable[[World, int], None], Callable[[Dict[str, str]], str] | None]
+        Tuple[Callable[[World, int], None], Callable[[Attributes], str] | None]
     ] = [],
     event_callbacks: Sequence[Callable[[str], None]] = [],
     input_callbacks: Sequence[Callable[[Room, Actor, str], None]] = [],
@@ -140,6 +141,9 @@ def simulate_world(
 
             def result_parser(value, agent, **kwargs):
                 for callback in input_callbacks:
+                    logger.info(
+                        f"calling input callback for {actor_name}: {callback.__name__}"
+                    )
                     callback(room, actor, value)
 
                 return world_result_parser(value, agent, **kwargs)
@@ -198,7 +202,13 @@ def parse_args():
         help="Extra actions to include in the simulation",
     )
     parser.add_argument(
-        "--flavor", type=str, help="Some additional flavor text for the generated world"
+        "--discord", type=bool, help="Whether to run the simulation in a Discord bot"
+    )
+    parser.add_argument(
+        "--flavor",
+        type=str,
+        default="",
+        help="Some additional flavor text for the generated world",
     )
     parser.add_argument(
         "--player", type=str, help="The name of the character to play as"
@@ -289,7 +299,7 @@ def main():
     else:
         logger.info(f"Generating a new {args.theme} world")
         llm = agent_easy_connect()
-        agent = Agent(
+        world_builder = Agent(
             "World Builder",
             f"You are an experienced game master creating a visually detailed {args.theme} world for a new adventure. {args.flavor}",
             {},
@@ -306,7 +316,7 @@ def main():
                 server_system(world, 0)
 
         world = generate_world(
-            agent,
+            world_builder,
             args.world,
             args.theme,
             room_count=args.rooms,
@@ -349,13 +359,27 @@ def main():
         logger.info(f"Loading extra systems from {system_name}")
         module_systems = load_plugin(system_name)
         logger.info(
-            f"Loaded extra systems: {[system.__name__ for system in module_systems]}"
+            f"Loaded extra systems: {[component.__name__ for system in module_systems for component in system]}"
         )
-        extra_systems.append(module_systems)
+        extra_systems.extend(module_systems)
 
     # make sure the server system runs after any updates
     if args.server:
         extra_systems.append((server_system, None))
+
+    # create the DM
+    llm = agent_easy_connect()
+    world_builder = Agent(
+        "dungeon master",
+        (
+            f"You are the dungeon master in charge of a {world.theme} world. Be creative and original, and come up with "
+            f"interesting events that will keep players interested. {args.flavor}"
+            "Do not to repeat yourself unless you are given the same prompt with the same characters and actions."
+        ),
+        {},
+        llm,
+    )
+    set_dungeon_master(world_builder)
 
     # start the sim
     logger.debug("Simulating world: %s", world)
