@@ -134,3 +134,7 @@ def get_dungeon_master() -> Agent:
         )
 
     return dungeon_master
+
+
+def has_dungeon_master():
+    return dungeon_master is not None

@@ -35,7 +35,7 @@ def generate_room(
     name = loop_retry(
         agent,
         "Generate one room, area, or location that would make sense in the world of {world_theme}. "
-        "Only respond with the room name, do not include the description or any other text. "
+        "Only respond with the room name in title case, do not include the description or any other text. "
         'Do not prefix the name with "the", do not wrap it in quotes. The existing rooms are: {existing_rooms}',
         context={
             "world_theme": world_theme,
@@ -86,9 +86,10 @@ def generate_item(
     name = loop_retry(
         agent,
         "Generate one item or object that would make sense in the world of {world_theme}. {dest_note}. "
-        "Only respond with the item name, do not include a description or any other text. Do not prefix the "
-        'name with "the", do not wrap it in quotes. Do not include the name of the room. '
-        "Do not create any duplicate items in the same room. Do not give characters any duplicate items. The existing items are: {existing_items}",
+        "Only respond with the item name in title case, do not include a description or any other text. Do not prefix the "
+        'name with "the", do not wrap it in quotes. Do not include the name of the room. Use a unique name. '
+        "Do not create any duplicate items in the same room. Do not give characters any duplicate items. "
+        "The existing items are: {existing_items}",
         context={
             "dest_note": dest_note,
             "existing_items": existing_items,
@@ -125,8 +126,10 @@ def generate_actor(
 
     name = loop_retry(
         agent,
-        "Generate one person or creature that would make sense in the world of {world_theme}. The character will be placed in the {dest_room} room. "
-        'Only respond with the character name, do not include a description or any other text. Do not prefix the name with "the", do not wrap it in quotes. '
+        "Generate one person or creature that would make sense in the world of {world_theme}. "
+        "The character will be placed in the {dest_room} room. "
+        "Only respond with the character name in title case, do not include a description or any other text. "
+        'Do not prefix the name with "the", do not wrap it in quotes. '
         "Do not include the name of the room. Do not give characters any duplicate names."
         "Do not create any duplicate characters. The existing characters are: {existing_actors}",
         context={
@@ -186,7 +189,7 @@ def generate_world(
         rooms.append(room)
         existing_rooms.append(room.name)
 
-        item_count = randint(0, 3)
+        item_count = randint(1, 3)
 
         if callable(callback):
             callback(f"Generating {item_count} items for room: {room.name}")
@@ -202,7 +205,7 @@ def generate_world(
             room.items.append(item)
             existing_items.append(item.name)
 
-        actor_count = randint(0, 3)
+        actor_count = randint(1, 3)
 
         if callable(callback):
             callback(f"Generating {actor_count} actors for room: {room.name}")
@@ -219,7 +222,7 @@ def generate_world(
             existing_actors.append(actor.name)
 
             # generate the actor's inventory
-            item_count = randint(0, 3)
+            item_count = randint(0, 2)
 
             if callable(callback):
                 callback(f"Generating {item_count} items for actor {actor.name}")
