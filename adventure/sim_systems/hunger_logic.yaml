@@ -4,7 +4,7 @@ rules:
       type: item
       edible: true
       cooked: false
-    chance: 0.2
+    chance: 0.1
     set:
       spoiled: true
 
@@ -12,7 +12,7 @@ rules:
       type: item
       edible: true
       cooked: true
-    chance: 0.1
+    chance: 0.05
     set:
       spoiled: true
 
@@ -20,7 +20,7 @@ rules:
   - match:
       type: actor
       hunger: full
-    chance: 0.2
+    chance: 0.1
     set:
       hunger: hungry
 
@@ -28,13 +28,13 @@ rules:
   - rule: |
       "hunger" not in attributes
     set:
-      hunger: hungry
+      hunger: full
 
   # thirst logic
   - match:
       type: actor
       thirst: hydrated
-    chance: 0.2
+    chance: 0.1
     set:
       thirst: thirsty
 

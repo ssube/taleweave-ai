@@ -1,7 +1,7 @@
 from adventure.context import get_current_context, get_dungeon_master
 
 
-def action_wash() -> str:
+def action_wash(unused: bool) -> str:
     """
     Wash yourself.
     """

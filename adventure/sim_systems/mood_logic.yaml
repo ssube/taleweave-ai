@@ -4,7 +4,7 @@ rules:
     match:
       type: actor
       mood: happy
-    chance: 0.2
+    chance: 0.1
     set:
       mood: sad
 
@@ -12,7 +12,7 @@ rules:
     match:
       type: actor
       mood: happy
-    chance: 0.2
+    chance: 0.1
     set:
       mood: neutral
 
@@ -20,7 +20,7 @@ rules:
     match:
       type: actor
       mood: angry
-    chance: 0.2
+    chance: 0.1
     set:
       mood: neutral
 
@@ -28,7 +28,7 @@ rules:
     match:
       type: actor
       mood: neutral
-    chance: 0.2
+    chance: 0.1
     set:
       mood: happy
 
@@ -36,7 +36,7 @@ rules:
     match:
       type: actor
       mood: neutral
-    chance: 0.2
+    chance: 0.1
     set:
       mood: sad
 
@@ -44,7 +44,7 @@ rules:
     match:
       type: actor
       mood: sad
-    chance: 0.2
+    chance: 0.1
     set:
       mood: angry
 
@@ -52,7 +52,7 @@ rules:
     match:
       type: actor
       mood: sad
-    chance: 0.2
+    chance: 0.1
     set:
       mood: neutral
 
@@ -62,7 +62,7 @@ rules:
       type: actor
       mood: sad
       sleep: rested
-    chance: 0.5
+    chance: 0.2
     set:
       sleep: tired
 
@@ -70,7 +70,7 @@ rules:
     match:
       type: actor
       hunger: hungry
-    chance: 0.5
+    chance: 0.2
     set:
       mood: angry
 
@@ -79,7 +79,7 @@ rules:
       type: actor
       mood: angry
       hunger: full
-    chance: 0.5
+    chance: 0.2
     set:
       mood: neutral
 
@@ -88,7 +88,7 @@ rules:
       type: actor
       mood: neutral
       hunger: full
-    chance: 0.5
+    chance: 0.2
     set:
       mood: happy
 
@@ -97,7 +97,7 @@ rules:
       type: actor
       mood: happy
       hunger: hungry
-    chance: 0.5
+    chance: 0.2
     set:
       mood: neutral
 
@@ -106,7 +106,7 @@ rules:
       type: actor
       mood: neutral
       sleep: tired
-    chance: 0.5
+    chance: 0.2
     set:
       mood: sad
 

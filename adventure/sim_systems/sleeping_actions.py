@@ -1,7 +1,7 @@
 from adventure.context import get_current_context, get_dungeon_master
 
 
-def action_sleep() -> str:
+def action_sleep(unused: bool) -> str:
     """
     Sleep until you are rested.
     """

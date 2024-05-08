@@ -4,7 +4,7 @@ rules:
     match:
       type: actor
       wet: true
-    chance: 0.2
+    chance: 0.1
     set:
       wet: false
 
@@ -13,7 +13,7 @@ rules:
       type: actor
       wet: true
       temperature: hot
-    chance: 0.5
+    chance: 0.2
     set:
       wet: false
 
@@ -21,15 +21,15 @@ rules:
     match:
       type: room
       temperature: hot
-    chance: 0.5
-    trigger: adventure.sim_systems.environment_triggers:hot_room
+    chance: 0.2
+    trigger: [adventure.sim_systems.environment_triggers:hot_room]
 
   - group: environment-temperature
     match:
       type: room
       temperature: cold
-    chance: 0.5
-    trigger: adventure.sim_systems.environment_triggers:cold_room
+    chance: 0.2
+    trigger: [adventure.sim_systems.environment_triggers:cold_room]
 
 labels:
   wet:

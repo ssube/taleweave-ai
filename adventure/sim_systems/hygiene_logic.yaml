@@ -2,16 +2,22 @@ rules:
   - match:
       type: actor
       hygiene: clean
-    chance: 0.2
+    chance: 0.1
     set:
       hygiene: dirty
 
   - match:
       type: actor
       hygiene: dirty
-    chance: 0.2
+    chance: 0.1
     set:
       hygiene: filthy
+
+  # initialize hygiene
+  - rule: |
+      "hygiene" not in attributes
+    set:
+      hygiene: clean
 
 labels:
   hygiene:

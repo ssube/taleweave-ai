@@ -3,7 +3,7 @@ rules:
   - match:
       type: actor
       sleep: rested
-    chance: 0.2
+    chance: 0.1
     set:
       sleep: tired
 

@@ -5,6 +5,7 @@ from .sleeping_actions import action_sleep
 from adventure.logic import init_from_file
 
 LOGIC_FILES = [
+    "./adventure/sim_systems/environment_logic.yaml",
     "./adventure/sim_systems/hunger_logic.yaml",
     "./adventure/sim_systems/hygiene_logic.yaml",
     "./adventure/sim_systems/mood_logic.yaml",
