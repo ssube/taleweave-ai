@@ -267,6 +267,14 @@ def main():
     input_callbacks = []
     result_callbacks = []
 
+    if args.discord:
+        from adventure.discord_bot import bot_action, bot_event, bot_result, launch_bot
+
+        launch_bot()
+        event_callbacks.append(bot_event)
+        input_callbacks.append(bot_action)
+        result_callbacks.append(bot_result)
+
     if args.server:
         from adventure.server import (
             launch_server,

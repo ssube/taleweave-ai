@@ -2,13 +2,57 @@ from json import dumps
 from logging import getLogger
 from queue import Queue
 from readline import add_history
-from typing import Any, Callable, Dict, List, Sequence
+from typing import Any, Callable, Dict, List, Optional, Sequence
 
 from langchain_core.messages import AIMessage, BaseMessage, HumanMessage
 from packit.agent import Agent
 from packit.utils import could_be_json
 
 logger = getLogger(__name__)
+
+
+# Dict[client, player]
+active_players: Dict[str, "BasePlayer"] = {}
+
+
+def get_player(client: str) -> Optional["BasePlayer"]:
+    """
+    Get a player by name.
+    """
+
+    return active_players.get(client, None)
+
+
+def set_player(client: str, player: "BasePlayer"):
+    """
+    Add a player to the active players.
+    """
+
+    if has_player(player.name):
+        raise ValueError(f"Someone is already playing as {player.name}!")
+
+    active_players[client] = player
+
+
+def remove_player(client: str):
+    """
+    Remove a player from the active players.
+    """
+
+    if client in active_players:
+        del active_players[client]
+
+
+def has_player(character_name: str) -> bool:
+    """
+    Check if a character is already being played.
+    """
+
+    return character_name in [player.name for player in active_players.values()]
+
+
+def list_players():
+    return {client: player.name for client, player in active_players.items()}
 
 
 class BasePlayer:
