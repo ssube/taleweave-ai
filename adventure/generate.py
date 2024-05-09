@@ -1,11 +1,12 @@
 from logging import getLogger
 from random import choice, randint
-from typing import Callable, List
+from typing import List
 
 from packit.agent import Agent
 from packit.loops import loop_retry
 
-from adventure.models import Actor, Item, Room, World
+from adventure.models.entity import Actor, Item, Room, World
+from adventure.models.event import EventCallback, GenerateEvent
 
 logger = getLogger(__name__)
 
@@ -17,13 +18,10 @@ OPPOSITE_DIRECTIONS = {
 }
 
 
-GenerateCallback = Callable[[str], None]
-
-
 def generate_room(
     agent: Agent,
     world_theme: str,
-    callback: GenerateCallback | None = None,
+    callback: EventCallback | None = None,
     existing_rooms: List[str] = [],
 ) -> Room:
     def unique_name(name: str, **kwargs):
@@ -45,7 +43,7 @@ def generate_room(
     )
 
     if callable(callback):
-        callback(f"Generating room: {name}")
+        callback(GenerateEvent.from_name(f"Generating room: {name}"))
 
     desc = agent(
         "Generate a detailed description of the {name} area. What does it look like? "
@@ -65,7 +63,7 @@ def generate_room(
 def generate_item(
     agent: Agent,
     world_theme: str,
-    callback: Callable[[str], None] | None = None,
+    callback: EventCallback | None = None,
     dest_room: str | None = None,
     dest_actor: str | None = None,
     existing_items: List[str] = [],
@@ -99,7 +97,7 @@ def generate_item(
     )
 
     if callable(callback):
-        callback(f"Generating item: {name}")
+        callback(GenerateEvent.from_name(f"Generating item: {name}"))
 
     desc = agent(
         "Generate a detailed description of the {name} item. What does it look like? What is it made of? What does it do?",
@@ -115,7 +113,7 @@ def generate_actor(
     agent: Agent,
     world_theme: str,
     dest_room: str,
-    callback: GenerateCallback | None = None,
+    callback: EventCallback | None = None,
     existing_actors: List[str] = [],
 ) -> Actor:
     def unique_name(name: str, **kwargs):
@@ -141,7 +139,7 @@ def generate_actor(
     )
 
     if callable(callback):
-        callback(f"Generating actor: {name}")
+        callback(GenerateEvent.from_name(f"Generating actor: {name}"))
 
     description = agent(
         "Generate a detailed description of the {name} character. What do they look like? What are they wearing? "
@@ -169,12 +167,14 @@ def generate_world(
     theme: str,
     room_count: int | None = None,
     max_rooms: int = 5,
-    callback: Callable[[str], None] | None = None,
+    callback: EventCallback | None = None,
 ) -> World:
     room_count = room_count or randint(3, max_rooms)
 
     if callable(callback):
-        callback(f"Generating a {theme} with {room_count} rooms")
+        callback(
+            GenerateEvent.from_name(f"Generating a {theme} with {room_count} rooms")
+        )
 
     existing_actors: List[str] = []
     existing_items: List[str] = []
@@ -192,7 +192,11 @@ def generate_world(
         item_count = randint(1, 3)
 
         if callable(callback):
-            callback(f"Generating {item_count} items for room: {room.name}")
+            callback(
+                GenerateEvent.from_name(
+                    f"Generating {item_count} items for room: {room.name}"
+                )
+            )
 
         for j in range(item_count):
             item = generate_item(
@@ -208,7 +212,11 @@ def generate_world(
         actor_count = randint(1, 3)
 
         if callable(callback):
-            callback(f"Generating {actor_count} actors for room: {room.name}")
+            callback(
+                GenerateEvent.from_name(
+                    f"Generating {actor_count} actors for room: {room.name}"
+                )
+            )
 
         for j in range(actor_count):
             actor = generate_actor(
@@ -225,7 +233,11 @@ def generate_world(
             item_count = randint(0, 2)
 
             if callable(callback):
-                callback(f"Generating {item_count} items for actor {actor.name}")
+                callback(
+                    GenerateEvent.from_name(
+                        f"Generating {item_count} items for actor {actor.name}"
+                    )
+                )
 
             for k in range(item_count):
                 item = generate_item(

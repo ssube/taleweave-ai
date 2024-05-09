@@ -1,4 +1,4 @@
-from adventure.models import Attributes, Room
+from adventure.models.entity import Attributes, Room
 
 
 def hot_room(room: Room, attributes: Attributes):

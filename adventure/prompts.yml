@@ -1,32 +1,43 @@
 prompts:
-  - theme: talking animal truckers in the Australian outback
+  - name: outback-animals
+    theme: talking animal truckers in the Australian outback
     flavor: create a fun and happy world where rough and tumble talking animals drive trucks and run saloons in the outback
-  - theme: grimdark future where humans wage a desperate war for survival against hedgehogs
+  - name: grimdark-hedgehogs
+    theme: grimdark future where humans wage a desperate war for survival against hedgehogs
     flavor: create a grim, dark story where a ragtag group of humans is barely surviving in a world overrun by vicious mutant hedgehogs
-  - theme: crowded apartment building in New York City
+  - name: nyc-apartment
+    theme: crowded apartment building in New York City
     flavor: |
       create a crowded apartment building in NYC in the late 90s with a cast of wild and wacky characters.
       include colorful characters and make sure they will fully utilize all of the actions available to them
       in this world, exploring and interacting with each other
-  - theme: opening scenes from Jurassic Park
+  - name: jurassic-park
+    theme: opening scenes from Jurassic Park
     flavor: |
       follow the script of the film Jurassic Park exactly. do not deviate from the script in any way.
       include accurate characters and make sure they will fully utilize all of the actions available to them in this world
-  - theme: opening scenes from Star Wars
+  - name: star-wars
+    theme: opening scenes from Star Wars
     flavor: |
       follow the script of the 1977 film Star Wars exactly. do not deviate from the script in any way.
       include accurate characters and make sure they will fully utilize all of the actions available to them in this world
-  - theme: wealthy cyberpunk utopia with a dark secret
+  - name: cyberpunk-utopia
+    theme: wealthy cyberpunk utopia with a dark secret
     flavor: make a strange and dangerous world where technology is pervasive and scarcity is unheard of - for the upper class, at least
-  - theme: post-apocalyptic world where the only survivors are sentient robots
+  - name: post-apocalyptic-robots
+    theme: post-apocalyptic world where the only survivors are sentient robots
     flavor: create a world where the only survivors of a nuclear apocalypse are sentient robots, who must now rebuild society from scratch
-  - theme: haunted house in the middle of nowhere
+  - name: haunted-house
+    theme: haunted house in the middle of nowhere
     flavor: create a spooky and suspenseful world where a group of people are trapped in a haunted house in the middle of nowhere
-  - theme: dangerous magical fantasy world
+  - name: magical-kingdom
+    theme: dangerous magical fantasy world
     flavor: make a strange and dangerous world where magic winds its way through everything and incredibly powerful beings drink, fight, and wander the halls
-  - theme: underwater city of mermaids
+  - name: underwater-mermaids
+    theme: underwater city of mermaids
     flavor: create a beautiful and mysterious world where mermaids live in an underwater city, exploring the depths and interacting with each other
-  - theme: a mysterious town in the Pacific Northwest filled with strange cryptids and private investigators searching for them
+  - name: cryptid-town
+    theme: a mysterious town in the Pacific Northwest filled with strange cryptids and private investigators searching for them
     flavor: |
       make a strange and creepy world where terrifying creatures that you could never imagine in daylight roam the back
       alleys and hard-bitten private investigators with rough voices search for answers. do not use the word cryptid in any names

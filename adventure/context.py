@@ -2,7 +2,7 @@ from typing import Callable, Dict, Tuple
 
 from packit.agent import Agent
 
-from adventure.models import Actor, Room, World
+from adventure.models.entity import Actor, Room, World
 
 current_broadcast: Callable[[str], None] | None = None
 current_world: World | None = None
@@ -16,6 +16,16 @@ dungeon_master: Agent | None = None
 actor_agents: Dict[str, Tuple[Actor, Agent]] = {}
 
 
+def broadcast(message: str):
+    if current_broadcast:
+        current_broadcast(message)
+
+
+def has_dungeon_master():
+    return dungeon_master is not None
+
+
+# region context getters
 def get_current_context() -> Tuple[World, Room, Actor]:
     if not current_world:
         raise ValueError(
@@ -47,11 +57,23 @@ def get_current_broadcast():
     return current_broadcast
 
 
-def broadcast(message: str):
-    if current_broadcast:
-        current_broadcast(message)
+def get_current_step() -> int:
+    return current_step
 
 
+def get_dungeon_master() -> Agent:
+    if not dungeon_master:
+        raise ValueError(
+            "The dungeon master must be set before calling action functions"
+        )
+
+    return dungeon_master
+
+
+# endregion
+
+
+# region context setters
 def set_current_broadcast(broadcast):
     global current_broadcast
     current_broadcast = broadcast
@@ -72,15 +94,24 @@ def set_current_actor(actor: Actor | None):
     current_actor = actor
 
 
-def get_current_step() -> int:
-    return current_step
-
-
 def set_current_step(step: int):
     global current_step
     current_step = step
 
 
+def set_actor_agent(name, actor, agent):
+    actor_agents[name] = (actor, agent)
+
+
+def set_dungeon_master(agent):
+    global dungeon_master
+    dungeon_master = agent
+
+
+# endregion
+
+
+# region search functions
 def get_actor_for_agent(agent):
     return next(
         (
@@ -114,27 +145,8 @@ def get_actor_agent_for_name(name):
     )
 
 
-def set_actor_agent_for_name(name, actor, agent):
-    actor_agents[name] = (actor, agent)
-
-
 def get_all_actor_agents():
     return list(actor_agents.values())
 
 
-def set_dungeon_master(agent):
-    global dungeon_master
-    dungeon_master = agent
-
-
-def get_dungeon_master() -> Agent:
-    if not dungeon_master:
-        raise ValueError(
-            "The dungeon master must be set before calling action functions"
-        )
-
-    return dungeon_master
-
-
-def has_dungeon_master():
-    return dungeon_master is not None
+# endregion

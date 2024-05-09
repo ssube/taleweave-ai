@@ -7,8 +7,8 @@ from langchain_core.messages import AIMessage, BaseMessage, HumanMessage, System
 from packit.agent import Agent, agent_easy_connect
 from pydantic import RootModel
 
-from adventure.context import get_all_actor_agents, set_actor_agent_for_name
-from adventure.models import World
+from adventure.context import get_all_actor_agents, set_actor_agent
+from adventure.models.entity import World
 from adventure.player import LocalPlayer
 
 
@@ -29,7 +29,7 @@ def create_agents(
             else:
                 agent = Agent(actor.name, actor.backstory, {}, llm)
                 agent.memory = restore_memory(memory.get(actor.name, []))
-            set_actor_agent_for_name(actor.name, actor, agent)
+            set_actor_agent(actor.name, actor, agent)
 
 
 def graph_world(world: World, step: int):

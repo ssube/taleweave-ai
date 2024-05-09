@@ -8,8 +8,17 @@ from uuid import uuid4
 
 import websockets
 
-from adventure.context import get_actor_agent_for_name, set_actor_agent_for_name
-from adventure.models import Actor, Room, World
+from adventure.context import get_actor_agent_for_name, set_actor_agent
+from adventure.models.entity import Actor, Room, World
+from adventure.models.event import (
+    ActionEvent,
+    GameEvent,
+    GenerateEvent,
+    PromptEvent,
+    ReplyEvent,
+    ResultEvent,
+    StatusEvent,
+)
 from adventure.player import (
     RemotePlayer,
     get_player,
@@ -24,7 +33,7 @@ logger = getLogger(__name__)
 
 connected = set()
 recent_events = deque(maxlen=100)
-recent_world = None
+last_snapshot = None
 
 
 async def handler(websocket):
@@ -45,10 +54,10 @@ async def handler(websocket):
             ),
         )
 
-    def sync_turn(character: str, prompt: str) -> bool:
+    def sync_turn(event: PromptEvent) -> bool:
         player = get_player(id)
-        if player and player.name == character:
-            asyncio.run(next_turn(character, prompt))
+        if player and player.name == event.actor.name:
+            asyncio.run(next_turn(event.actor.name, event.prompt))
             return True
 
         return False
@@ -56,8 +65,8 @@ async def handler(websocket):
     try:
         await websocket.send(dumps({"type": "id", "id": id}))
 
-        if recent_world:
-            await websocket.send(recent_world)
+        if last_snapshot:
+            await websocket.send(last_snapshot)
 
         for message in recent_events:
             await websocket.send(message)
@@ -74,10 +83,14 @@ async def handler(websocket):
                 data = loads(message)
                 message_type = data.get("type", None)
                 if message_type == "player":
+                    character_name = data["become"]
+                    if has_player(character_name):
+                        logger.error(f"Character {character_name} is already in use")
+                        continue
+
                     # TODO: should this always remove?
                     remove_player(id)
 
-                    character_name = data["become"]
                     actor, llm_agent = get_actor_agent_for_name(character_name)
                     if not actor:
                         logger.error(f"Failed to find actor {character_name}")
@@ -90,10 +103,6 @@ async def handler(websocket):
                         )
                         llm_agent = llm_agent.fallback_agent
 
-                    if has_player(character_name):
-                        logger.error(f"Character {character_name} is already in use")
-                        continue
-
                     # player_name = data["player"]
                     player = RemotePlayer(
                         actor.name, actor.backstory, sync_turn, fallback_agent=llm_agent
@@ -102,7 +111,7 @@ async def handler(websocket):
                     logger.info(f"Client {id} is now character {character_name}")
 
                     # swap out the LLM agent
-                    set_actor_agent_for_name(actor.name, actor, player)
+                    set_actor_agent(actor.name, actor, player)
 
                     # notify all clients that this character is now active
                     player_event(character_name, id, "join")
@@ -134,7 +143,7 @@ async def handler(websocket):
         actor, _ = get_actor_agent_for_name(player.name)
         if actor and player.fallback_agent:
             logger.info("Restoring LLM agent for %s", player.name)
-            set_actor_agent_for_name(player.name, actor, player.fallback_agent)
+            set_actor_agent(player.name, actor, player.fallback_agent)
 
     logger.info("Client disconnected: %s", id)
 
@@ -166,8 +175,10 @@ def launch_server():
     def run_sockets():
         asyncio.run(server_main())
 
-    socket_thread = Thread(target=run_sockets)
+    socket_thread = Thread(target=run_sockets, daemon=True)
     socket_thread.start()
+
+    return [socket_thread]
 
 
 async def server_main():
@@ -177,12 +188,12 @@ async def server_main():
 
 
 def server_system(world: World, step: int):
-    global recent_world
+    global last_snapshot
     json_state = {
         **snapshot_world(world, step),
         "type": "world",
     }
-    recent_world = send_and_append(json_state)
+    last_snapshot = send_and_append(json_state)
 
 
 def server_result(room: Room, actor: Actor, action: str):
@@ -205,12 +216,27 @@ def server_action(room: Room, actor: Actor, message: str):
     send_and_append(json_input)
 
 
-def server_event(message: str):
+def server_generate(event: GenerateEvent):
     json_broadcast = {
-        "message": message,
-        "type": "event",
+        "name": event.name,
+        "type": "generate",
     }
     send_and_append(json_broadcast)
+
+
+def server_event(event: GameEvent):
+    if isinstance(event, GenerateEvent):
+        return server_generate(event)
+    elif isinstance(event, ActionEvent):
+        return server_action(event.room, event.actor, event.action)
+    elif isinstance(event, ReplyEvent):
+        return server_action(event.room, event.actor, event.text)
+    elif isinstance(event, ResultEvent):
+        return server_result(event.room, event.actor, event.result)
+    elif isinstance(event, StatusEvent):
+        pass
+    else:
+        logger.warning("Unknown event type: %s", event)
 
 
 def player_event(character: str, id: str, event: Literal["join", "leave"]):

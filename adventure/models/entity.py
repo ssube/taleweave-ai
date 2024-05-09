@@ -1,12 +1,8 @@
-from typing import TYPE_CHECKING, Callable, Dict, List
+from typing import Callable, Dict, List
 
 from pydantic import Field
 
-if TYPE_CHECKING:
-    from dataclasses import dataclass
-else:
-    from pydantic.dataclasses import dataclass as dataclass  # noqa
-
+from .base import dataclass
 
 Actions = Dict[str, Callable]
 AttributeValue = bool | int | str
@@ -55,3 +51,6 @@ class WorldState:
     memory: Dict[str, List[str | Dict[str, str]]]
     step: int
     world: World
+
+
+WorldEntity = Room | Actor | Item

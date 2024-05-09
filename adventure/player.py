@@ -8,6 +8,8 @@ from langchain_core.messages import AIMessage, BaseMessage, HumanMessage
 from packit.agent import Agent
 from packit.utils import could_be_json
 
+from adventure.models.event import PromptEvent
+
 logger = getLogger(__name__)
 
 
@@ -158,13 +160,13 @@ class LocalPlayer(BasePlayer):
 class RemotePlayer(BasePlayer):
     fallback_agent: Agent | None
     input_queue: Queue[str]
-    send_prompt: Callable[[str, str], bool]
+    send_prompt: Callable[[PromptEvent], bool]
 
     def __init__(
         self,
         name: str,
         backstory: str,
-        send_prompt: Callable[[str, str], bool],
+        send_prompt: Callable[[PromptEvent], bool],
         fallback_agent=None,
     ) -> None:
         super().__init__(name, backstory)
@@ -180,9 +182,11 @@ class RemotePlayer(BasePlayer):
         formatted_prompt = prompt.format(**kwargs)
         self.memory.append(HumanMessage(content=formatted_prompt))
 
+        prompt_event = PromptEvent.from_text(formatted_prompt, None, None)
+
         try:
             logger.info(f"prompting remote player: {self.name}")
-            if self.send_prompt(self.name, formatted_prompt):
+            if self.send_prompt(prompt_event):
                 reply = self.input_queue.get(timeout=60)
                 logger.info(f"got reply from remote player: {reply}")
                 return self.parse_input(reply)

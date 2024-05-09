@@ -197,7 +197,7 @@ def action_give(character: str, item_name: str) -> str:
     if not item:
         return f"You do not have the {item_name} item in your inventory."
 
-    broadcast(f"{action_actor.name} gives {character} the {item_name} item")
+    broadcast(f"{action_actor.name} gives {character} the {item_name} item.")
     action_actor.items.remove(item)
     destination_actor.items.append(item)
 

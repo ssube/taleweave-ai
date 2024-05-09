@@ -7,7 +7,7 @@ from pydantic import Field
 from rule_engine import Rule
 from yaml import Loader, load
 
-from adventure.models import (
+from adventure.models.entity import (
     Actor,
     Attributes,
     AttributeValue,
