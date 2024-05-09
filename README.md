@@ -1,4 +1,4 @@
-# TailWeave AI
+# TaleWeave AI
 
 TaleWeave AI is an innovative open-source text adventure engine that harnesses the storytelling prowess and novel
 behaviors of large language models to create a vibrant, interactive universe. This project merges the classic depth of
@@ -13,7 +13,7 @@ captivate and engage players' imaginations.
 
 ## Contents
 
-- [TailWeave AI](#tailweave-ai)
+- [TaleWeave AI](#taleweave-ai)
   - [Contents](#contents)
   - [Features](#features)
   - [Installation](#installation)
