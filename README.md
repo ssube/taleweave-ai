@@ -13,16 +13,23 @@ captivate and engage players’ imaginations.
 
 ## Features
 
-- Cross-Platform Gameplay: Enjoy a seamless gameplay experience across Discord and web browsers, ensuring accessibility
-  and continuous engagement no matter where you are.
-- Rich Interactions: Dive into a world where AI-generated characters and real human players coexist, each bringing
+- **Cross-Platform Gameplay**: Enjoy a seamless gameplay experience across Discord and web browsers, ensuring
+  accessibility and continuous engagement no matter where you are.
+- **Rich Interactions**: Dive into a world where AI-generated characters and real human players coexist, each bringing
   unique elements to the narrative and gameplay.
-- Play as Any Character: Join or leave ongoing adventures without any disruption to the ongoing world, making it easy
-  for players to drop in or out according to their schedules.
-- AI-Driven World Generation: Leverage the capabilities of a large language model acting as your dungeon master to
+- **Play as Any Character**: Every character in the world is always active, powered by large language models. Human
+  players can seamlessly take over AI characters, responding to system prompts and engaging in conversations with other
+  characters, enhancing the depth and flexibility of interactions.
+- **AI-Driven World Generation**: Leverage the capabilities of a large language model acting as your dungeon master to
   generate expansive, reactive worlds simply from a text prompt.
-- Enhanced Conversations: Engage in deep, meaningful interactions with both AI and human characters, enriching your
+- **Enhanced Conversations**: Engage in deep, meaningful interactions with both AI and human characters, enriching your
   gaming experience with every conversation and decision.
+- **Customizable Actions**: Introduce your own actions to interact with the world and other characters in innovative
+  ways, adding a personal touch to every adventure.
+- **Flexible Game Saving**: Easily save and resume your worlds at any time, preserving not only the state of the world
+  but also the language model's memory to maintain continuity in your adventures.
+- **Dynamic Character Behavior**: Influence characters' behavior through logical systems that simulate hunger, mood, and
+  other life-like mechanics, adding layers of realism to your interactive experiences.
 
 Emergent behavior in TaleWeave AI offers a complex and captivating layer to gameplay, as large language models (LLMs)
 interpret and act on character needs and feelings with surprising depth. By incorporating function-calling capabilities,
@@ -60,14 +67,39 @@ pip install -r requirements.txt
 
 **Step 3: Configuration**
 
-- Configure the settings by editing the `config.json` file to match your setup, including Discord tokens and web server details.
+Configure the settings by editing the `.env` file to match your setup, including Discord tokens and web server details.
 
-**Step 4: Run the Server**
+**Step 4: Run the Dependencies**
+
+Launch Comfy UI for image generation and Ollama for text generation.
+
+**Step 5: Run the Game Server**
+
+To start a game simulation using the "outback animals" example prompt and running both the Discord both and websocket server:
 
 ```bash
 # Start the TaleWeave AI engine
-python main.py
+python3 -m adventure.main \
+  --world worlds/outback-animals-1 \
+  --world-prompt ./adventure/prompts.yml:outback-animals \
+  --discord=true  \
+  --server=true \
+  --rooms 6 \
+  --steps 30 \
+  --optional-actions=true \
+  --actions adventure.sim_systems:init_actions \
+  --systems adventure.sim_systems:init_logic
+#  --actions adventure.custom_systems:init_actions
+#  --systems adventure.custom_systems:init_logic
 ```
+
+This will run for 30 steps, then shut down. The world will be saved to a file named `worlds/outback-animals-1.json`
+and the state will be saved after each step to another file named `worlds/outback-animals-1.state.json`. The world can
+be stopped at any time, although the step in progress will be lost. The saved state can be resumed and played for any
+number of steps.
+
+The `sim_systems` provide many mechanics from popular life simulations, including hunger, thirst, exhaustion, and mood.
+Custom actions and systems can be used to provide any other mechanics that are desired for your setting.
 
 ## Documentation
 
