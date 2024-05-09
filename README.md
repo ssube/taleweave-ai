@@ -21,12 +21,14 @@ captivate and engage players' imaginations.
     - [Step 2: Set Up Your Environment](#step-2-set-up-your-environment)
     - [Step 3: Configuration](#step-3-configuration)
     - [Step 4: Run the Dependencies](#step-4-run-the-dependencies)
-    - [Step 5: Run the Game Server](#step-5-run-the-game-server)
+    - [Step 5: Launch the Game Server](#step-5-launch-the-game-server)
   - [Documentation](#documentation)
   - [Contributing](#contributing)
   - [Support and Community](#support-and-community)
   - [License](#license)
   - [TODOs](#todos)
+    - [Things That Are Bad](#things-that-are-bad)
+    - [Things That Are Good](#things-that-are-good)
 
 ## Features
 
@@ -66,6 +68,13 @@ element of the world is consistent and meaningful. By dynamically generating env
 master model weaves together a coherent, immersive world where every character and their actions fit seamlessly into the
 larger tapestry of the tale.
 
+In TaleWeave AI, the logic system employs a sophisticated combination of Python and YAML to construct intricate systems
+that add and modify attributes on the rooms, characters, and items in the world. Each attribute is tagged with text
+labels for both first-person prompts and third-person descriptions, enabling the system to directly influence the
+behaviors and responses of the language models. This architecture allows for a dynamic interaction model where the
+underlying logic subtly guides the actions and reactions of the AI, enriching the narrative depth and realism of the
+game environment.
+
 ## Installation
 
 ### Step 1: Clone the Repository
@@ -94,9 +103,10 @@ Configure the settings by editing the `.env` file to match your setup, including
 
 Launch Comfy UI for image generation and Ollama for text generation.
 
-### Step 5: Run the Game Server
+### Step 5: Launch the Game Server
 
-To start a game simulation using the "outback animals" example prompt and running both the Discord both and websocket server:
+To start a game simulation using the "outback animals" example prompt and running both the Discord both and websocket
+server:
 
 ```bash
 # Start the TaleWeave AI engine
@@ -110,6 +120,7 @@ python3 -m adventure.main \
   --optional-actions=true \
   --actions adventure.sim_systems:init_actions \
   --systems adventure.sim_systems:init_logic
+
 #  --actions adventure.custom_systems:init_actions
 #  --systems adventure.custom_systems:init_logic
 ```
@@ -119,8 +130,14 @@ saved to a file named `worlds/outback-animals-1.json` and the state will be save
 `worlds/outback-animals-1.state.json`. The world can be stopped at any time by pressing Ctrl-C, although the step in
 progress will be lost. The saved state can be resumed and played for any number of additional steps.
 
+> Note: `module.name:function_name` and `path/filename.yml:key` are patterns you will see repeated throughout TaleWeave AI.
+> They indicate a Python module and function within it, or a data file and key within it, respectively.
+
 The `sim_systems` provide many mechanics from popular life simulations, including hunger, thirst, exhaustion, and mood.
-Custom actions and systems can be used to provide any other mechanics that are desired for your setting.
+Custom actions and systems can be used to provide any other mechanics that are desired for your setting. The logic
+system uses a combination of Python and YAML to build complex systems that add and modify the attributes on rooms,
+characters, and items. Attributes can become sentences and fragments in the character prompt and entity description,
+allowing the logic to influence the language models.
 
 ## Documentation
 
@@ -129,7 +146,8 @@ please refer to our [Documentation](./docs). This guide includes comprehensive i
 
 - **Setting up your first adventure:** Learn how to create and launch your own story.
 - **Customizing characters:** Instructions on how to personalize AI and human characters.
-- **Advanced features:** Explore the more complex functionalities of TaleWeave AI, like AI behavior tweaking and interactive scenario creation.
+- **Advanced features:** Explore the more complex functionalities of TaleWeave AI, like AI behavior tweaking and
+  interactive scenario creation.
 
 ## Contributing
 
@@ -147,6 +165,20 @@ TaleWeave AI is released under the MIT License. See the [LICENSE](./LICENSE) fil
 
 ## TODOs
 
-- admin panel in web UI
-- store long-term memory for actors in vector DB
+- figure out the human input syntax for actions
+- make an admin panel in web UI
+- store long-term memory for actors in a vector DB (RAG and all that)
 - generate and simulate should probably be async
+
+### Things That Are Bad
+
+1. Why are the `generate` and `simulate` functions not async?
+   1. Because I had written them before I realized they should be
+2. Why is the web client in Typescript and React?
+   1. Because I have a template for that and it was easy to set up
+
+### Things That Are Good
+
+1. The system is largely event-driven
+2. Each server or bot has its own thread (for error handling)
+3. Remote players can be implemented with any client, since they use a queue
