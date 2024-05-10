@@ -30,7 +30,7 @@ if not has_dungeon_master():
 
 def action_explore(direction: str) -> str:
     """
-    Explore the room in a new direction.
+    Explore the room in a new direction. You can only explore directions that do not already have a portal.
 
     Args:
         direction: The direction to explore: north, south, east, or west.
@@ -44,7 +44,7 @@ def action_explore(direction: str) -> str:
 
     if direction in current_room.portals:
         dest_room = current_room.portals[direction]
-        return f"You cannot explore {direction} from here, that direction leads to {dest_room}."
+        return f"You cannot explore {direction} from here, that direction already leads to {dest_room}. Please use the move action to go there."
 
     existing_rooms = [room.name for room in current_world.rooms]
     new_room = generate_room(

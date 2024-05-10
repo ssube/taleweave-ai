@@ -3,11 +3,11 @@ from os import environ
 from queue import Queue
 from re import sub
 from threading import Thread
-from typing import Tuple
 
 from discord import Client, Embed, File, Intents
 
 from adventure.context import (
+    broadcast,
     get_actor_agent_for_name,
     get_current_world,
     set_actor_agent,
@@ -16,6 +16,7 @@ from adventure.models.event import (
     ActionEvent,
     GameEvent,
     GenerateEvent,
+    PlayerEvent,
     PromptEvent,
     ReplyEvent,
     ResultEvent,
@@ -28,7 +29,7 @@ logger = getLogger(__name__)
 client = None
 
 active_tasks = set()
-prompt_queue: Queue[Tuple[GameEvent, Embed | str]] = Queue()
+event_queue: Queue[GameEvent] = Queue()
 
 
 def remove_tags(text: str) -> str:
@@ -156,8 +157,7 @@ class AdventureClient(Client):
                     event.prompt,
                 )
 
-                # TODO: build an embed from the prompt
-                prompt_queue.put((event, event.prompt))
+                event_queue.put(event)
                 return True
 
             player = RemotePlayer(
@@ -167,25 +167,25 @@ class AdventureClient(Client):
             set_player(user_name, player)
 
             logger.info(f"{user_name} has joined the game as {actor.name}!")
-            await message.channel.send(
-                f"{user_name} has joined the game as {actor.name}!"
-            )
-            return
-
-        if message.content.startswith("!leave"):
-            # TODO: revert to LLM agent
-            logger.info(f"{user_name} has left the game!")
-            await message.channel.send(f"{user_name} has left the game!")
-            return
+            join_event = PlayerEvent("join", character_name, user_name)
+            return broadcast(join_event)
 
         player = get_player(user_name)
-        if player and isinstance(player, RemotePlayer):
-            content = remove_tags(message.content)
-            player.input_queue.put(content)
-            logger.info(
-                f"Received message from {user_name} for {player.name}: {content}"
-            )
-            return
+        if player:
+            if message.content.startswith("!leave"):
+                # TODO: check if player is playing
+                # TODO: revert to LLM agent
+                logger.info(f"{user_name} has left the game!")
+                leave_event = PlayerEvent("leave", player.name, user_name)
+                return broadcast(leave_event)
+
+            if isinstance(player, RemotePlayer):
+                content = remove_tags(message.content)
+                player.input_queue.put(content)
+                logger.info(
+                    f"Received message from {user_name} for {player.name}: {content}"
+                )
+                return
 
         await message.channel.send(
             "You are not currently playing Adventure! Type `!join` to start playing!"
@@ -194,41 +194,49 @@ class AdventureClient(Client):
 
 
 def launch_bot():
+    global client
+
+    intents = Intents.default()
+    # intents.message_content = True
+
+    client = AdventureClient(intents=intents)
+
     def bot_main():
-        global client
+        if not client:
+            raise ValueError("No Discord client available")
 
-        intents = Intents.default()
-        # intents.message_content = True
-
-        client = AdventureClient(intents=intents)
         client.run(environ["DISCORD_TOKEN"])
 
-    def prompt_main():
+    def send_main():
         from time import sleep
 
         while True:
             sleep(0.1)
-            if prompt_queue.empty():
+            if event_queue.empty():
+                # logger.debug("no events to prompt")
                 continue
 
             if len(active_tasks) > 0:
+                logger.debug("waiting for active tasks to complete")
                 continue
 
-            event, prompt = prompt_queue.get()
-            logger.info("Prompting for event %s: %s", event, prompt)
+            event = event_queue.get()
+            logger.info("broadcasting event %s", event.type)
 
             if client:
-                prompt_task = client.loop.create_task(broadcast_event(prompt))
-                active_tasks.add(prompt_task)
-                prompt_task.add_done_callback(active_tasks.discard)
+                event_task = client.loop.create_task(broadcast_event(event))
+                active_tasks.add(event_task)
+                event_task.add_done_callback(active_tasks.discard)
+            else:
+                logger.warning("no Discord client available")
 
     bot_thread = Thread(target=bot_main, daemon=True)
     bot_thread.start()
 
-    prompt_thread = Thread(target=prompt_main, daemon=True)
-    prompt_thread.start()
+    send_thread = Thread(target=send_main, daemon=True)
+    send_thread.start()
 
-    return [bot_thread, prompt_thread]
+    return [bot_thread, send_thread]
 
 
 def stop_bot():
@@ -253,72 +261,99 @@ def get_active_channels():
     ]
 
 
-async def broadcast_event(message: str | Embed):
+def bot_event(event: GameEvent):
+    event_queue.put(event)
+
+
+async def broadcast_event(message: str | GameEvent):
     if not client:
-        logger.warning("No Discord client available")
+        logger.warning("no Discord client available")
         return
 
     active_channels = get_active_channels()
     if not active_channels:
-        logger.warning("No active channels")
+        logger.warning("no active channels")
         return
 
     for channel in active_channels:
         if isinstance(message, str):
-            logger.info("Broadcasting to channel %s: %s", channel, message)
+            logger.info("broadcasting to channel %s: %s", channel, message)
             await channel.send(content=message)
-        elif isinstance(message, Embed):
+        elif isinstance(message, GameEvent):
+            embed = embed_from_event(message)
             logger.info(
-                "Broadcasting to channel %s: %s - %s",
+                "broadcasting to channel %s: %s - %s",
                 channel,
-                message.title,
-                message.description,
+                embed.title,
+                embed.description,
             )
-            await channel.send(embed=message)
+            await channel.send(embed=embed)
 
 
-def bot_event(event: GameEvent):
+def embed_from_event(event: GameEvent) -> Embed:
     if isinstance(event, GenerateEvent):
-        bot_generate(event)
+        return embed_from_generate(event)
     elif isinstance(event, ResultEvent):
-        bot_result(event)
+        return embed_from_result(event)
     elif isinstance(event, (ActionEvent, ReplyEvent)):
-        bot_action(event)
+        return embed_from_action(event)
     elif isinstance(event, StatusEvent):
-        pass
+        return embed_from_status(event)
+    elif isinstance(event, PlayerEvent):
+        return embed_from_player(event)
     else:
-        logger.warning("Unknown event type: %s", event)
+        logger.warning("unknown event type: %s", event)
 
 
-def bot_action(event: ActionEvent | ReplyEvent):
-    try:
-        action_embed = Embed(title=event.room.name, description=event.actor.name)
+def embed_from_action(event: ActionEvent | ReplyEvent):
+    action_embed = Embed(title=event.room.name, description=event.actor.name)
 
-        if isinstance(event, ActionEvent):
-            action_name = event.action.replace("action_", "").title()
-            action_parameters = event.parameters
+    if isinstance(event, ActionEvent):
+        action_name = event.action.replace("action_", "").title()
+        action_parameters = event.parameters
 
-            action_embed.add_field(name="Action", value=action_name)
+        action_embed.add_field(name="Action", value=action_name)
 
-            for key, value in action_parameters.items():
-                action_embed.add_field(name=key.replace("_", " ").title(), value=value)
-        else:
-            action_embed.add_field(name="Message", value=event.text)
+        for key, value in action_parameters.items():
+            action_embed.add_field(name=key.replace("_", " ").title(), value=value)
+    else:
+        action_embed.add_field(name="Message", value=event.text)
 
-        prompt_queue.put((event, action_embed))
-    except Exception as e:
-        logger.error("Failed to broadcast action: %s", e)
+    return action_embed
 
 
-def bot_generate(event: GenerateEvent):
-    prompt_queue.put((event, event.name))
+def embed_from_generate(event: GenerateEvent) -> Embed:
+    generate_embed = Embed(title="Generating", description=event.name)
+    return generate_embed
 
 
-def bot_result(event: ResultEvent):
+def embed_from_result(event: ResultEvent):
     text = event.result
     if len(text) > 1000:
         text = text[:1000] + "..."
 
     result_embed = Embed(title=event.room.name, description=event.actor.name)
     result_embed.add_field(name="Result", value=text)
-    prompt_queue.put((event, result_embed))
+    return result_embed
+
+
+def embed_from_player(event: PlayerEvent):
+    if event.status == "join":
+        title = "New Player"
+        description = f"{event.client} is now playing as {event.character}"
+    else:
+        title = "Player Left"
+        description = f"{event.client} has left the game, {event.character} will be played by the AI"
+
+    player_embed = Embed(title=title, description=description)
+    return player_embed
+
+
+def embed_from_status(event: StatusEvent):
+    # TODO: add room and actor
+    status_embed = Embed(
+        title=event.room.name if event.room else "",
+        description=event.actor.name if event.actor else "",
+    )
+    status_embed.add_field(name="Status", value=event.text)
+    return status_embed

@@ -10,17 +10,17 @@ export interface EventItemProps {
   focusRef?: MutableRefObject<any>;
 }
 
-export function ActionItem(props: EventItemProps) {
+export function ActionEventItem(props: EventItemProps) {
   const { event } = props;
   const { actor, room, type } = event;
   const content = formatters[type](event);
 
   return <ListItem alignItems="flex-start" ref={props.focusRef}>
     <ListItemAvatar>
-      <Avatar alt={actor} src="/static/images/avatar/1.jpg" />
+      <Avatar alt={actor.name} src="/static/images/avatar/1.jpg" />
     </ListItemAvatar>
     <ListItemText
-      primary={room}
+      primary={room.name}
       secondary={
         <React.Fragment>
           <Typography
@@ -29,7 +29,7 @@ export function ActionItem(props: EventItemProps) {
             variant="body2"
             color="text.primary"
           >
-            {actor}
+            {actor.name}
           </Typography>
           {content}
         </React.Fragment>
@@ -38,7 +38,7 @@ export function ActionItem(props: EventItemProps) {
   </ListItem>;
 }
 
-export function WorldItem(props: EventItemProps) {
+export function SnapshotEventItem(props: EventItemProps) {
   const { event } = props;
   const { step, world } = event;
   const { theme } = world;
@@ -63,9 +63,9 @@ export function WorldItem(props: EventItemProps) {
   </ListItem>;
 }
 
-export function MessageItem(props: EventItemProps) {
+export function ReplyEventItem(props: EventItemProps) {
   const { event } = props;
-  const { message } = event;
+  const { text } = event;
 
   return <ListItem alignItems="flex-start" ref={props.focusRef}>
     <ListItemAvatar>
@@ -80,26 +80,26 @@ export function MessageItem(props: EventItemProps) {
           variant="body2"
           color="text.primary"
         >
-          {message}
+          {text}
         </Typography>
       }
     />
   </ListItem>;
 }
 
-export function PlayerItem(props: EventItemProps) {
+export function PlayerEventItem(props: EventItemProps) {
   const { event } = props;
-  const { character, event: innerEvent, id } = event;
+  const { character, status, client } = event;
 
   let primary = '';
   let secondary = '';
-  if (innerEvent === 'join') {
+  if (status === 'join') {
     primary = 'New Player';
-    secondary = `${id} is now playing as ${character}`;
+    secondary = `${client} is now playing as ${character}`;
   }
-  if (innerEvent === 'leave') {
+  if (status === 'leave') {
     primary = 'Player Left';
-    secondary = `${id} has left the game. ${character} is now controlled by an LLM`;
+    secondary = `${client} has left the game. ${character} is now controlled by an LLM`;
   }
 
   return <ListItem alignItems="flex-start" ref={props.focusRef}>
@@ -129,13 +129,13 @@ export function EventItem(props: EventItemProps) {
   switch (type) {
     case 'action':
     case 'result':
-      return <ActionItem event={event} focusRef={props.focusRef} />;
-    case 'event':
-      return <MessageItem event={event} focusRef={props.focusRef} />;
+      return <ActionEventItem event={event} focusRef={props.focusRef} />;
+    case 'reply':
+      return <ReplyEventItem event={event} focusRef={props.focusRef} />;
     case 'player':
-      return <PlayerItem event={event} focusRef={props.focusRef} />;
-    case 'world':
-      return <WorldItem event={event} focusRef={props.focusRef} />;
+      return <PlayerEventItem event={event} focusRef={props.focusRef} />;
+    case 'snapshot':
+      return <SnapshotEventItem event={event} focusRef={props.focusRef} />;
     default:
       return <ListItem ref={props.focusRef}>
         <ListItemText primary={`Unknown event type: ${type}`} />

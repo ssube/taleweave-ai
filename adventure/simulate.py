@@ -29,6 +29,7 @@ from adventure.models.entity import Attributes, World
 from adventure.models.event import (
     ActionEvent,
     EventCallback,
+    GameEvent,
     ReplyEvent,
     ResultEvent,
     StatusEvent,
@@ -70,9 +71,13 @@ def simulate_world(
     set_current_world(world)
 
     # set up a broadcast callback
-    def broadcast_callback(message):
+    def broadcast_callback(message: str | GameEvent):
         logger.info(message)
-        event = StatusEvent(text=message)
+        if isinstance(message, str):
+            event = StatusEvent(text=message)
+        else:
+            event = message
+
         for callback in callbacks:
             callback(event)
 

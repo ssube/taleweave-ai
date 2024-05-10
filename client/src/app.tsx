@@ -119,7 +119,7 @@ export function App(props: AppProps) {
 
       if (data.type === 'prompt') {
         // prompts are broadcast to all players
-        if (data.id === clientId) {
+        if (data.client === clientId) {
           // only notify the active player
           setActiveTurn(true);
         } else {
@@ -137,7 +137,7 @@ export function App(props: AppProps) {
       setHistory((prev) => prev.concat(data));
 
       // if we get a world event, update the last world state
-      if (data.type === 'world') {
+      if (data.type === 'snapshot') {
         setWorld(data.world);
       }
 

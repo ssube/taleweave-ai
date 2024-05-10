@@ -3,8 +3,9 @@ from typing import Callable, Dict, Tuple
 from packit.agent import Agent
 
 from adventure.models.entity import Actor, Room, World
+from adventure.models.event import GameEvent
 
-current_broadcast: Callable[[str], None] | None = None
+current_broadcast: Callable[[str | GameEvent], None] | None = None
 current_world: World | None = None
 current_room: Room | None = None
 current_actor: Actor | None = None
@@ -16,7 +17,7 @@ dungeon_master: Agent | None = None
 actor_agents: Dict[str, Tuple[Actor, Agent]] = {}
 
 
-def broadcast(message: str):
+def broadcast(message: str | GameEvent):
     if current_broadcast:
         current_broadcast(message)
 

@@ -125,19 +125,20 @@ python3 -m adventure.main \
 #  --systems adventure.custom_systems:init_logic
 ```
 
-This will generate a relatively small world with 3 rooms or areas, run for 30 steps, then shut down. The world will be
-saved to a file named `worlds/outback-animals-1.json` and the state will be saved after each step to another file named
-`worlds/outback-animals-1.state.json`. The world can be stopped at any time by pressing Ctrl-C, although the step in
-progress will be lost. The saved state can be resumed and played for any number of additional steps.
+This will generate a relatively small world with 3 rooms or areas, run for 30 steps, then shut down.
+
+The world will be saved to a file named `worlds/outback-animals-1.json` and the state will be saved after each step to
+another file named `worlds/outback-animals-1.state.json`. The world can be stopped at any time by pressing Ctrl-C,
+although the step in progress will be lost. The saved state can be resumed and played for any number of additional
+steps by running the server again with the same arguments.
 
 > Note: `module.name:function_name` and `path/filename.yml:key` are patterns you will see repeated throughout TaleWeave AI.
 > They indicate a Python module and function within it, or a data file and key within it, respectively.
 
 The `sim_systems` provide many mechanics from popular life simulations, including hunger, thirst, exhaustion, and mood.
 Custom actions and systems can be used to provide any other mechanics that are desired for your setting. The logic
-system uses a combination of Python and YAML to build complex systems that add and modify the attributes on rooms,
-characters, and items. Attributes can become sentences and fragments in the character prompt and entity description,
-allowing the logic to influence the language models.
+system uses a combination of Python and YAML to modify the prompts connected to rooms, characters, and items in the
+world, influencing the behavior of the language models.
 
 ## Documentation
 

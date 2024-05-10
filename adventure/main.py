@@ -41,6 +41,15 @@ logger = logger_with_colors(__name__, level="DEBUG")
 load_dotenv(environ.get("ADVENTURE_ENV", ".env"), override=True)
 
 
+# start the debugger, if needed
+if environ.get("DEBUG", "false").lower() == "true":
+    import debugpy
+
+    debugpy.listen(5679)
+    logger.info("waiting for debugger to attach...")
+    debugpy.wait_for_client()
+
+
 # main
 def parse_args():
     import argparse

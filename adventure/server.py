@@ -7,18 +7,11 @@ from typing import Literal
 from uuid import uuid4
 
 import websockets
+from pydantic import RootModel
 
-from adventure.context import get_actor_agent_for_name, set_actor_agent
-from adventure.models.entity import Actor, Room, World
-from adventure.models.event import (
-    ActionEvent,
-    GameEvent,
-    GenerateEvent,
-    PromptEvent,
-    ReplyEvent,
-    ResultEvent,
-    StatusEvent,
-)
+from adventure.context import broadcast, get_actor_agent_for_name, set_actor_agent
+from adventure.models.entity import Actor, Item, Room, World
+from adventure.models.event import GameEvent, PlayerEvent, PromptEvent
 from adventure.player import (
     RemotePlayer,
     get_player,
@@ -46,7 +39,7 @@ async def handler(websocket):
             dumps(
                 {
                     "type": "prompt",
-                    "id": id,
+                    "client": id,
                     "character": character,
                     "prompt": prompt,
                     "actions": [],
@@ -153,10 +146,7 @@ static_thread = None
 
 
 def server_json(obj):
-    if isinstance(obj, Actor):
-        return obj.name
-
-    if isinstance(obj, Room):
+    if isinstance(obj, (Actor, Item, Room)):
         return obj.name
 
     return world_json(obj)
@@ -191,68 +181,26 @@ def server_system(world: World, step: int):
     global last_snapshot
     json_state = {
         **snapshot_world(world, step),
-        "type": "world",
+        "type": "snapshot",
     }
     last_snapshot = send_and_append(json_state)
 
 
-def server_result(room: Room, actor: Actor, action: str):
-    json_action = {
-        "actor": actor,
-        "result": action,
-        "room": room,
-        "type": "result",
-    }
-    send_and_append(json_action)
-
-
-def server_action(room: Room, actor: Actor, message: str):
-    json_input = {
-        "actor": actor,
-        "input": message,
-        "room": room,
-        "type": "action",
-    }
-    send_and_append(json_input)
-
-
-def server_generate(event: GenerateEvent):
-    json_broadcast = {
-        "name": event.name,
-        "type": "generate",
-    }
-    send_and_append(json_broadcast)
-
-
 def server_event(event: GameEvent):
-    if isinstance(event, GenerateEvent):
-        return server_generate(event)
-    elif isinstance(event, ActionEvent):
-        return server_action(event.room, event.actor, event.action)
-    elif isinstance(event, ReplyEvent):
-        return server_action(event.room, event.actor, event.text)
-    elif isinstance(event, ResultEvent):
-        return server_result(event.room, event.actor, event.result)
-    elif isinstance(event, StatusEvent):
-        pass
-    else:
-        logger.warning("Unknown event type: %s", event)
+    json_event = RootModel[event.__class__](event).model_dump()
+    json_event["type"] = event.type
+    send_and_append(json_event)
 
 
-def player_event(character: str, id: str, event: Literal["join", "leave"]):
-    json_broadcast = {
-        "type": "player",
-        "character": character,
-        "id": id,
-        "event": event,
-    }
-    send_and_append(json_broadcast)
+def player_event(character: str, client: str, status: Literal["join", "leave"]):
+    event = PlayerEvent(status=status, character=character, client=client)
+    broadcast(event)
 
 
 def player_list():
-    players = {value: key for key, value in list_players()}
     json_broadcast = {
         "type": "players",
-        "players": players,
+        "players": list_players(),
     }
+    # TODO: broadcast this
     send_and_append(json_broadcast)

@@ -1,5 +1,5 @@
 from json import loads
-from typing import Callable, Dict, Literal
+from typing import Any, Callable, Dict, List, Literal
 
 from .base import dataclass
 from .entity import Actor, Item, Room, WorldEntity
@@ -11,7 +11,7 @@ class BaseEvent:
     A base event class.
     """
 
-    event: str
+    type: str
 
 
 @dataclass
@@ -20,7 +20,7 @@ class GenerateEvent:
     A new entity has been generated.
     """
 
-    event = "generate"
+    type = "generate"
     name: str
     entity: WorldEntity | None = None
 
@@ -39,9 +39,9 @@ class ActionEvent:
     An actor has taken an action.
     """
 
-    event = "action"
+    type = "action"
     action: str
-    parameters: Dict[str, str]
+    parameters: Dict[str, bool | float | int | str]
 
     room: Room
     actor: Actor
@@ -65,7 +65,7 @@ class PromptEvent:
     A prompt for an actor to take an action.
     """
 
-    event = "prompt"
+    type = "prompt"
     prompt: str
     room: Room
     actor: Actor
@@ -83,7 +83,7 @@ class ReplyEvent:
     This is the non-JSON version of an ActionEvent.
     """
 
-    event = "text"
+    type = "reply"
     text: str
     room: Room
     actor: Actor
@@ -99,7 +99,7 @@ class ResultEvent:
     A result of an action.
     """
 
-    event = "result"
+    type = "result"
     result: str
     room: Room
     actor: Actor
@@ -111,10 +111,25 @@ class StatusEvent:
     A status broadcast event with text.
     """
 
-    event = "status"
+    type = "status"
     text: str
     room: Room | None = None
     actor: Actor | None = None
+
+
+@dataclass
+class SnapshotEvent:
+    """
+    A snapshot of the world state.
+
+    This one is slightly unusual, because the world has already been dumped to a JSON-compatible dictionary.
+    That is especially important for the memory, which is a dictionary of actor names to lists of messages.
+    """
+
+    type = "snapshot"
+    world: Dict[str, Any]
+    memory: Dict[str, List[Any]]
+    step: int
 
 
 @dataclass
@@ -123,7 +138,7 @@ class PlayerEvent:
     A player joining or leaving the game.
     """
 
-    event = "player"
+    type = "player"
     status: Literal["join", "leave"]
     character: str
     client: str

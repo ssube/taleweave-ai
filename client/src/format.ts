@@ -6,19 +6,15 @@ export function formatActionName(name: string) {
 }
 
 export function formatAction(data: any) {
-  const actionName = formatActionName(data.function);
+  const actionName = formatActionName(data.action);
   const actionParameters = data.parameters;
 
   return `Action: ${actionName} - ${Object.entries(actionParameters).map(([key, value]) => `${key}: ${value}`).join(', ')}`;
 }
 
 export function formatInput(data: any) {
-  try {
-    const action = formatAction(JSON.parse(data.input));
-    return `Starting turn: ${action}`;
-  } catch (err) {
-    return `Error parsing input: ${err}`;
-  }
+  const action = formatAction(data);
+  return `Starting turn: ${action}`;
 }
 
 export function formatResult(data: any) {
