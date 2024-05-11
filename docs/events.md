@@ -16,6 +16,12 @@
     - [Reply Events](#reply-events)
     - [Result Events](#result-events)
     - [Status Events](#status-events)
+  - [Server-specific Events](#server-specific-events)
+    - [Websocket Server Events](#websocket-server-events)
+      - [Websocket New Client](#websocket-new-client)
+      - [Websocket Player Become Character](#websocket-player-become-character)
+      - [Websocket Player Input](#websocket-player-input)
+      - [Websocket Player Name](#websocket-player-name)
 
 ## Event Types
 
@@ -88,3 +94,53 @@ more frequent progress updates when generating with slow models.
 ### Result Events
 
 ### Status Events
+
+## Server-specific Events
+
+### Websocket Server Events
+
+The websocket server has a few unique message types that it uses to communicate metadata with socket clients.
+
+#### Websocket New Client
+
+Notify a new client of its unique ID.
+
+```yaml
+type: "id"
+id: str
+```
+
+This is an outgoing event from the server to clients.
+
+#### Websocket Player Become Character
+
+A socket client wants to play as a character in the world.
+
+```yaml
+type: "player"
+become: str
+```
+
+This is an incoming event from clients to the server.
+
+#### Websocket Player Input
+
+A socket client has sent some input, usually in response to a prompt.
+
+```yaml
+type: "input"
+input: str
+```
+
+This is an incoming event from clients to the server.
+
+#### Websocket Player Name
+
+Update the player name attached to a socket client.
+
+```yaml
+type: "player"
+name: str
+```
+
+This is an incoming event from clients to the server.

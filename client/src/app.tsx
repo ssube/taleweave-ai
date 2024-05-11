@@ -20,6 +20,8 @@ import {
   Switch,
   FormGroup,
   FormControlLabel,
+  TextField,
+  IconButton,
 } from '@mui/material';
 import { Allotment } from 'allotment';
 
@@ -30,6 +32,8 @@ import { PlayerPanel } from './player.js';
 import 'allotment/dist/style.css';
 import './main.css';
 import { HistoryPanel } from './history.js';
+import { set } from 'lodash';
+import { CheckBox, Save } from '@mui/icons-material';
 
 const useWebSocket = (useWebSocketModule as any).default;
 
@@ -74,15 +78,23 @@ export function DetailDialog(props: { setDetails: SetDetails; details: Maybe<Ite
 }
 
 export function App(props: AppProps) {
+  // client state - slice 1
   const [ activeTurn, setActiveTurn ] = useState<boolean>(false);
   const [ autoScroll, setAutoScroll ] = useState<boolean>(true);
+  const [ themeMode, setThemeMode ] = useState('light');
+
+  // client identity - slice 2
+  const [ clientId, setClientId ] = useState<string>('');
+  const [ clientName, setClientName ] = useState<string>('');
+
+  // world state - slice 3
   const [ detailEntity, setDetailEntity ] = useState<Maybe<Item | Actor | Room>>(undefined);
   const [ character, setCharacter ] = useState<Maybe<Actor>>(undefined);
-  const [ clientId, setClientId ] = useState<string>('');
   const [ world, setWorld ] = useState<Maybe<World>>(undefined);
-  const [ themeMode, setThemeMode ] = useState('light');
-  const [ history, setHistory ] = useState<Array<string>>([]);
   const [ players, setPlayers ] = useState<Record<string, string>>({});
+
+  // socket stuff
+  const [ history, setHistory ] = useState<Array<string>>([]);
   const { lastMessage, readyState, sendMessage } = useWebSocket(props.socketUrl);
 
   function setPlayer(actor: Maybe<Actor>) {
@@ -97,6 +109,11 @@ export function App(props: AppProps) {
       sendMessage(JSON.stringify({ type: 'input', input }));
       setActiveTurn(false);
     }
+  }
+
+  function sendName(name: string) {
+    sendMessage(JSON.stringify({ type: 'player', name: clientName }));
+    setClientName(name);
   }
 
   const theme = createTheme({
@@ -174,6 +191,22 @@ export function App(props: AppProps) {
                 inputProps={{ 'aria-label': 'controlled' }}
                 sx={{ marginLeft: 'auto' }}
               />} label="Auto Scroll" />
+            </FormGroup>
+            <FormGroup row>
+              <TextField
+                label="Player Name"
+                value={clientName}
+                onChange={(e) => setClientName(e.target.value)}
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter') {
+                    sendName(clientName);
+                  }
+                }}
+                sx={{ marginLeft: 'auto' }}
+              />
+              <IconButton onClick={() => sendName(clientName)}>
+                <Save />
+              </IconButton>
             </FormGroup>
           </Stack>
         </Alert>

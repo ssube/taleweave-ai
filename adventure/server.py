@@ -3,7 +3,7 @@ from collections import deque
 from json import dumps, loads
 from logging import getLogger
 from threading import Thread
-from typing import Literal
+from typing import Dict, Literal
 from uuid import uuid4
 
 import websockets
@@ -27,6 +27,11 @@ logger = getLogger(__name__)
 connected = set()
 recent_events = deque(maxlen=100)
 last_snapshot = None
+player_names: Dict[str, str] = {}
+
+
+def get_player_name(client_id: str) -> str:
+    return player_names.get(client_id, client_id)
 
 
 async def handler(websocket):
@@ -70,45 +75,74 @@ async def handler(websocket):
         try:
             # if this socket is attached to a character and that character's turn is active, wait for input
             message = await websocket.recv()
-            logger.info(f"Received message for {id}: {message}")
+            player_name = get_player_name(id)
+            logger.info(f"Received message for {player_name}: {message}")
 
             try:
                 data = loads(message)
                 message_type = data.get("type", None)
                 if message_type == "player":
-                    character_name = data["become"]
-                    if has_player(character_name):
-                        logger.error(f"Character {character_name} is already in use")
-                        continue
-
-                    # TODO: should this always remove?
-                    remove_player(id)
-
-                    actor, llm_agent = get_actor_agent_for_name(character_name)
-                    if not actor:
-                        logger.error(f"Failed to find actor {character_name}")
-                        continue
-
-                    # prevent any recursive fallback bugs
-                    if isinstance(llm_agent, RemotePlayer):
-                        logger.warning(
-                            "patching recursive fallback for %s", character_name
+                    if "name" in data:
+                        new_player_name = data["name"]
+                        existing_id = next(
+                            (
+                                k
+                                for k, v in player_names.items()
+                                if v == new_player_name
+                            ),
+                            None,
                         )
-                        llm_agent = llm_agent.fallback_agent
+                        if existing_id is not None:
+                            logger.error(
+                                f"Name {new_player_name} is already in use by {existing_id}"
+                            )
+                            continue
 
-                    # player_name = data["player"]
-                    player = RemotePlayer(
-                        actor.name, actor.backstory, sync_turn, fallback_agent=llm_agent
-                    )
-                    set_player(id, player)
-                    logger.info(f"Client {id} is now character {character_name}")
+                        logger.info(
+                            f"changing player name for {id} to {new_player_name}"
+                        )
+                        player_names[id] = new_player_name
 
-                    # swap out the LLM agent
-                    set_actor_agent(actor.name, actor, player)
+                    elif "become" in data:
+                        character_name = data["become"]
+                        if has_player(character_name):
+                            logger.error(
+                                f"Character {character_name} is already in use"
+                            )
+                            continue
 
-                    # notify all clients that this character is now active
-                    player_event(character_name, id, "join")
-                    player_list()
+                        # TODO: should this always remove?
+                        remove_player(id)
+
+                        actor, llm_agent = get_actor_agent_for_name(character_name)
+                        if not actor:
+                            logger.error(f"Failed to find actor {character_name}")
+                            continue
+
+                        # prevent any recursive fallback bugs
+                        if isinstance(llm_agent, RemotePlayer):
+                            logger.warning(
+                                "patching recursive fallback for %s", character_name
+                            )
+                            llm_agent = llm_agent.fallback_agent
+
+                        player = RemotePlayer(
+                            actor.name,
+                            actor.backstory,
+                            sync_turn,
+                            fallback_agent=llm_agent,
+                        )
+                        set_player(id, player)
+                        logger.info(
+                            f"Client {player_name} is now character {character_name}"
+                        )
+
+                        # swap out the LLM agent
+                        set_actor_agent(actor.name, actor, player)
+
+                        # notify all clients that this character is now active
+                        player_event(character_name, player_name, "join")
+                        player_list()
                 elif message_type == "input":
                     player = get_player(id)
                     if player and isinstance(player, RemotePlayer):
@@ -129,8 +163,9 @@ async def handler(websocket):
     if player and isinstance(player, RemotePlayer):
         remove_player(id)
 
-        logger.info("Disconnecting player for %s", player.name)
-        player_event(player.name, id, "leave")
+        player_name = get_player_name(id)
+        logger.info("Disconnecting player %s from %s", player_name, player.name)
+        player_event(player.name, player_name, "leave")
         player_list()
 
         actor, _ = get_actor_agent_for_name(player.name)
@@ -138,7 +173,7 @@ async def handler(websocket):
             logger.info("Restoring LLM agent for %s", player.name)
             set_actor_agent(player.name, actor, player.fallback_agent)
 
-    logger.info("Client disconnected: %s", id)
+    logger.info("Client disconnected: %s", player_name)
 
 
 socket_thread = None

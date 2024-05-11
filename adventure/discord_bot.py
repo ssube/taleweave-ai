@@ -221,7 +221,7 @@ def launch_bot():
                 continue
 
             event = event_queue.get()
-            logger.info("broadcasting event %s", event.type)
+            logger.debug("broadcasting %s event", event.type)
 
             if client:
                 event_task = client.loop.create_task(broadcast_event(event))
@@ -343,7 +343,7 @@ def embed_from_player(event: PlayerEvent):
         description = f"{event.client} is now playing as {event.character}"
     else:
         title = "Player Left"
-        description = f"{event.client} has left the game, {event.character} will be played by the AI"
+        description = f"{event.client} has left the game. {event.character} is now controlled by an LLM"
 
     player_embed = Embed(title=title, description=description)
     return player_embed
