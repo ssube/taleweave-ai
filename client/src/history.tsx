@@ -1,23 +1,30 @@
+import { Maybe } from '@apextoaster/js-utils';
 import { Divider, List } from '@mui/material';
 import React, { useEffect, useRef } from 'react';
-import { Maybe } from '@apextoaster/js-utils';
+import { useStore } from 'zustand';
 import { EventItem } from './events';
+import { store, StoreState } from './store';
 
-export interface HistoryPanelProps {
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  history: Array<any>;
-  scroll: 'auto' | 'instant' | 'smooth' | false;
+export function historyStateSelector(s: StoreState) {
+  return {
+    history: s.eventHistory,
+    scroll: s.autoScroll,
+  };
 }
 
-export function HistoryPanel(props: HistoryPanelProps) {
-  const { history, scroll } = props;
+export function HistoryPanel() {
+  const state = useStore(store, historyStateSelector);
+  const { history, scroll } = state;
+
   const scrollRef = useRef<Maybe<Element>>(undefined);
+
+  const scrollBehavior = state.scroll ? 'smooth' : 'auto';
 
   useEffect(() => {
     if (scrollRef.current && scroll !== false) {
-      scrollRef.current.scrollIntoView({ behavior: scroll as ScrollBehavior, block: 'end' });
+      scrollRef.current.scrollIntoView({ behavior: scrollBehavior, block: 'end' });
     }
-  }, [scrollRef.current, props.scroll]);
+  }, [scrollRef.current, scrollBehavior]);
 
   const items = history.map((item, index) => {
     if (index === history.length - 1) {

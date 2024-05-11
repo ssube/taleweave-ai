@@ -339,7 +339,7 @@ def embed_from_result(event: ResultEvent):
 
 def embed_from_player(event: PlayerEvent):
     if event.status == "join":
-        title = "New Player"
+        title = "Player Joined"
         description = f"{event.client} is now playing as {event.character}"
     else:
         title = "Player Left"

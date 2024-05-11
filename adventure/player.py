@@ -8,6 +8,7 @@ from langchain_core.messages import AIMessage, BaseMessage, HumanMessage
 from packit.agent import Agent
 from packit.utils import could_be_json
 
+from adventure.context import get_current_context
 from adventure.models.event import PromptEvent
 
 logger = getLogger(__name__)
@@ -182,7 +183,10 @@ class RemotePlayer(BasePlayer):
         formatted_prompt = prompt.format(**kwargs)
         self.memory.append(HumanMessage(content=formatted_prompt))
 
-        prompt_event = PromptEvent.from_text(formatted_prompt, None, None)
+        _, current_room, current_actor = get_current_context()
+        prompt_event = PromptEvent(
+            prompt=formatted_prompt, room=current_room, actor=current_actor
+        )
 
         try:
             logger.info(f"prompting remote player: {self.name}")

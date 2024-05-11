@@ -27,7 +27,8 @@
     "react-i18next": "^12.2.0",
     "react-use": "^17.4.3",
     "react-use-websocket": "^4.8.1",
-    "tslib": "^2.6.2"
+    "tslib": "^2.6.2",
+    "zustand": "^4.5.2"
   },
   "devDependencies": {
     "@mochajs/multi-reporter": "^1.1.0",

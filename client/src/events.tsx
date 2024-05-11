@@ -94,7 +94,7 @@ export function PlayerEventItem(props: EventItemProps) {
   let primary = '';
   let secondary = '';
   if (status === 'join') {
-    primary = 'New Player';
+    primary = 'Player Joined';
     secondary = `${client} is now playing as ${character}`;
   }
   if (status === 'leave') {

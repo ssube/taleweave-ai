@@ -70,10 +70,6 @@ class PromptEvent:
     room: Room
     actor: Actor
 
-    @staticmethod
-    def from_text(prompt: str, room: Room, actor: Actor) -> "PromptEvent":
-        return PromptEvent(prompt=prompt, room=room, actor=actor)
-
 
 @dataclass
 class ReplyEvent:

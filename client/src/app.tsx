@@ -1,223 +1,185 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
-import React, { useState, useEffect, Fragment } from 'react';
-import useWebSocketModule, { ReadyState } from 'react-use-websocket';
 import { Maybe, doesExist } from '@apextoaster/js-utils';
 import {
   Button,
+  Container,
   CssBaseline,
   Dialog,
+  DialogActions,
   DialogContent,
   DialogTitle,
-  PaletteMode,
-  ThemeProvider,
-  createTheme,
-  List,
-  Divider,
-  Typography,
-  Container,
   Stack,
-  Alert,
-  Switch,
-  FormGroup,
-  FormControlLabel,
-  TextField,
-  IconButton,
+  ThemeProvider,
+  Typography,
+  createTheme,
 } from '@mui/material';
 import { Allotment } from 'allotment';
+import React, { Fragment, useEffect } from 'react';
+import useWebSocketModule from 'react-use-websocket';
+import { useStore } from 'zustand';
 
-import { Room, Actor, Item, World, WorldPanel, SetDetails } from './world.js';
-import { EventItem } from './events.js';
+import { HistoryPanel } from './history.js';
+import { Actor, Item, Room } from './models.js';
 import { PlayerPanel } from './player.js';
+import { store, StoreState } from './store.js';
+import { WorldPanel } from './world.js';
+import { Statusbar } from './status.js';
 
 import 'allotment/dist/style.css';
 import './main.css';
-import { HistoryPanel } from './history.js';
-import { set } from 'lodash';
-import { CheckBox, Save } from '@mui/icons-material';
 
 const useWebSocket = (useWebSocketModule as any).default;
-
-const statusStrings = {
-  [ReadyState.CONNECTING]: 'Connecting',
-  [ReadyState.OPEN]: 'Running',
-  [ReadyState.CLOSING]: 'Closing',
-  [ReadyState.CLOSED]: 'Closed',
-  [ReadyState.UNINSTANTIATED]: 'Unready',
-};
 
 export interface AppProps {
   socketUrl: string;
 }
 
-export function EntityDetails(props: { entity: Maybe<Item | Actor | Room>; close: () => void }) {
+export interface EntityDetailsProps {
+  entity: Maybe<Item | Actor | Room>;
+  close: () => void;
+}
+
+export function EntityDetails(props: EntityDetailsProps) {
+  const { entity, close } = props;
+
   // eslint-disable-next-line no-restricted-syntax
-  if (!doesExist(props.entity)) {
+  if (!doesExist(entity)) {
     return <Fragment />;
   }
 
   return <Fragment>
-    <DialogTitle>{props.entity.name}</DialogTitle>
-    <DialogContent>
+    <DialogTitle>{entity.name}</DialogTitle>
+    <DialogContent dividers>
       <Typography>
-        {props.entity.description}
+        {entity.description}
       </Typography>
-      <Button onClick={() => props.close()}>Close</Button>
     </DialogContent>
+    <DialogActions>
+      <Button onClick={close}>Close</Button>
+    </DialogActions>
   </Fragment>;
 }
 
-export function DetailDialog(props: { setDetails: SetDetails; details: Maybe<Item | Actor | Room> }) {
-  const { details, setDetails } = props;
+export function detailStateSelector(s: StoreState) {
+  return {
+    detailEntity: s.detailEntity,
+    clearDetailEntity: s.clearDetailEntity,
+  };
+}
+
+export function DetailDialog() {
+  const state = useStore(store, detailStateSelector);
+  const { detailEntity, clearDetailEntity } = state;
 
   return <Dialog
-    open={doesExist(details)}
-    onClose={() => setDetails(undefined)}
+    open={doesExist(detailEntity)}
+    onClose={clearDetailEntity}
   >
-    <EntityDetails entity={details} close={() => setDetails(undefined)} />
+    <EntityDetails entity={detailEntity} close={clearDetailEntity} />
   </Dialog>;
 }
 
+export function appStateSelector(s: StoreState) {
+  return {
+    themeMode: s.themeMode,
+    setReadyState: s.setReadyState,
+  };
+}
+
 export function App(props: AppProps) {
-  // client state - slice 1
-  const [ activeTurn, setActiveTurn ] = useState<boolean>(false);
-  const [ autoScroll, setAutoScroll ] = useState<boolean>(true);
-  const [ themeMode, setThemeMode ] = useState('light');
-
-  // client identity - slice 2
-  const [ clientId, setClientId ] = useState<string>('');
-  const [ clientName, setClientName ] = useState<string>('');
-
-  // world state - slice 3
-  const [ detailEntity, setDetailEntity ] = useState<Maybe<Item | Actor | Room>>(undefined);
-  const [ character, setCharacter ] = useState<Maybe<Actor>>(undefined);
-  const [ world, setWorld ] = useState<Maybe<World>>(undefined);
-  const [ players, setPlayers ] = useState<Record<string, string>>({});
+  const state = useStore(store, appStateSelector);
+  const { themeMode, setReadyState } = state;
 
   // socket stuff
-  const [ history, setHistory ] = useState<Array<string>>([]);
   const { lastMessage, readyState, sendMessage } = useWebSocket(props.socketUrl);
 
   function setPlayer(actor: Maybe<Actor>) {
-    // do not setCharacter until the server confirms the player change
+    // do not call setCharacter until the server confirms the player change
     if (doesExist(actor)) {
       sendMessage(JSON.stringify({ type: 'player', become: actor.name }));
     }
   }
 
   function sendInput(input: string) {
+    const { character, setActiveTurn } = store.getState();
     if (doesExist(character)) {
       sendMessage(JSON.stringify({ type: 'input', input }));
       setActiveTurn(false);
     }
   }
 
-  function sendName(name: string) {
-    sendMessage(JSON.stringify({ type: 'player', name: clientName }));
+  function setName(name: string) {
+    const { setClientName } = store.getState();
+    sendMessage(JSON.stringify({ type: 'player', name }));
     setClientName(name);
   }
 
   const theme = createTheme({
     palette: {
-      mode: themeMode as PaletteMode,
+      mode: themeMode,
     },
   });
 
-  const connectionStatus = statusStrings[readyState as ReadyState];
-
   useEffect(() => {
+    const { setClientId, setActiveTurn, setPlayers, appendEvent, setWorld, world, clientId, setCharacter } = store.getState();
     if (doesExist(lastMessage)) {
-      const data = JSON.parse(lastMessage.data);
+      const event = JSON.parse(lastMessage.data);
 
-      if (data.type === 'id') {
-        // unicast the client id to the player
-        setClientId(data.id);
-        return;
+      // handle special events
+      switch (event.type) {
+        case 'id':
+          // unicast the client id to the player, do not append to history
+          setClientId(event.id);
+          return;
+        case 'prompt':
+          // prompts are broadcast to all players
+          if (event.client === clientId) {
+            // only notify the active player
+            setActiveTurn(true);
+            break;
+          } else {
+            setActiveTurn(false);
+            return;
+          }
+        case 'player':
+          if (event.status === 'join' && doesExist(world) && event.client === clientId) {
+            const { character: characterName } = event;
+            const actor = world.rooms.flatMap((room) => room.actors).find((a) => a.name === characterName);
+            setCharacter(actor);
+          }
+          break;
+        case 'players':
+          setPlayers(event.players);
+          return;
+        case 'snapshot':
+          setWorld(event.world);
+          break;
+        default:
+          // this is not concerning, other events are kept in history and displayed
       }
 
-      if (data.type === 'prompt') {
-        // prompts are broadcast to all players
-        if (data.client === clientId) {
-          // only notify the active player
-          setActiveTurn(true);
-        } else {
-          const message = `Waiting for ${data.character} to take their turn`;
-          setHistory((prev) => prev.concat(message));
-        }
-        return;
-      }
-
-      if (data.type === 'players') {
-        setPlayers(data.players);
-        return;
-      }
-
-      setHistory((prev) => prev.concat(data));
-
-      // if we get a world event, update the last world state
-      if (data.type === 'snapshot') {
-        setWorld(data.world);
-      }
-
-      if (doesExist(world) && data.type === 'player' && data.id === clientId && data.event === 'join') {
-        // find the actor that matches the player name
-        const { character: characterName } = data;
-        const actor = world.rooms.flatMap((room) => room.actors).find((a) => a.name === characterName);
-        setCharacter(actor);
-      }
+      appendEvent(event);
     }
   }, [lastMessage]);
 
+  useEffect(() => {
+    setReadyState(readyState);
+  }, [readyState]);
 
   return <ThemeProvider theme={theme}>
     <CssBaseline />
-    <DetailDialog details={detailEntity} setDetails={setDetailEntity} />
+    <DetailDialog />
     <Container maxWidth='xl'>
       <Stack direction="column">
-        <Alert icon={false} severity="success">
-          <Stack direction="row" alignItems="center" gap={4}>
-            <Typography>
-              Status: {connectionStatus}
-            </Typography>
-            <FormGroup row>
-              <FormControlLabel control={<Switch
-                checked={themeMode === 'dark'}
-                onChange={() => setThemeMode(themeMode === 'dark' ? 'light' : 'dark')}
-                inputProps={{ 'aria-label': 'controlled' }}
-                sx={{ marginLeft: 'auto' }}
-              />} label="Dark Mode" />
-              <FormControlLabel control={<Switch
-                checked={autoScroll}
-                onChange={() => setAutoScroll(autoScroll === false)}
-                inputProps={{ 'aria-label': 'controlled' }}
-                sx={{ marginLeft: 'auto' }}
-              />} label="Auto Scroll" />
-            </FormGroup>
-            <FormGroup row>
-              <TextField
-                label="Player Name"
-                value={clientName}
-                onChange={(e) => setClientName(e.target.value)}
-                onKeyDown={(e) => {
-                  if (e.key === 'Enter') {
-                    sendName(clientName);
-                  }
-                }}
-                sx={{ marginLeft: 'auto' }}
-              />
-              <IconButton onClick={() => sendName(clientName)}>
-                <Save />
-              </IconButton>
-            </FormGroup>
-          </Stack>
-        </Alert>
+        <Statusbar setName={setName} />
         <Stack direction="row" spacing={2}>
           <Allotment className='body-allotment'>
             <Stack direction="column" spacing={2} sx={{ minWidth: 400 }} className="scroll-history">
-              <PlayerPanel actor={character} activeTurn={activeTurn} setDetails={setDetailEntity} sendInput={sendInput}  />
-              <WorldPanel world={world} activeCharacter={character} setDetails={setDetailEntity} setPlayer={setPlayer} />
+              <PlayerPanel sendInput={sendInput} />
+              <WorldPanel setPlayer={setPlayer} />
             </Stack>
             <Stack direction="column" sx={{ minWidth: 600 }} className="scroll-history">
-              <HistoryPanel history={history} scroll={autoScroll ? 'instant' : false} />
+              <HistoryPanel />
             </Stack>
           </Allotment>
         </Stack>

@@ -1,6 +1,6 @@
 import { doesExist } from '@apextoaster/js-utils';
 import { createRoot } from 'react-dom/client';
-import React from 'react';
+import React, { StrictMode } from 'react';
 
 import { App } from './app.js';
 
@@ -14,5 +14,5 @@ window.addEventListener('DOMContentLoaded', () => {
 
   const hostname = window.location.hostname;
   const root = createRoot(history);
-  root.render(<App socketUrl={`ws://${hostname}:8001/`} />);
+  root.render(<StrictMode><App socketUrl={`ws://${hostname}:8001/`} /></StrictMode>);
 });

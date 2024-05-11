@@ -3,7 +3,7 @@ from collections import deque
 from json import dumps, loads
 from logging import getLogger
 from threading import Thread
-from typing import Dict, Literal
+from typing import Any, Dict, Literal
 from uuid import uuid4
 
 import websockets
@@ -157,6 +157,8 @@ async def handler(websocket):
             break
 
     connected.remove(websocket)
+    if id in player_names:
+        del player_names[id]
 
     # swap out the character for the original agent when they disconnect
     player = get_player(id)
@@ -173,11 +175,10 @@ async def handler(websocket):
             logger.info("Restoring LLM agent for %s", player.name)
             set_actor_agent(player.name, actor, player.fallback_agent)
 
-    logger.info("Client disconnected: %s", player_name)
+    logger.info("Client disconnected: %s", id)
 
 
 socket_thread = None
-static_thread = None
 
 
 def server_json(obj):
@@ -195,7 +196,7 @@ def send_and_append(message):
 
 
 def launch_server():
-    global socket_thread, static_thread
+    global socket_thread
 
     def run_sockets():
         asyncio.run(server_main())
@@ -222,7 +223,7 @@ def server_system(world: World, step: int):
 
 
 def server_event(event: GameEvent):
-    json_event = RootModel[event.__class__](event).model_dump()
+    json_event: Dict[str, Any] = RootModel[event.__class__](event).model_dump()
     json_event["type"] = event.type
     send_and_append(json_event)
 
