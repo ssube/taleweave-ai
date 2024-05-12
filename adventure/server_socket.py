@@ -12,7 +12,12 @@ import websockets
 from PIL import Image
 from pydantic import RootModel
 
-from adventure.context import broadcast, get_actor_agent_for_name, set_actor_agent
+from adventure.context import (
+    broadcast,
+    get_actor_agent_for_name,
+    get_current_world,
+    set_actor_agent,
+)
 from adventure.models.entity import Actor, Item, Room, World
 from adventure.models.event import (
     GameEvent,
@@ -29,16 +34,16 @@ from adventure.player import (
     remove_player,
     set_player,
 )
-from adventure.render_comfy import render_event
+from adventure.render_comfy import render_entity, render_event
 from adventure.state import snapshot_world, world_json
 
 logger = getLogger(__name__)
 
 connected = set()
+last_snapshot: str | None = None
+player_names: Dict[str, str] = {}
 recent_events: MutableSequence[GameEvent] = deque(maxlen=100)
 recent_json: MutableSequence[str] = deque(maxlen=100)
-last_snapshot = None
-player_names: Dict[str, str] = {}
 
 
 def get_player_name(client_id: str) -> str:
@@ -47,13 +52,14 @@ def get_player_name(client_id: str) -> str:
 
 async def handler(websocket):
     id = uuid4().hex
-    logger.info("Client connected, given id: %s", id)
+    logger.info("client connected, given id: %s", id)
     connected.add(websocket)
 
     async def next_turn(character: str, prompt: str) -> None:
         await websocket.send(
             dumps(
                 {
+                    # TODO: these should be fields in the PromptEvent
                     "type": "prompt",
                     "client": id,
                     "character": character,
@@ -64,6 +70,7 @@ async def handler(websocket):
         )
 
     def sync_turn(event: PromptEvent) -> bool:
+        # TODO: nothing about this is good
         player = get_player(id)
         if player and player.name == event.actor.name:
             asyncio.run(next_turn(event.actor.name, event.prompt))
@@ -74,21 +81,21 @@ async def handler(websocket):
     try:
         await websocket.send(dumps({"type": "id", "client": id}))
 
-        # TODO: only send this if the recent events don't contain a snapshot
+        # only send the snapshot once
         if last_snapshot and last_snapshot not in recent_json:
             await websocket.send(last_snapshot)
 
         for message in recent_json:
             await websocket.send(message)
     except Exception:
-        logger.exception("Failed to send recent messages to new client")
+        logger.exception("failed to send recent messages to new client")
 
     while True:
         try:
             # if this socket is attached to a character and that character's turn is active, wait for input
             message = await websocket.recv()
             player_name = get_player_name(id)
-            logger.info(f"Received message for {player_name}: {message}")
+            logger.info(f"received message for {player_name}: {message}")
 
             try:
                 data = loads(message)
@@ -106,7 +113,7 @@ async def handler(websocket):
                         )
                         if existing_id is not None:
                             logger.error(
-                                f"Name {new_player_name} is already in use by {existing_id}"
+                                f"name {new_player_name} is already in use by {existing_id}"
                             )
                             continue
 
@@ -119,7 +126,7 @@ async def handler(websocket):
                         character_name = data["become"]
                         if has_player(character_name):
                             logger.error(
-                                f"Character {character_name} is already in use"
+                                f"character {character_name} is already in use"
                             )
                             continue
 
@@ -146,7 +153,7 @@ async def handler(websocket):
                         )
                         set_player(id, player)
                         logger.info(
-                            f"Client {player_name} is now character {character_name}"
+                            f"client {player_name} is now character {character_name}"
                         )
 
                         # swap out the LLM agent
@@ -163,15 +170,10 @@ async def handler(websocket):
                         )
                         player.input_queue.put(data["input"])
                 elif message_type == "render":
-                    event_id = data["event"]
-                    event = next((e for e in recent_events if e.id == event_id), None)
-                    if event:
-                        render_event(event)
-                    else:
-                        logger.error(f"Failed to find event {event_id}")
+                    render_input(data)
 
             except Exception:
-                logger.exception("Failed to parse message")
+                logger.exception("failed to parse message")
         except websockets.ConnectionClosedOK:
             break
 
@@ -197,6 +199,56 @@ async def handler(websocket):
     logger.info("client disconnected: %s", id)
 
 
+def render_input(data):
+    world = get_current_world()
+    if not world:
+        logger.error("no world available")
+        return
+
+    if "event" in data:
+        event_id = data["event"]
+        event = next((e for e in recent_events if e.id == event_id), None)
+        if event:
+            render_event(event)
+        else:
+            logger.error(f"failed to find event {event_id}")
+    elif "actor" in data:
+        actor_name = data["actor"]
+        actor = next(
+            (a for r in world.rooms for a in r.actors if a.name == actor_name), None
+        )
+        if actor:
+            render_entity(actor)
+        else:
+            logger.error(f"failed to find actor {actor_name}")
+    elif "room" in data:
+        room_name = data["room"]
+        room = next((r for r in world.rooms if r.name == room_name), None)
+        if room:
+            render_entity(room)
+        else:
+            logger.error(f"failed to find room {room_name}")
+    elif "item" in data:
+        item_name = data["item"]
+        item = None
+        for room in world.rooms:
+            item = next((i for i in room.items if i.name == item_name), None)
+            if item:
+                break
+
+            for actor in room.actors:
+                item = next((i for i in actor.items if i.name == item_name), None)
+                if item:
+                    break
+
+        if item:
+            render_entity(item)
+        else:
+            logger.error(f"failed to find item {item_name}")
+    else:
+        logger.error(f"failed to find entity in {data}")
+
+
 socket_thread = None
 
 
@@ -220,6 +272,7 @@ def launch_server():
     def run_sockets():
         asyncio.run(server_main())
 
+    logger.info("launching websocket server")
     socket_thread = Thread(target=run_sockets, daemon=True)
     socket_thread.start()
 
@@ -228,7 +281,7 @@ def launch_server():
 
 async def server_main():
     async with websockets.serve(handler, "", 8001):
-        logger.info("Server started")
+        logger.info("websocket server started")
         await asyncio.Future()  # run forever
 
 

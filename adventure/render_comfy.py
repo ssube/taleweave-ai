@@ -1,22 +1,22 @@
-# This is an example that uses the websockets api to know when a prompt execution is done
-# Once the prompt execution is done it downloads the images using the /history endpoint
-
 import io
 import json
 import urllib.parse
 import urllib.request
-import uuid
 from logging import getLogger
 from os import environ, path
 from queue import Queue
 from random import choice, randint
 from threading import Thread
 from typing import List
+from uuid import uuid4
 
 import websocket  # NOTE: websocket-client (https://github.com/websocket-client/websocket-client)
+from jinja2 import Environment, FileSystemLoader, select_autoescape
 from PIL import Image
 
 from adventure.context import broadcast
+from adventure.models.config import Range, RenderConfig, Size
+from adventure.models.entity import WorldEntity
 from adventure.models.event import (
     ActionEvent,
     GameEvent,
@@ -29,15 +29,39 @@ from adventure.models.event import (
 logger = getLogger(__name__)
 
 server_address = environ["COMFY_API"]
-client_id = str(uuid.uuid4())
+client_id = uuid4().hex
+render_config: RenderConfig = RenderConfig(
+    cfg=Range(min=5, max=8),
+    checkpoints=[
+        "diffusion-sdxl-dynavision-0-5-5-7.safetensors",
+    ],
+    path="/tmp/adventure-images",
+    sizes={
+        "landscape": Size(width=1024, height=768),
+        "portrait": Size(width=768, height=1024),
+        "square": Size(width=768, height=768),
+    },
+    steps=Range(min=30, max=30),
+)
+
+
+# requests to generate images for game events
+render_queue: Queue[GameEvent | WorldEntity] = Queue()
+render_thread: Thread | None = None
 
 
 def generate_cfg():
-    return randint(5, 8)
+    if render_config.cfg.min == render_config.cfg.max:
+        return render_config.cfg.min
+
+    return randint(render_config.cfg.min, render_config.cfg.max)
 
 
 def generate_steps():
-    return 30
+    if render_config.steps.min == render_config.steps.max:
+        return render_config.steps.min
+
+    return randint(render_config.steps.min, render_config.steps.max)
 
 
 def generate_batches(
@@ -93,7 +117,7 @@ def get_images(ws, prompt):
             continue  # previews are binary data
 
     history = get_history(prompt_id)[prompt_id]
-    for o in history["outputs"]:
+    for _ in history["outputs"]:
         for node_id in history["outputs"]:
             node_output = history["outputs"][node_id]
             if "images" in node_output:
@@ -117,86 +141,47 @@ def generate_image_tool(prompt, count, size="landscape"):
     return output_paths
 
 
-sizes = {
-    "landscape": (1024, 768),
-    "portrait": (768, 1024),
-    "square": (768, 768),
-}
-
-
 def generate_images(
     prompt: str, count: int, size="landscape", prefix="output"
 ) -> List[str]:
     cfg = generate_cfg()
-    width, height = sizes.get(size, (512, 512))
+    dims = render_config.sizes[size]
     steps = generate_steps()
     seed = randint(0, 10000000)
-    checkpoint = choice(["diffusion-sdxl-dynavision-0-5-5-7.safetensors"])
+    checkpoint = choice(render_config.checkpoints)
     logger.info(
-        "generating %s images at %s by %s with prompt: %s", count, width, height, prompt
+        "generating %s images at %s by %s with prompt: %s",
+        count,
+        dims.width,
+        dims.height,
+        prompt,
+    )
+
+    env = Environment(
+        loader=FileSystemLoader(["adventure/templates"]),
+        autoescape=select_autoescape(["json"]),
+    )
+    template = env.get_template("comfy.json.j2")
+    result = template.render(
+        cfg=cfg,
+        height=dims.height,
+        width=dims.width,
+        steps=steps,
+        seed=seed,
+        checkpoint=checkpoint,
+        prompt=prompt.replace("\n", ". "),
+        negative_prompt="",
+        count=count,
+        prefix=prefix,
     )
 
     # parsing here helps ensure the template emits valid JSON
-    prompt_workflow = {
-        "3": {
-            "class_type": "KSampler",
-            "inputs": {
-                "cfg": cfg,
-                "denoise": 1,
-                "latent_image": ["5", 0],
-                "model": ["4", 0],
-                "negative": ["7", 0],
-                "positive": ["6", 0],
-                "sampler_name": "euler_ancestral",
-                "scheduler": "normal",
-                "seed": seed,
-                "steps": steps,
-            },
-        },
-        "4": {
-            "class_type": "CheckpointLoaderSimple",
-            "inputs": {"ckpt_name": checkpoint},
-        },
-        "5": {
-            "class_type": "EmptyLatentImage",
-            "inputs": {"batch_size": count, "height": height, "width": width},
-        },
-        "6": {
-            "class_type": "smZ CLIPTextEncode",
-            "inputs": {
-                "text": prompt,
-                "parser": "compel",
-                "mean_normalization": True,
-                "multi_conditioning": True,
-                "use_old_emphasis_implementation": False,
-                "with_SDXL": False,
-                "ascore": 6,
-                "width": width,
-                "height": height,
-                "crop_w": 0,
-                "crop_h": 0,
-                "target_width": width,
-                "target_height": height,
-                "text_g": "",
-                "text_l": "",
-                "smZ_steps": 1,
-                "clip": ["4", 1],
-            },
-        },
-        "7": {"class_type": "CLIPTextEncode", "inputs": {"text": "", "clip": ["4", 1]}},
-        "8": {
-            "class_type": "VAEDecode",
-            "inputs": {"samples": ["3", 0], "vae": ["4", 2]},
-        },
-        "9": {
-            "class_type": "SaveImage",
-            "inputs": {"filename_prefix": prefix, "images": ["8", 0]},
-        },
-    }
+    logger.debug("template workflow: %s", result)
+    prompt_workflow = json.loads(result)
 
-    logger.debug("Connecting to Comfy API at %s", server_address)
+    logger.debug("connecting to Comfy API at %s", server_address)
     ws = websocket.WebSocket()
-    ws.connect("ws://{}/ws?clientId={}".format(server_address, client_id))
+    ws.connect("ws://{}/ws?clientId={}".format(server_address, client_id), timeout=60)
     images = get_images(ws, prompt_workflow)
 
     results = []
@@ -207,8 +192,7 @@ def generate_images(
 
     paths: List[str] = []
     for j, image in enumerate(results):
-        # TODO: replace with environment variable
-        image_path = path.join("/home/ssube/adventure-images", f"{prefix}-{j}.png")
+        image_path = path.join(render_config.path, f"{prefix}-{j}.png")
         with open(image_path, "wb") as f:
             image_bytes = io.BytesIO()
             image.save(image_bytes, format="PNG")
@@ -244,51 +228,85 @@ def prompt_from_event(event: GameEvent) -> str | None:
     return None
 
 
-def prefix_from_event(event: GameEvent) -> str:
+def prompt_from_entity(entity: WorldEntity) -> str:
+    return entity.description
+
+
+def get_image_prefix(event: GameEvent | WorldEntity) -> str:
     if isinstance(event, ActionEvent):
-        return (
-            f"{event.actor.name}-{event.action}-{event.item.name if event.item else ''}"
-        )
+        return f"event-action-{event.actor.name}-{event.action}"
 
     if isinstance(event, ReplyEvent):
-        return f"{event.actor.name}-reply"
+        return f"event-reply-{event.actor.name}"
 
     if isinstance(event, ResultEvent):
-        return f"{event.actor.name}-result"
+        return f"event-result-{event.actor.name}"
 
     if isinstance(event, StatusEvent):
         return "status"
 
+    if isinstance(event, WorldEntity):
+        return f"entity-{event.__class__.__name__.lower()}-{event.name}"
+
     return "unknown"
-
-
-# requests to generate images for game events
-render_queue: Queue[GameEvent] = Queue()
 
 
 def render_loop():
     while True:
         event = render_queue.get()
-        prompt = prompt_from_event(event)
+        prefix = get_image_prefix(event)
+
+        # check if images already exist
+        image_index = 0
+        image_path = path.join(render_config.path, f"{prefix}-{image_index}.png")
+        existing_images = []
+        while path.exists(image_path):
+            existing_images.append(image_path)
+            image_index += 1
+            image_path = path.join(render_config.path, f"{prefix}-{image_index}.png")
+
+        if existing_images:
+            logger.info(
+                "using existing images for event %s: %s", event, existing_images
+            )
+            broadcast(RenderEvent(paths=existing_images, source=event))
+            continue
+
+        # generate the prompt
+        if isinstance(event, WorldEntity):
+            logger.info("rendering entity %s", event)
+            prompt = prompt_from_entity(event)
+        else:
+            logger.info("rendering event %s", event)
+            prompt = prompt_from_event(event)
+
+        # render or not
         if prompt:
             logger.info("rendering prompt for event %s: %s", event, prompt)
-            prefix = prefix_from_event(event)
             image_paths = generate_images(prompt, 2, prefix=prefix)
             broadcast(RenderEvent(paths=image_paths, source=event))
         else:
             logger.warning("no prompt for event %s", event)
 
 
+def render_entity(entity: WorldEntity):
+    render_queue.put(entity)
+
+
 def render_event(event: GameEvent):
     render_queue.put(event)
 
 
-render_thread = None
-
-
-def launch_render():
+def launch_render(config: RenderConfig):
+    global render_config
     global render_thread
 
+    # update the config
+    logger.info("updating render config: %s", config)
+    render_config = config
+
+    # start the render thread
+    logger.info("launching render thread")
     render_thread = Thread(target=render_loop, daemon=True)
     render_thread.start()
 

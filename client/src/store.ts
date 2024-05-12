@@ -10,7 +10,7 @@ export interface ClientState {
   autoScroll: boolean;
   clientId: string;
   clientName: string;
-  detailEntity: Maybe<Item | Actor | Room>;
+  detailEntity: Maybe<Item | Actor | Room | World>;
   eventHistory: Array<GameEvent>;
   readyState: ReadyState;
   themeMode: PaletteMode;
@@ -19,7 +19,7 @@ export interface ClientState {
   setAutoScroll: (autoScroll: boolean) => void;
   setClientId: (clientId: string) => void;
   setClientName: (name: string) => void;
-  setDetailEntity: (entity: Maybe<Item | Actor | Room>) => void;
+  setDetailEntity: (entity: Maybe<Item | Actor | Room | World>) => void;
   setReadyState: (state: ReadyState) => void;
   setThemeMode: (mode: PaletteMode) => void;
 

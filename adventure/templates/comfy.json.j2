@@ -1,0 +1,59 @@
+{
+    "3": {
+        "class_type": "KSampler",
+        "inputs": {
+            "cfg": {{ cfg }},
+            "denoise": 1,
+            "latent_image": ["5", 0],
+            "model": ["4", 0],
+            "negative": ["7", 0],
+            "positive": ["6", 0],
+            "sampler_name": "euler_ancestral",
+            "scheduler": "normal",
+            "seed": {{ seed }},
+            "steps": {{ steps }}
+        }
+    },
+    "4": {
+        "class_type": "CheckpointLoaderSimple",
+        "inputs": {
+            "ckpt_name": "{{ checkpoint }}"
+        }
+    },
+    "5": {
+        "class_type": "EmptyLatentImage",
+        "inputs": {
+            "batch_size": {{ count }},
+            "height": {{ height }},
+            "width": {{ width }}
+        }
+    },
+    "6": {
+        "class_type": "CLIPTextEncode",
+        "inputs": {
+            "text": {{ prompt | tojson }},
+            "clip": ["4", 1]
+        }
+    },
+    "7": {
+        "class_type": "CLIPTextEncode",
+        "inputs": {
+            "text": "",
+            "clip": ["4", 1]
+        }
+    },
+    "8": {
+        "class_type": "VAEDecode",
+        "inputs": {
+            "samples": ["3", 0],
+            "vae": ["4", 2]
+        }
+    },
+    "9": {
+        "class_type": "SaveImage",
+        "inputs": {
+            "filename_prefix": {{ prefix | tojson }},
+            "images": ["8", 0]
+        }
+    }
+}

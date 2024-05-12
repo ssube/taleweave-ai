@@ -1,82 +1,32 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import { Maybe, doesExist } from '@apextoaster/js-utils';
 import {
-  Button,
   Container,
   CssBaseline,
-  Dialog,
-  DialogActions,
-  DialogContent,
-  DialogTitle,
   Stack,
   ThemeProvider,
-  Typography,
   createTheme,
 } from '@mui/material';
 import { Allotment } from 'allotment';
-import React, { Fragment, useEffect } from 'react';
+import React, { useEffect } from 'react';
 import useWebSocketModule from 'react-use-websocket';
 import { useStore } from 'zustand';
 
 import { HistoryPanel } from './history.js';
-import { Actor, GameEvent, Item, Room } from './models.js';
+import { Actor } from './models.js';
 import { PlayerPanel } from './player.js';
-import { store, StoreState } from './store.js';
-import { WorldPanel } from './world.js';
 import { Statusbar } from './status.js';
+import { StoreState, store } from './store.js';
+import { WorldPanel } from './world.js';
 
 import 'allotment/dist/style.css';
+import { DetailDialog } from './details.js';
 import './main.css';
 
 const useWebSocket = (useWebSocketModule as any).default;
 
 export interface AppProps {
   socketUrl: string;
-}
-
-export interface EntityDetailsProps {
-  entity: Maybe<Item | Actor | Room>;
-  close: () => void;
-}
-
-export function EntityDetails(props: EntityDetailsProps) {
-  const { entity, close } = props;
-
-  // eslint-disable-next-line no-restricted-syntax
-  if (!doesExist(entity)) {
-    return <Fragment />;
-  }
-
-  return <Fragment>
-    <DialogTitle>{entity.name}</DialogTitle>
-    <DialogContent dividers>
-      <Typography>
-        {entity.description}
-      </Typography>
-    </DialogContent>
-    <DialogActions>
-      <Button onClick={close}>Close</Button>
-    </DialogActions>
-  </Fragment>;
-}
-
-export function detailStateSelector(s: StoreState) {
-  return {
-    detailEntity: s.detailEntity,
-    clearDetailEntity: s.clearDetailEntity,
-  };
-}
-
-export function DetailDialog() {
-  const state = useStore(store, detailStateSelector);
-  const { detailEntity, clearDetailEntity } = state;
-
-  return <Dialog
-    open={doesExist(detailEntity)}
-    onClose={clearDetailEntity}
-  >
-    <EntityDetails entity={detailEntity} close={clearDetailEntity} />
-  </Dialog>;
 }
 
 export function appStateSelector(s: StoreState) {
@@ -94,6 +44,10 @@ export function App(props: AppProps) {
   const { lastMessage, readyState, sendMessage } = useWebSocket(props.socketUrl);
 
   // socket senders
+  function renderEntity(type: string, entity: string) {
+    sendMessage(JSON.stringify({ type: 'render', [type]: entity }));
+  }
+
   function renderEvent(event: string) {
     sendMessage(JSON.stringify({ type: 'render', event }));
   }
@@ -138,14 +92,9 @@ export function App(props: AppProps) {
           return;
         case 'prompt':
           // prompts are broadcast to all players
-          if (event.client === clientId) {
-            // only notify the active player
-            setActiveTurn(true);
-            break;
-          } else {
-            setActiveTurn(false);
-            return;
-          }
+          // only notify the active player
+          setActiveTurn(event.client === clientId);
+          break;
         case 'player':
           if (event.status === 'join' && doesExist(world) && event.client === clientId) {
             const { character: characterName } = event;
@@ -173,7 +122,7 @@ export function App(props: AppProps) {
 
   return <ThemeProvider theme={theme}>
     <CssBaseline />
-    <DetailDialog />
+    <DetailDialog renderEntity={renderEntity} />
     <Container maxWidth='xl'>
       <Stack direction="column">
         <Statusbar setName={setName} />
@@ -184,7 +133,7 @@ export function App(props: AppProps) {
               <WorldPanel setPlayer={setPlayer} />
             </Stack>
             <Stack direction="column" sx={{ minWidth: 600 }} className="scroll-history">
-              <HistoryPanel renderEvent={renderEvent} />
+              <HistoryPanel renderEntity={renderEntity} renderEvent={renderEvent} />
             </Stack>
           </Allotment>
         </Stack>

@@ -6,7 +6,7 @@ import React from 'react';
 
 import { useStore } from 'zustand';
 import { StoreState, store } from './store';
-import { Actor, Item, Room, World } from './models';
+import { Actor, Item, Room } from './models';
 
 export type SetDetails = (entity: Maybe<Item | Actor | Room>) => void;
 export type SetPlayer = (actor: Maybe<Actor>) => void;
@@ -33,6 +33,7 @@ export function itemStateSelector(s: StoreState) {
 export function worldStateSelector(s: StoreState) {
   return {
     world: s.world,
+    setDetailEntity: s.setDetailEntity,
   };
 }
 
@@ -91,7 +92,7 @@ export function RoomItem(props: { room: Room } & BaseEntityItemProps) {
 export function WorldPanel(props: BaseEntityItemProps) {
   const { setPlayer } = props;
   const state = useStore(store, worldStateSelector);
-  const { world } = state;
+  const { world, setDetailEntity } = state;
 
   // eslint-disable-next-line no-restricted-syntax
   if (!doesExist(world)) {
@@ -111,6 +112,7 @@ export function WorldPanel(props: BaseEntityItemProps) {
         Theme: {world.theme}
       </Typography>
       <SimpleTreeView>
+        <TreeItem itemId="world-graph" label="Graph" onClick={() => setDetailEntity(world)} />
         {world.rooms.map((room) => <RoomItem key={room.name} room={room} setPlayer={setPlayer} />)}
       </SimpleTreeView>
     </CardContent>

@@ -1,0 +1,24 @@
+bot:
+  discord:
+    channels: [bots]
+render:
+  cfg:
+    min: 5
+    max: 8
+  checkpoints: [
+    "diffusion-sdxl-dynavision-0-5-5-7.safetensors",
+  ]
+  path: /tmp/adventure-images
+  sizes:
+    landscape:
+      width: 1280
+      height: 960
+    portrait:
+      width: 960
+      height: 1280
+    square:
+      width: 1024
+      height: 1024
+  steps:
+    min: 30
+    max: 50

@@ -13,6 +13,7 @@ from adventure.context import (
     get_current_world,
     set_actor_agent,
 )
+from adventure.models.config import DiscordBotConfig
 from adventure.models.event import (
     ActionEvent,
     GameEvent,
@@ -24,11 +25,18 @@ from adventure.models.event import (
     ResultEvent,
     StatusEvent,
 )
-from adventure.player import RemotePlayer, get_player, has_player, set_player
+from adventure.player import (
+    RemotePlayer,
+    get_player,
+    has_player,
+    remove_player,
+    set_player,
+)
 from adventure.render_comfy import render_event
 
 logger = getLogger(__name__)
 client = None
+bot_config: DiscordBotConfig = DiscordBotConfig(channels=["bots"])
 
 active_tasks = set()
 event_messages: Dict[str, str | GameEvent] = {}
@@ -45,17 +53,17 @@ def remove_tags(text: str) -> str:
 
 class AdventureClient(Client):
     async def on_ready(self):
-        logger.info(f"Logged in as {self.user}")
+        logger.info(f"logged in as {self.user}")
 
     async def on_reaction_add(self, reaction, user):
         if user == self.user:
             return
 
-        logger.info(f"Reaction added: {reaction} by {user}")
+        logger.info(f"reaction added: {reaction} by {user}")
         if reaction.emoji == "📷":
             message_id = reaction.message.id
             if message_id not in event_messages:
-                logger.warning(f"Message {message_id} not found in event messages")
+                logger.warning(f"message {message_id} not found in event messages")
                 # TODO: return error message
                 return
 
@@ -119,19 +127,25 @@ class AdventureClient(Client):
             return broadcast(join_event)
 
         player = get_player(user_name)
-        if player:
+        if isinstance(player, RemotePlayer):
             if message.content.startswith("!leave"):
-                # TODO: check if player is playing
-                # TODO: revert to LLM agent
-                logger.info(f"{user_name} has left the game!")
+                remove_player(user_name)
+
+                # revert to LLM agent
+                actor, _ = get_actor_agent_for_name(player.name)
+                if actor and player.fallback_agent:
+                    logger.info("restoring LLM agent for %s", player.name)
+                    set_actor_agent(actor.name, actor, player.fallback_agent)
+
+                # broadcast leave event
+                logger.info("disconnecting player %s from %s", user_name, player.name)
                 leave_event = PlayerEvent("leave", player.name, user_name)
                 return broadcast(leave_event)
-
-            if isinstance(player, RemotePlayer):
+            else:
                 content = remove_tags(message.content)
                 player.input_queue.put(content)
                 logger.info(
-                    f"Received message from {user_name} for {player.name}: {content}"
+                    f"received message from {user_name} for {player.name}: {content}"
                 )
                 return
 
@@ -141,11 +155,16 @@ class AdventureClient(Client):
         return
 
 
-def launch_bot():
+def launch_bot(config: DiscordBotConfig):
+    global bot_config
     global client
 
+    bot_config = config
+
+    # message contents need to be enabled for multi-server bots
     intents = Intents.default()
-    # intents.message_content = True
+    if bot_config.content_intent:
+        intents.message_content = True
 
     client = AdventureClient(intents=intents)
 
@@ -164,6 +183,7 @@ def launch_bot():
                 # logger.debug("no events to prompt")
                 continue
 
+            # wait for pending messages to send, to keep them in order
             if len(active_tasks) > 0:
                 logger.debug("waiting for active tasks to complete")
                 continue
@@ -178,6 +198,7 @@ def launch_bot():
             else:
                 logger.warning("no Discord client available")
 
+    logger.info("launching Discord bot")
     bot_thread = Thread(target=bot_main, daemon=True)
     bot_thread.start()
 
@@ -205,7 +226,7 @@ def get_active_channels():
         channel
         for guild in client.guilds
         for channel in guild.text_channels
-        if channel.name == "bots"
+        if channel.name in bot_config.channels
     ]
 
 
@@ -286,6 +307,8 @@ def embed_from_event(event: GameEvent) -> Embed:
         return embed_from_status(event)
     elif isinstance(event, PlayerEvent):
         return embed_from_player(event)
+    elif isinstance(event, PromptEvent):
+        return embed_from_prompt(event)
     else:
         logger.warning("unknown event type: %s", event)
 
@@ -334,8 +357,14 @@ def embed_from_player(event: PlayerEvent):
     return player_embed
 
 
+def embed_from_prompt(event: PromptEvent):
+    # TODO: ping the player
+    prompt_embed = Embed(title=event.room.name, description=event.actor.name)
+    prompt_embed.add_field(name="Prompt", value=event.prompt)
+    return prompt_embed
+
+
 def embed_from_status(event: StatusEvent):
-    # TODO: add room and actor
     status_embed = Embed(
         title=event.room.name if event.room else "",
         description=event.actor.name if event.actor else "",

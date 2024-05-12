@@ -5,7 +5,7 @@ from typing import List
 from packit.agent import Agent
 from packit.loops import loop_retry
 
-from adventure.models.entity import Actor, Item, Room, World
+from adventure.models.entity import Actor, Item, Room, World, WorldEntity
 from adventure.models.event import EventCallback, GenerateEvent
 
 logger = getLogger(__name__)
@@ -171,10 +171,18 @@ def generate_world(
 ) -> World:
     room_count = room_count or randint(3, max_rooms)
 
-    if callable(callback):
-        callback(
-            GenerateEvent.from_name(f"Generating a {theme} with {room_count} rooms")
-        )
+    def callback_wrapper(message: str | None = None, entity: WorldEntity | None = None):
+        if message:
+            event = GenerateEvent.from_name(message)
+        elif entity:
+            event = GenerateEvent.from_entity(entity)
+        else:
+            raise ValueError("Either message or entity must be provided")
+
+        if callable(callback):
+            callback(event)
+
+    callback_wrapper(message=f"Generating a {theme} with {room_count} rooms")
 
     existing_actors: List[str] = []
     existing_items: List[str] = []
@@ -186,17 +194,13 @@ def generate_world(
         room = generate_room(
             agent, theme, existing_rooms=existing_rooms, callback=callback
         )
+        callback_wrapper(entity=room)
         rooms.append(room)
         existing_rooms.append(room.name)
 
         item_count = randint(1, 3)
 
-        if callable(callback):
-            callback(
-                GenerateEvent.from_name(
-                    f"Generating {item_count} items for room: {room.name}"
-                )
-            )
+        callback_wrapper(f"Generating {item_count} items for room: {room.name}")
 
         for j in range(item_count):
             item = generate_item(
@@ -206,17 +210,16 @@ def generate_world(
                 existing_items=existing_items,
                 callback=callback,
             )
+            callback_wrapper(entity=item)
+
             room.items.append(item)
             existing_items.append(item.name)
 
         actor_count = randint(1, 3)
 
-        if callable(callback):
-            callback(
-                GenerateEvent.from_name(
-                    f"Generating {actor_count} actors for room: {room.name}"
-                )
-            )
+        callback_wrapper(
+            message=f"Generating {actor_count} actors for room: {room.name}"
+        )
 
         for j in range(actor_count):
             actor = generate_actor(
@@ -226,18 +229,15 @@ def generate_world(
                 existing_actors=existing_actors,
                 callback=callback,
             )
+            callback_wrapper(entity=actor)
+
             room.actors.append(actor)
             existing_actors.append(actor.name)
 
             # generate the actor's inventory
             item_count = randint(0, 2)
 
-            if callable(callback):
-                callback(
-                    GenerateEvent.from_name(
-                        f"Generating {item_count} items for actor {actor.name}"
-                    )
-                )
+            callback_wrapper(f"Generating {item_count} items for actor {actor.name}")
 
             for k in range(item_count):
                 item = generate_item(
@@ -247,6 +247,8 @@ def generate_world(
                     existing_items=existing_items,
                     callback=callback,
                 )
+                callback_wrapper(entity=item)
+
                 actor.items.append(item)
                 existing_items.append(item.name)
 

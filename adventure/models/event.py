@@ -1,5 +1,5 @@
 from json import loads
-from typing import Any, Callable, Dict, List, Literal
+from typing import Any, Callable, Dict, List, Literal, Union
 from uuid import uuid4
 
 from pydantic import Field
@@ -175,7 +175,7 @@ class RenderEvent(BaseEvent):
     id = Field(default_factory=uuid)
     type = "render"
     paths: List[str]
-    source: "GameEvent"
+    source: Union["GameEvent", WorldEntity]
 
 
 # event types

@@ -144,7 +144,7 @@ def format_logic(attributes: Attributes, rules: LogicTable, self=True) -> str:
                 logger.debug("label has no relevant description: %s", label)
 
     if len(labels) > 0:
-        logger.info("adding attribute labels: %s", labels)
+        logger.debug("adding attribute labels: %s", labels)
 
     return " ".join(labels)
 

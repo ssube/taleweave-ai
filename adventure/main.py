@@ -10,8 +10,9 @@ from yaml import Loader, load
 
 from adventure.context import set_current_step, set_dungeon_master
 from adventure.generate import generate_world
+from adventure.models.config import Config
 from adventure.models.entity import World, WorldState
-from adventure.models.event import EventCallback, GameEvent
+from adventure.models.event import EventCallback, GameEvent, GenerateEvent
 from adventure.models.files import PromptFile, WorldPrompt
 from adventure.plugins import load_plugin
 from adventure.simulate import simulate_world
@@ -36,7 +37,7 @@ except Exception as err:
     print("error loading logging config: %s" % (err))
 
 
-logger = logger_with_colors(__name__, level="DEBUG")
+logger = logger_with_colors(__name__)  # , level="DEBUG")
 
 load_dotenv(environ.get("ADVENTURE_ENV", ".env"), override=True)
 
@@ -64,7 +65,15 @@ def parse_args():
         help="Extra actions to include in the simulation",
     )
     parser.add_argument(
-        "--discord", type=bool, help="Whether to run the simulation in a Discord bot"
+        "--config",
+        type=str,
+        default="config.yml",
+        help="The file to load the configuration from",
+    )
+    parser.add_argument(
+        "--discord",
+        action="store_true",
+        help="Whether to run the simulation in a Discord bot",
     )
     parser.add_argument(
         "--flavor",
@@ -73,29 +82,50 @@ def parse_args():
         help="Some additional flavor text for the generated world",
     )
     parser.add_argument(
-        "--player", type=str, help="The name of the character to play as"
+        "--max-rooms",
+        type=int,
+        help="The maximum number of rooms to generate",
     )
     parser.add_argument(
-        "--rooms", type=int, default=5, help="The number of rooms to generate"
+        "--optional-actions",
+        action="store_true",
+        help="Whether to include optional actions",
     )
     parser.add_argument(
-        "--max-rooms", type=int, help="The maximum number of rooms to generate"
+        "--player",
+        type=str,
+        help="The name of the character to play as",
     )
     parser.add_argument(
-        "--optional-actions", type=bool, help="Whether to include optional actions"
+        "--render",
+        action="store_true",
+        help="Whether to render the simulation",
     )
-    parser.add_argument("--render", type=bool, help="Whether to render the simulation")
     parser.add_argument(
-        "--server", type=str, help="The address on which to run the server"
+        "--render-generated",
+        action="store_true",
+        help="Whether to render entities as they are generated",
+    )
+    parser.add_argument(
+        "--rooms",
+        type=int,
+        help="The number of rooms to generate",
+    )
+    parser.add_argument(
+        "--server",
+        type=str,
+        help="The address on which to run the server",
     )
     parser.add_argument(
         "--state",
         type=str,
-        # default="world.state.json",
         help="The file to save the world state to. Defaults to $world.state.json, if not set",
     )
     parser.add_argument(
-        "--steps", type=int, default=10, help="The number of simulation steps to run"
+        "--steps",
+        type=int,
+        default=10,
+        help="The number of simulation steps to run",
     )
     parser.add_argument(
         "--systems",
@@ -104,7 +134,10 @@ def parse_args():
         help="Extra systems to run in the simulation",
     )
     parser.add_argument(
-        "--theme", type=str, default="fantasy", help="The theme of the generated world"
+        "--theme",
+        type=str,
+        default="fantasy",
+        help="The theme of the generated world",
     )
     parser.add_argument(
         "--world",
@@ -113,16 +146,16 @@ def parse_args():
         help="The file to save the generated world to",
     )
     parser.add_argument(
-        "--world-prompt",
+        "--world-template",
         type=str,
-        help="The file to load the world prompt from",
+        help="The template file to load the world prompt from",
     )
     return parser.parse_args()
 
 
 def get_world_prompt(args) -> WorldPrompt:
-    if args.world_prompt:
-        prompt_file, prompt_name = args.world_prompt.split(":")
+    if args.world_template:
+        prompt_file, prompt_name = args.world_template.split(":")
         with open(prompt_file, "r") as f:
             prompts = PromptFile(**load_yaml(f))
             for prompt in prompts.prompts:
@@ -138,7 +171,9 @@ def get_world_prompt(args) -> WorldPrompt:
     )
 
 
-def load_or_generate_world(args, players, callbacks, world_prompt: WorldPrompt):
+def load_or_generate_world(
+    args, players, callbacks, systems, world_prompt: WorldPrompt
+):
     world_file = args.world + ".json"
     world_state_file = args.state or (args.world + ".state.json")
 
@@ -170,7 +205,7 @@ def load_or_generate_world(args, players, callbacks, world_prompt: WorldPrompt):
         world = None
 
         def broadcast_callback(event: GameEvent):
-            logger.info(event)
+            logger.debug("broadcasting generation event: %s", event)
             for callback in callbacks:
                 callback(event)
 
@@ -184,12 +219,19 @@ def load_or_generate_world(args, players, callbacks, world_prompt: WorldPrompt):
         )
         save_world(world, world_file)
 
+        # run the systems once to initialize everything
+        for system_update, _ in systems:
+            system_update(world, 0)
+
     create_agents(world, memory=memory, players=players)
     return (world, world_state_file)
 
 
 def main():
     args = parse_args()
+
+    with open(args.config, "r") as f:
+        config = Config(**load_yaml(f))
 
     players = []
     if args.player:
@@ -204,12 +246,22 @@ def main():
     if args.render:
         from adventure.render_comfy import launch_render
 
-        threads.extend(launch_render())
+        threads.extend(launch_render(config.render))
+
+        if args.render_generated:
+            from adventure.render_comfy import render_entity
+
+            def render_generated(event: GameEvent):
+                if isinstance(event, GenerateEvent) and event.entity:
+                    logger.info("rendering generated entity: %s", event.entity.name)
+                    render_entity(event.entity)
+
+            callbacks.append(render_generated)
 
     if args.discord:
         from adventure.bot_discord import bot_event, launch_bot
 
-        threads.extend(launch_bot())
+        threads.extend(launch_bot(config.bot.discord))
         callbacks.append(bot_event)
 
     if args.server:
@@ -263,7 +315,7 @@ def main():
     # load or generate the world
     world_prompt = get_world_prompt(args)
     world, world_state_file = load_or_generate_world(
-        args, players, callbacks, world_prompt=world_prompt
+        args, players, callbacks, extra_systems, world_prompt=world_prompt
     )
 
     # make sure the snapshot system runs last
@@ -273,9 +325,9 @@ def main():
 
     extra_systems.append((snapshot_system, None))
 
-    # run the systems once to initialize everything
-    for system_update, _ in extra_systems:
-        system_update(world, 0)
+    # hack: send a snapshot to the websocket server
+    if args.server:
+        server_system(world, 0)
 
     # create the DM
     llm = agent_easy_connect()

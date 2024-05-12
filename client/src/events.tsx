@@ -1,9 +1,12 @@
 import { Avatar, IconButton, ImageList, ImageListItem, ListItem, ListItemAvatar, ListItemText, Typography } from '@mui/material';
 import React, { Fragment, MutableRefObject } from 'react';
 
+import { Maybe, doesExist } from '@apextoaster/js-utils';
 import { Camera } from '@mui/icons-material';
+import { useStore } from 'zustand';
 import { formatters } from './format.js';
-import { GameEvent } from './models.js';
+import { Actor, GameEvent } from './models.js';
+import { StoreState, store } from './store.js';
 
 export function openImage(image: string) {
   const byteCharacters = atob(image);
@@ -23,13 +26,36 @@ export interface EventItemProps {
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   focusRef?: MutableRefObject<any>;
 
-  renderEvent: (event: GameEvent) => void;
+  renderEntity: (type: string, entity: string) => void;
+  renderEvent: (event: string) => void;
+}
+
+export function characterSelector(state: StoreState) {
+  return {
+    character: state.character,
+  };
+}
+
+export function sameCharacter(a: Maybe<Actor>, b: Maybe<Actor>): boolean {
+  if (doesExist(a) && doesExist(b)) {
+    return a.name === b.name;
+  }
+
+  return false;
 }
 
 export function ActionEventItem(props: EventItemProps) {
   const { event, renderEvent } = props;
   const { id, actor, room, type } = event;
   const content = formatters[type](event);
+
+  const state = useStore(store, characterSelector);
+  const { character } = state;
+
+  const playerAction = sameCharacter(actor, character);
+  const typographyProps = {
+    color: playerAction ? 'success.text' : 'primary.text',
+  };
 
   return <ListItem
     alignItems="flex-start"
@@ -45,6 +71,8 @@ export function ActionEventItem(props: EventItemProps) {
     </ListItemAvatar>
     <ListItemText
       primary={room.name}
+      primaryTypographyProps={typographyProps}
+      secondaryTypographyProps={typographyProps}
       secondary={
         <React.Fragment>
           <Typography
@@ -160,13 +188,78 @@ export function RenderEventItem(props: EventItemProps) {
     <ListItemAvatar>
       <Avatar alt="Render" src="/static/images/avatar/1.jpg" />
     </ListItemAvatar>
+    <ImageList cols={3} rowHeight={256}>
+      {Object.entries(images).map(([name, image]) => <ImageListItem key={name}>
+        <a href='#' onClick={() => openImage(image as string)}>
+          <img src={`data:image/jpeg;base64,${image}`} alt="Render" style={{ maxHeight: 256, maxWidth: 256 }} />
+        </a>
+      </ImageListItem>)}
+    </ImageList>
+  </ListItem>;
+}
+
+export function PromptEventItem(props: EventItemProps) {
+  const { event } = props;
+  const { character, prompt } = event;
+
+  const state = useStore(store, characterSelector);
+  const { character: playerCharacter } = state;
+
+  const playerPrompt = sameCharacter(playerCharacter, character);
+  const typographyProps = {
+    color: playerPrompt ? 'success.text' : 'primary.text',
+  };
+
+  return <ListItem alignItems="flex-start" ref={props.focusRef}>
+    <ListItemAvatar>
+      <Avatar alt="Prompt" src="/static/images/avatar/1.jpg" />
+    </ListItemAvatar>
     <ListItemText
-      primary="Render"
-      secondary={<ImageList cols={3} rowHeight={256}>
-        {Object.entries(images).map(([name, image]) => <ImageListItem key={name}>
-          <img src={`data:image/jpeg;base64,${image}`} onClick={() => openImage(image)} alt="Render" />
-        </ImageListItem>)}
-      </ImageList>}
+      primary="Prompt"
+      primaryTypographyProps={typographyProps}
+      secondaryTypographyProps={typographyProps}
+      secondary={
+        <Typography
+          sx={{ display: 'block' }}
+          component="span"
+          variant="body2"
+          color="text.primary"
+        >
+          Prompt for {character}: {prompt}
+        </Typography>
+      }
+    />
+  </ListItem>;
+}
+
+export function GenerateEventItem(props: EventItemProps) {
+  const { event, renderEntity } = props;
+  const { entity, name } = event;
+
+  return <ListItem
+    alignItems="flex-start"
+    ref={props.focusRef}
+    secondaryAction={
+      <IconButton edge="end" aria-label="render" onClick={() => renderEntity(entity.name)}>
+        <Camera />
+      </IconButton>
+    }
+  >
+    <ListItemAvatar>
+      <Avatar alt="Generate" src="/static/images/avatar/1.jpg" />
+    </ListItemAvatar>
+    <ListItemText
+      primary="Generate"
+      secondary={
+        <Typography
+          sx={{ display: 'block' }}
+          component="span"
+          variant="body2"
+          color="text.primary"
+        >
+          {name}
+        </Typography>
+      }
     />
   </ListItem>;
 }
@@ -188,6 +281,10 @@ export function EventItem(props: EventItemProps) {
       return <RenderEventItem {...props} />;
     case 'snapshot':
       return <SnapshotEventItem {...props} />;
+    case 'prompt':
+      return <PromptEventItem {...props} />;
+    case 'generate':
+      return <GenerateEventItem {...props} />;
     default:
       return <ListItem ref={props.focusRef}>
         <ListItemText primary={`Unknown event type: ${type}`} />
