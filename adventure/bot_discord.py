@@ -3,6 +3,7 @@ from os import environ
 from queue import Queue
 from re import sub
 from threading import Thread
+from typing import Dict
 
 from discord import Client, Embed, File, Intents
 
@@ -18,17 +19,19 @@ from adventure.models.event import (
     GenerateEvent,
     PlayerEvent,
     PromptEvent,
+    RenderEvent,
     ReplyEvent,
     ResultEvent,
     StatusEvent,
 )
 from adventure.player import RemotePlayer, get_player, has_player, set_player
-from adventure.render_comfy import generate_image_tool
+from adventure.render_comfy import render_event
 
 logger = getLogger(__name__)
 client = None
 
 active_tasks = set()
+event_messages: Dict[str, str | GameEvent] = {}
 event_queue: Queue[GameEvent] = Queue()
 
 
@@ -38,54 +41,6 @@ def remove_tags(text: str) -> str:
     """
 
     return sub(r"<[^>]*>", "", text)
-
-
-def find_embed_field(embed: Embed, name: str) -> str | None:
-    return next((field.value for field in embed.fields if field.name == name), None)
-
-
-# TODO: becomes prompt from event
-def prompt_from_embed(embed: Embed) -> str | None:
-    room_name = embed.title
-    actor_name = embed.description
-
-    world = get_current_world()
-    if not world:
-        return
-
-    room = next((room for room in world.rooms if room.name == room_name), None)
-    if not room:
-        return
-
-    actor = next((actor for actor in room.actors if actor.name == actor_name), None)
-    if not actor:
-        return
-
-    item_field = find_embed_field(embed, "Item")
-
-    action_field = find_embed_field(embed, "Action")
-    if action_field:
-        if item_field:
-            item = next(
-                (
-                    item
-                    for item in (room.items + actor.items)
-                    if item.name == item_field
-                ),
-                None,
-            )
-            if item:
-                return f"{actor.name} {action_field} the {item.name}. {item.description}. {actor.description}. {room.description}."
-
-            return f"{actor.name} {action_field} the {item_field}. {actor.description}. {room.description}."
-
-        return f"{actor.name} {action_field}. {actor.description}. {room.name}."
-
-    result_field = find_embed_field(embed, "Result")
-    if result_field:
-        return f"{result_field}. {actor.description}. {room.description}."
-
-    return
 
 
 class AdventureClient(Client):
@@ -98,23 +53,16 @@ class AdventureClient(Client):
 
         logger.info(f"Reaction added: {reaction} by {user}")
         if reaction.emoji == "📷":
-            # message_id = reaction.message.id
-            # TODO: look up event that caused this message, get the room and actors
-            if len(reaction.message.embeds) > 0:
-                embed = reaction.message.embeds[0]
-                prompt = prompt_from_embed(embed)
-            else:
-                prompt = remove_tags(reaction.message.content)
-                if prompt.startswith("Generating"):
-                    # TODO: get the entity from the message
-                    pass
+            message_id = reaction.message.id
+            if message_id not in event_messages:
+                logger.warning(f"Message {message_id} not found in event messages")
+                # TODO: return error message
+                return
 
-            await reaction.message.add_reaction("📸")
-            paths = generate_image_tool(prompt, 2)
-            logger.info(f"Generated images: {paths}")
-
-            files = [File(filename) for filename in paths]
-            await reaction.message.channel.send(files=files, reference=reaction.message)
+            event = event_messages[message_id]
+            if isinstance(event, GameEvent):
+                render_event(event)
+                await reaction.message.add_reaction("📸")
 
     async def on_message(self, message):
         if message.author == self.user:
@@ -277,17 +225,54 @@ async def broadcast_event(message: str | GameEvent):
 
     for channel in active_channels:
         if isinstance(message, str):
-            logger.info("broadcasting to channel %s: %s", channel, message)
-            await channel.send(content=message)
-        elif isinstance(message, GameEvent):
+            # deprecated, use events instead
+            logger.warning(
+                "broadcasting non-event message to channel %s: %s", channel, message
+            )
+            event_message = await channel.send(content=message)
+        elif isinstance(message, RenderEvent):
+            # special handling to upload images
+            # find the source event
+            source_event_id = message.source.id
+            source_message_id = next(
+                (
+                    message_id
+                    for message_id, event in event_messages.items()
+                    if isinstance(event, GameEvent) and event.id == source_event_id
+                ),
+                None,
+            )
+            if not source_message_id:
+                logger.warning("source event not found: %s", source_event_id)
+                return
+
+            # open and upload images
+            files = [File(filename) for filename in message.paths]
+            try:
+                source_message = await channel.fetch_message(source_message_id)
+            except Exception as err:
+                logger.warning("source message not found: %s", err)
+                return
+
+            # send the images as a reply to the source message
+            event_message = await source_message.channel.send(
+                files=files, reference=source_message
+            )
+        else:
             embed = embed_from_event(message)
+            if not embed:
+                logger.warning("no embed for event: %s", message)
+                return
+
             logger.info(
                 "broadcasting to channel %s: %s - %s",
                 channel,
                 embed.title,
                 embed.description,
             )
-            await channel.send(embed=embed)
+            event_message = await channel.send(embed=embed)
+
+        event_messages[event_message.id] = message
 
 
 def embed_from_event(event: GameEvent) -> Embed:

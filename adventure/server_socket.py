@@ -1,17 +1,26 @@
 import asyncio
+from base64 import b64encode
 from collections import deque
+from io import BytesIO
 from json import dumps, loads
 from logging import getLogger
 from threading import Thread
-from typing import Any, Dict, Literal
+from typing import Any, Dict, Literal, MutableSequence
 from uuid import uuid4
 
 import websockets
+from PIL import Image
 from pydantic import RootModel
 
 from adventure.context import broadcast, get_actor_agent_for_name, set_actor_agent
 from adventure.models.entity import Actor, Item, Room, World
-from adventure.models.event import GameEvent, PlayerEvent, PromptEvent
+from adventure.models.event import (
+    GameEvent,
+    PlayerEvent,
+    PlayerListEvent,
+    PromptEvent,
+    RenderEvent,
+)
 from adventure.player import (
     RemotePlayer,
     get_player,
@@ -20,12 +29,14 @@ from adventure.player import (
     remove_player,
     set_player,
 )
+from adventure.render_comfy import render_event
 from adventure.state import snapshot_world, world_json
 
 logger = getLogger(__name__)
 
 connected = set()
-recent_events = deque(maxlen=100)
+recent_events: MutableSequence[GameEvent] = deque(maxlen=100)
+recent_json: MutableSequence[str] = deque(maxlen=100)
 last_snapshot = None
 player_names: Dict[str, str] = {}
 
@@ -61,12 +72,13 @@ async def handler(websocket):
         return False
 
     try:
-        await websocket.send(dumps({"type": "id", "id": id}))
+        await websocket.send(dumps({"type": "id", "client": id}))
 
-        if last_snapshot:
+        # TODO: only send this if the recent events don't contain a snapshot
+        if last_snapshot and last_snapshot not in recent_json:
             await websocket.send(last_snapshot)
 
-        for message in recent_events:
+        for message in recent_json:
             await websocket.send(message)
     except Exception:
         logger.exception("Failed to send recent messages to new client")
@@ -141,8 +153,8 @@ async def handler(websocket):
                         set_actor_agent(actor.name, actor, player)
 
                         # notify all clients that this character is now active
-                        player_event(character_name, player_name, "join")
-                        player_list()
+                        broadcast_player_event(character_name, player_name, "join")
+                        broadcast_player_list()
                 elif message_type == "input":
                     player = get_player(id)
                     if player and isinstance(player, RemotePlayer):
@@ -150,6 +162,13 @@ async def handler(websocket):
                             "queueing input for player %s: %s", player.name, data
                         )
                         player.input_queue.put(data["input"])
+                elif message_type == "render":
+                    event_id = data["event"]
+                    event = next((e for e in recent_events if e.id == event_id), None)
+                    if event:
+                        render_event(event)
+                    else:
+                        logger.error(f"Failed to find event {event_id}")
 
             except Exception:
                 logger.exception("Failed to parse message")
@@ -166,16 +185,16 @@ async def handler(websocket):
         remove_player(id)
 
         player_name = get_player_name(id)
-        logger.info("Disconnecting player %s from %s", player_name, player.name)
-        player_event(player.name, player_name, "leave")
-        player_list()
+        logger.info("disconnecting player %s from %s", player_name, player.name)
+        broadcast_player_event(player.name, player_name, "leave")
+        broadcast_player_list()
 
         actor, _ = get_actor_agent_for_name(player.name)
         if actor and player.fallback_agent:
-            logger.info("Restoring LLM agent for %s", player.name)
+            logger.info("restoring LLM agent for %s", player.name)
             set_actor_agent(player.name, actor, player.fallback_agent)
 
-    logger.info("Client disconnected: %s", id)
+    logger.info("client disconnected: %s", id)
 
 
 socket_thread = None
@@ -188,9 +207,9 @@ def server_json(obj):
     return world_json(obj)
 
 
-def send_and_append(message):
+def send_and_append(id: str, message: Dict):
     json_message = dumps(message, default=server_json)
-    recent_events.append(json_message)
+    recent_json.append(json_message)
     websockets.broadcast(connected, json_message)
     return json_message
 
@@ -215,28 +234,50 @@ async def server_main():
 
 def server_system(world: World, step: int):
     global last_snapshot
+    id = uuid4().hex  # TODO: should a server be allowed to generate event IDs?
     json_state = {
         **snapshot_world(world, step),
+        "id": id,
         "type": "snapshot",
     }
-    last_snapshot = send_and_append(json_state)
+    last_snapshot = send_and_append(id, json_state)
 
 
 def server_event(event: GameEvent):
     json_event: Dict[str, Any] = RootModel[event.__class__](event).model_dump()
-    json_event["type"] = event.type
-    send_and_append(json_event)
+    json_event.update(
+        {
+            "id": event.id,
+            "type": event.type,
+        }
+    )
+
+    if isinstance(event, RenderEvent):
+        # load and encode the images
+        image_paths = event.paths
+        image_data = {}
+        for path in image_paths:
+            with Image.open(path, "r") as image:
+                buffered = BytesIO()
+                image.save(
+                    buffered, format="JPEG", quality=80, optimize=True, progressive=True
+                )
+                image_str = b64encode(buffered.getvalue())
+                image_data[path] = image_str.decode("utf-8")
+
+        json_event["images"] = image_data
+
+    recent_events.append(event)
+    send_and_append(event.id, json_event)
 
 
-def player_event(character: str, client: str, status: Literal["join", "leave"]):
+def broadcast_player_event(
+    character: str, client: str, status: Literal["join", "leave"]
+):
     event = PlayerEvent(status=status, character=character, client=client)
     broadcast(event)
 
 
-def player_list():
-    json_broadcast = {
-        "type": "players",
-        "players": list_players(),
-    }
-    # TODO: broadcast this
-    send_and_append(json_broadcast)
+def broadcast_player_list():
+    event = PlayerListEvent(players=list_players())
+    broadcast(event)

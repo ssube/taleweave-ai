@@ -1,21 +1,45 @@
-import { ListItem, ListItemText, ListItemAvatar, Avatar, Typography } from '@mui/material';
-import React, { MutableRefObject } from 'react';
+import { Avatar, IconButton, ImageList, ImageListItem, ListItem, ListItemAvatar, ListItemText, Typography } from '@mui/material';
+import React, { Fragment, MutableRefObject } from 'react';
 
+import { Camera } from '@mui/icons-material';
 import { formatters } from './format.js';
+import { GameEvent } from './models.js';
+
+export function openImage(image: string) {
+  const byteCharacters = atob(image);
+  const byteNumbers = new Array(byteCharacters.length);
+  for (let i = 0; i < byteCharacters.length; i++) {
+    byteNumbers[i] = byteCharacters.charCodeAt(i);
+  }
+  const byteArray = new Uint8Array(byteNumbers);
+  const file = new Blob([byteArray], { type: 'image/jpeg;base64' });
+  const fileURL = URL.createObjectURL(file);
+  window.open(fileURL, '_blank');
+}
 
 export interface EventItemProps {
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   event: any;
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   focusRef?: MutableRefObject<any>;
+
+  renderEvent: (event: GameEvent) => void;
 }
 
 export function ActionEventItem(props: EventItemProps) {
-  const { event } = props;
-  const { actor, room, type } = event;
+  const { event, renderEvent } = props;
+  const { id, actor, room, type } = event;
   const content = formatters[type](event);
 
-  return <ListItem alignItems="flex-start" ref={props.focusRef}>
+  return <ListItem
+    alignItems="flex-start"
+    ref={props.focusRef}
+    secondaryAction={
+      <IconButton edge="end" aria-label="render" onClick={() => renderEvent(id)}>
+        <Camera />
+      </IconButton>
+    }
+  >
     <ListItemAvatar>
       <Avatar alt={actor.name} src="/static/images/avatar/1.jpg" />
     </ListItemAvatar>
@@ -41,23 +65,26 @@ export function ActionEventItem(props: EventItemProps) {
 export function SnapshotEventItem(props: EventItemProps) {
   const { event } = props;
   const { step, world } = event;
-  const { theme } = world;
+  const { name, theme } = world;
 
   return <ListItem alignItems="flex-start" ref={props.focusRef}>
     <ListItemAvatar>
       <Avatar alt={step.toString()} src="/static/images/avatar/1.jpg" />
     </ListItemAvatar>
     <ListItemText
-      primary={theme}
+      primary={name}
       secondary={
-        <Typography
-          sx={{ display: 'block' }}
-          component="span"
-          variant="body2"
-          color="text.primary"
-        >
-          Step {step}
-        </Typography>
+        <Fragment>
+          <Typography
+            sx={{ display: 'block' }}
+            component="span"
+            variant="body2"
+            color="text.primary"
+          >
+            Step: {step}
+          </Typography>
+          World Theme: {theme}
+        </Fragment>
       }
     />
   </ListItem>;
@@ -102,7 +129,10 @@ export function PlayerEventItem(props: EventItemProps) {
     secondary = `${client} has left the game. ${character} is now controlled by an LLM`;
   }
 
-  return <ListItem alignItems="flex-start" ref={props.focusRef}>
+  return <ListItem
+    alignItems="flex-start"
+    ref={props.focusRef}
+  >
     <ListItemAvatar>
       <Avatar alt={character} src="/static/images/avatar/1.jpg" />
     </ListItemAvatar>
@@ -122,6 +152,25 @@ export function PlayerEventItem(props: EventItemProps) {
   </ListItem>;
 }
 
+export function RenderEventItem(props: EventItemProps) {
+  const { event } = props;
+  const { images } = event;
+
+  return <ListItem alignItems="flex-start" ref={props.focusRef}>
+    <ListItemAvatar>
+      <Avatar alt="Render" src="/static/images/avatar/1.jpg" />
+    </ListItemAvatar>
+    <ListItemText
+      primary="Render"
+      secondary={<ImageList cols={3} rowHeight={256}>
+        {Object.entries(images).map(([name, image]) => <ImageListItem key={name}>
+          <img src={`data:image/jpeg;base64,${image}`} onClick={() => openImage(image)} alt="Render" />
+        </ImageListItem>)}
+      </ImageList>}
+    />
+  </ListItem>;
+}
+
 export function EventItem(props: EventItemProps) {
   const { event } = props;
   const { type } = event;
@@ -129,13 +178,16 @@ export function EventItem(props: EventItemProps) {
   switch (type) {
     case 'action':
     case 'result':
-      return <ActionEventItem event={event} focusRef={props.focusRef} />;
+      return <ActionEventItem {...props} />;
     case 'reply':
-      return <ReplyEventItem event={event} focusRef={props.focusRef} />;
+    case 'status': // TODO: should have a different component
+      return <ReplyEventItem {...props} />;
     case 'player':
-      return <PlayerEventItem event={event} focusRef={props.focusRef} />;
+      return <PlayerEventItem {...props} />;
+    case 'render':
+      return <RenderEventItem {...props} />;
     case 'snapshot':
-      return <SnapshotEventItem event={event} focusRef={props.focusRef} />;
+      return <SnapshotEventItem {...props} />;
     default:
       return <ListItem ref={props.focusRef}>
         <ListItemText primary={`Unknown event type: ${type}`} />

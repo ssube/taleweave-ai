@@ -84,6 +84,7 @@ def parse_args():
     parser.add_argument(
         "--optional-actions", type=bool, help="Whether to include optional actions"
     )
+    parser.add_argument("--render", type=bool, help="Whether to render the simulation")
     parser.add_argument(
         "--server", type=str, help="The address on which to run the server"
     )
@@ -199,14 +200,20 @@ def main():
 
     # launch other threads
     threads = []
+
+    if args.render:
+        from adventure.render_comfy import launch_render
+
+        threads.extend(launch_render())
+
     if args.discord:
-        from adventure.discord_bot import bot_event, launch_bot
+        from adventure.bot_discord import bot_event, launch_bot
 
         threads.extend(launch_bot())
         callbacks.append(bot_event)
 
     if args.server:
-        from adventure.server import launch_server, server_event, server_system
+        from adventure.server_socket import launch_server, server_event, server_system
 
         threads.extend(launch_server())
         callbacks.append(server_event)

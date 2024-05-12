@@ -8,11 +8,23 @@ import urllib.request
 import uuid
 from logging import getLogger
 from os import environ, path
+from queue import Queue
 from random import choice, randint
+from threading import Thread
 from typing import List
 
 import websocket  # NOTE: websocket-client (https://github.com/websocket-client/websocket-client)
 from PIL import Image
+
+from adventure.context import broadcast
+from adventure.models.event import (
+    ActionEvent,
+    GameEvent,
+    RenderEvent,
+    ReplyEvent,
+    ResultEvent,
+    StatusEvent,
+)
 
 logger = getLogger(__name__)
 
@@ -195,6 +207,7 @@ def generate_images(
 
     paths: List[str] = []
     for j, image in enumerate(results):
+        # TODO: replace with environment variable
         image_path = path.join("/home/ssube/adventure-images", f"{prefix}-{j}.png")
         with open(image_path, "wb") as f:
             image_bytes = io.BytesIO()
@@ -204,6 +217,82 @@ def generate_images(
         paths.append(image_path)
 
     return paths
+
+
+def prompt_from_event(event: GameEvent) -> str | None:
+    if isinstance(event, ActionEvent):
+        if event.item:
+            return f"{event.actor.name} uses the {event.item.name}. {event.item.description}. {event.actor.description}. {event.room.description}."
+
+        return f"{event.actor.name} {event.action}. {event.actor.description}. {event.room.description}."
+
+    if isinstance(event, ReplyEvent):
+        return event.text
+
+    if isinstance(event, ResultEvent):
+        return f"{event.result}. {event.actor.description}. {event.room.description}."
+
+    if isinstance(event, StatusEvent):
+        if event.room:
+            if event.actor:
+                return f"{event.text}. {event.actor.description}. {event.room.description}."
+
+            return f"{event.text}. {event.room.description}."
+
+        return event.text
+
+    return None
+
+
+def prefix_from_event(event: GameEvent) -> str:
+    if isinstance(event, ActionEvent):
+        return (
+            f"{event.actor.name}-{event.action}-{event.item.name if event.item else ''}"
+        )
+
+    if isinstance(event, ReplyEvent):
+        return f"{event.actor.name}-reply"
+
+    if isinstance(event, ResultEvent):
+        return f"{event.actor.name}-result"
+
+    if isinstance(event, StatusEvent):
+        return "status"
+
+    return "unknown"
+
+
+# requests to generate images for game events
+render_queue: Queue[GameEvent] = Queue()
+
+
+def render_loop():
+    while True:
+        event = render_queue.get()
+        prompt = prompt_from_event(event)
+        if prompt:
+            logger.info("rendering prompt for event %s: %s", event, prompt)
+            prefix = prefix_from_event(event)
+            image_paths = generate_images(prompt, 2, prefix=prefix)
+            broadcast(RenderEvent(paths=image_paths, source=event))
+        else:
+            logger.warning("no prompt for event %s", event)
+
+
+def render_event(event: GameEvent):
+    render_queue.put(event)
+
+
+render_thread = None
+
+
+def launch_render():
+    global render_thread
+
+    render_thread = Thread(target=render_loop, daemon=True)
+    render_thread.start()
+
+    return [render_thread]
 
 
 if __name__ == "__main__":

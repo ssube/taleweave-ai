@@ -3,7 +3,8 @@ import { Divider, List } from '@mui/material';
 import React, { useEffect, useRef } from 'react';
 import { useStore } from 'zustand';
 import { EventItem } from './events';
-import { store, StoreState } from './store';
+import { GameEvent } from './models';
+import { StoreState, store } from './store';
 
 export function historyStateSelector(s: StoreState) {
   return {
@@ -12,9 +13,14 @@ export function historyStateSelector(s: StoreState) {
   };
 }
 
-export function HistoryPanel() {
+export interface HistoryPanelProps {
+  renderEvent: (event: GameEvent) => void;
+}
+
+export function HistoryPanel(props: HistoryPanelProps) {
   const state = useStore(store, historyStateSelector);
   const { history, scroll } = state;
+  const { renderEvent } = props;
 
   const scrollRef = useRef<Maybe<Element>>(undefined);
 
@@ -28,10 +34,10 @@ export function HistoryPanel() {
 
   const items = history.map((item, index) => {
     if (index === history.length - 1) {
-      return <EventItem key={`item-${index}`} event={item} focusRef={scrollRef} />;
+      return <EventItem key={`item-${index}`} event={item} focusRef={scrollRef} renderEvent={renderEvent} />;
     }
 
-    return <EventItem key={`item-${index}`} event={item} />;
+    return <EventItem key={`item-${index}`} event={item} renderEvent={renderEvent} />;
   });
 
   return <List sx={{ width: '100%', bgcolor: 'background.paper' }}>

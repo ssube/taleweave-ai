@@ -19,7 +19,7 @@ import useWebSocketModule from 'react-use-websocket';
 import { useStore } from 'zustand';
 
 import { HistoryPanel } from './history.js';
-import { Actor, Item, Room } from './models.js';
+import { Actor, GameEvent, Item, Room } from './models.js';
 import { PlayerPanel } from './player.js';
 import { store, StoreState } from './store.js';
 import { WorldPanel } from './world.js';
@@ -92,6 +92,11 @@ export function App(props: AppProps) {
 
   // socket stuff
   const { lastMessage, readyState, sendMessage } = useWebSocket(props.socketUrl);
+
+  // socket senders
+  function renderEvent(event: string) {
+    sendMessage(JSON.stringify({ type: 'render', event }));
+  }
 
   function setPlayer(actor: Maybe<Actor>) {
     // do not call setCharacter until the server confirms the player change
@@ -179,7 +184,7 @@ export function App(props: AppProps) {
               <WorldPanel setPlayer={setPlayer} />
             </Stack>
             <Stack direction="column" sx={{ minWidth: 600 }} className="scroll-history">
-              <HistoryPanel />
+              <HistoryPanel renderEvent={renderEvent} />
             </Stack>
           </Allotment>
         </Stack>
