@@ -140,7 +140,7 @@ def get_actor_agent_for_name(name):
         (
             (actor, agent)
             for actor, agent in actor_agents.values()
-            if actor.name == name
+            if actor.name.lower() == name.lower()
         ),
         (None, None),
     )

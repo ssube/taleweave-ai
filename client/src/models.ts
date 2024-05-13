@@ -1,9 +1,11 @@
 export interface Item {
+  type: 'item';
   name: string;
   description: string;
 }
 
 export interface Actor {
+  type: 'actor';
   name: string;
   backstory: string;
   description: string;
@@ -11,6 +13,7 @@ export interface Actor {
 }
 
 export interface Room {
+  type: 'room';
   name: string;
   description: string;
   portals: Record<string, string>;
@@ -19,6 +22,7 @@ export interface Room {
 }
 
 export interface World {
+  type: 'world';
   name: string;
   order: Array<string>;
   rooms: Array<Room>;

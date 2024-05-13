@@ -6,6 +6,7 @@ from logging import getLogger
 from os import environ, path
 from queue import Queue
 from random import choice, randint
+from re import sub
 from threading import Thread
 from typing import List
 from uuid import uuid4
@@ -102,19 +103,35 @@ def get_history(prompt_id):
         return json.loads(response.read())
 
 
-def get_images(ws, prompt):
+def get_images(ws_host, prompt, max_retries=3):
     prompt_id = queue_prompt(prompt)["prompt_id"]
     output_images = {}
+    retry = 0
+
+    ws = websocket.WebSocket()
+    ws.connect(ws_host, timeout=60)
     while True:
-        out = ws.recv()
-        if isinstance(out, str):
-            message = json.loads(out)
-            if message["type"] == "executing":
-                data = message["data"]
-                if data["node"] is None and data["prompt_id"] == prompt_id:
-                    break  # Execution is done
-        else:
-            continue  # previews are binary data
+        try:
+            out = ws.recv()
+            if isinstance(out, str):
+                message = json.loads(out)
+                if message["type"] == "executing":
+                    data = message["data"]
+                    if data["node"] is None and data["prompt_id"] == prompt_id:
+                        break  # Execution is done
+            else:
+                continue  # previews are binary data
+        except websocket._exceptions.WebSocketTimeoutException:
+            logger.warning("timeout while waiting for image data")
+            retry += 1
+            if retry >= max_retries:
+                logger.error("max retries exceeded, giving up")
+                break
+            else:
+                # reconnect
+                ws = websocket.WebSocket()
+                ws.connect(ws_host, timeout=60)
+                continue
 
     history = get_history(prompt_id)[prompt_id]
     for _ in history["outputs"]:
@@ -180,9 +197,9 @@ def generate_images(
     prompt_workflow = json.loads(result)
 
     logger.debug("connecting to Comfy API at %s", server_address)
-    ws = websocket.WebSocket()
-    ws.connect("ws://{}/ws?clientId={}".format(server_address, client_id), timeout=60)
-    images = get_images(ws, prompt_workflow)
+    images = get_images(
+        "ws://{}/ws?clientId={}".format(server_address, client_id), prompt_workflow
+    )
 
     results = []
     for node_id in images:
@@ -232,21 +249,34 @@ def prompt_from_entity(entity: WorldEntity) -> str:
     return entity.description
 
 
+def sanitize_name(name: str) -> str:
+    def valid_char(c: str) -> str:
+        if c.isalnum() or c in ["-", "_"]:
+            return c
+
+        return "-"
+
+    valid_name = "".join([valid_char(c) for c in name])
+    valid_name = sub(r"-+", "-", valid_name)
+    valid_name = valid_name.strip("-").strip("_").strip()
+    return valid_name.lower()
+
+
 def get_image_prefix(event: GameEvent | WorldEntity) -> str:
     if isinstance(event, ActionEvent):
-        return f"event-action-{event.actor.name}-{event.action}"
+        return sanitize_name(f"event-action-{event.actor.name}-{event.action}")
 
     if isinstance(event, ReplyEvent):
-        return f"event-reply-{event.actor.name}"
+        return sanitize_name(f"event-reply-{event.actor.name}")
 
     if isinstance(event, ResultEvent):
-        return f"event-result-{event.actor.name}"
+        return sanitize_name(f"event-result-{event.actor.name}")
 
     if isinstance(event, StatusEvent):
         return "status"
 
     if isinstance(event, WorldEntity):
-        return f"entity-{event.__class__.__name__.lower()}-{event.name}"
+        return sanitize_name(f"entity-{event.__class__.__name__.lower()}-{event.name}")
 
     return "unknown"
 
@@ -274,15 +304,15 @@ def render_loop():
 
         # generate the prompt
         if isinstance(event, WorldEntity):
-            logger.info("rendering entity %s", event)
+            logger.info("rendering entity %s", event.name)
             prompt = prompt_from_entity(event)
         else:
-            logger.info("rendering event %s", event)
+            logger.info("rendering event %s", event.id)
             prompt = prompt_from_event(event)
 
         # render or not
         if prompt:
-            logger.info("rendering prompt for event %s: %s", event, prompt)
+            logger.debug("rendering prompt for event %s: %s", event, prompt)
             image_paths = generate_images(prompt, 2, prefix=prefix)
             broadcast(RenderEvent(paths=image_paths, source=event))
         else:
@@ -317,4 +347,4 @@ if __name__ == "__main__":
     paths = generate_images(
         "A painting of a beautiful sunset over a calm lake", 3, "landscape"
     )
-    logger.info("Generated %d images: %s", len(paths), paths)
+    logger.info("generated %d images: %s", len(paths), paths)

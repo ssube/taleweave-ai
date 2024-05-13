@@ -28,7 +28,7 @@ export function EntityDetails(props: EntityDetailsProps) {
       </Typography>
     </DialogContent>
     <DialogActions>
-      <Button onClick={() => onRender('actor', entity.name)}>Render</Button>
+      <Button onClick={() => onRender(entity.type, entity.name)}>Render</Button>
       <Button onClick={onClose}>Close</Button>
     </DialogActions>
   </Fragment>;
@@ -95,7 +95,7 @@ export function DetailDialog(props: DetailDialogProps) {
 }
 
 export function isWorld(entity: Maybe<Item | Actor | Room | World>): entity is World {
-  return doesExist(entity) && doesExist(entity.theme);
+  return doesExist(entity) && doesExist(Object.getOwnPropertyDescriptor(entity, 'theme'));
 }
 
 export function worldGraph(world: World): string {

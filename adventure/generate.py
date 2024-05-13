@@ -18,18 +18,44 @@ OPPOSITE_DIRECTIONS = {
 }
 
 
+def duplicate_name_parser(existing_names: List[str]):
+    def name_parser(name: str, **kwargs):
+        if name in existing_names:
+            raise ValueError(f'"{name}" has already been used.')
+
+        if '"' in name or ":" in name:
+            raise ValueError("The name cannot contain quotes or colons.")
+
+        if len(name) > 50:
+            raise ValueError("The name cannot be longer than 50 characters.")
+
+        return name
+
+    return name_parser
+
+
+def callback_wrapper(
+    callback: EventCallback | None,
+    message: str | None = None,
+    entity: WorldEntity | None = None,
+):
+    if message:
+        event = GenerateEvent.from_name(message)
+    elif entity:
+        event = GenerateEvent.from_entity(entity)
+    else:
+        raise ValueError("Either message or entity must be provided")
+
+    if callable(callback):
+        callback(event)
+
+
 def generate_room(
     agent: Agent,
     world_theme: str,
     callback: EventCallback | None = None,
     existing_rooms: List[str] = [],
 ) -> Room:
-    def unique_name(name: str, **kwargs):
-        if name in existing_rooms:
-            raise ValueError(f"A room named {name} already exists")
-
-        return name
-
     name = loop_retry(
         agent,
         "Generate one room, area, or location that would make sense in the world of {world_theme}. "
@@ -39,12 +65,10 @@ def generate_room(
             "world_theme": world_theme,
             "existing_rooms": existing_rooms,
         },
-        result_parser=unique_name,
+        result_parser=duplicate_name_parser(existing_rooms),
     )
 
-    if callable(callback):
-        callback(GenerateEvent.from_name(f"Generating room: {name}"))
-
+    callback_wrapper(callback, message=f"Generating room: {name}")
     desc = agent(
         "Generate a detailed description of the {name} area. What does it look like? "
         "What does it smell like? What can be seen or heard?",
@@ -69,17 +93,11 @@ def generate_item(
     existing_items: List[str] = [],
 ) -> Item:
     if dest_actor:
-        dest_note = "The item will be held by the {dest_actor} character"
+        dest_note = f"The item will be held by the {dest_actor} character"
     elif dest_room:
-        dest_note = "The item will be placed in the {dest_room} room"
+        dest_note = f"The item will be placed in the {dest_room} room"
     else:
         dest_note = "The item will be placed in the world"
-
-    def unique_name(name: str, **kwargs):
-        if name in existing_items:
-            raise ValueError(f"An item named {name} already exists")
-
-        return name
 
     name = loop_retry(
         agent,
@@ -93,12 +111,10 @@ def generate_item(
             "existing_items": existing_items,
             "world_theme": world_theme,
         },
-        result_parser=unique_name,
+        result_parser=duplicate_name_parser(existing_items),
     )
 
-    if callable(callback):
-        callback(GenerateEvent.from_name(f"Generating item: {name}"))
-
+    callback_wrapper(callback, message=f"Generating item: {name}")
     desc = agent(
         "Generate a detailed description of the {name} item. What does it look like? What is it made of? What does it do?",
         name=name,
@@ -116,12 +132,6 @@ def generate_actor(
     callback: EventCallback | None = None,
     existing_actors: List[str] = [],
 ) -> Actor:
-    def unique_name(name: str, **kwargs):
-        if name in existing_actors:
-            raise ValueError(f"An actor named {name} already exists")
-
-        return name
-
     name = loop_retry(
         agent,
         "Generate one person or creature that would make sense in the world of {world_theme}. "
@@ -135,12 +145,10 @@ def generate_actor(
             "existing_actors": existing_actors,
             "world_theme": world_theme,
         },
-        result_parser=unique_name,
+        result_parser=duplicate_name_parser(existing_actors),
     )
 
-    if callable(callback):
-        callback(GenerateEvent.from_name(f"Generating actor: {name}"))
-
+    callback_wrapper(callback, message=f"Generating actor: {name}")
     description = agent(
         "Generate a detailed description of the {name} character. What do they look like? What are they wearing? "
         "What are they doing? Describe their appearance from the perspective of an outside observer."
@@ -171,18 +179,7 @@ def generate_world(
 ) -> World:
     room_count = room_count or randint(3, max_rooms)
 
-    def callback_wrapper(message: str | None = None, entity: WorldEntity | None = None):
-        if message:
-            event = GenerateEvent.from_name(message)
-        elif entity:
-            event = GenerateEvent.from_entity(entity)
-        else:
-            raise ValueError("Either message or entity must be provided")
-
-        if callable(callback):
-            callback(event)
-
-    callback_wrapper(message=f"Generating a {theme} with {room_count} rooms")
+    callback_wrapper(callback, message=f"Generating a {theme} with {room_count} rooms")
 
     existing_actors: List[str] = []
     existing_items: List[str] = []
@@ -191,55 +188,24 @@ def generate_world(
     # generate the rooms
     rooms = []
     for i in range(room_count):
-        room = generate_room(
-            agent, theme, existing_rooms=existing_rooms, callback=callback
-        )
-        callback_wrapper(entity=room)
-        rooms.append(room)
-        existing_rooms.append(room.name)
+        try:
+            room = generate_room(
+                agent, theme, existing_rooms=existing_rooms, callback=callback
+            )
+            callback_wrapper(callback, entity=room)
+            rooms.append(room)
+            existing_rooms.append(room.name)
+        except Exception:
+            logger.exception("error generating room")
+            continue
 
         item_count = randint(1, 3)
-
-        callback_wrapper(f"Generating {item_count} items for room: {room.name}")
-
-        for j in range(item_count):
-            item = generate_item(
-                agent,
-                theme,
-                dest_room=room.name,
-                existing_items=existing_items,
-                callback=callback,
-            )
-            callback_wrapper(entity=item)
-
-            room.items.append(item)
-            existing_items.append(item.name)
-
-        actor_count = randint(1, 3)
-
         callback_wrapper(
-            message=f"Generating {actor_count} actors for room: {room.name}"
+            callback, f"Generating {item_count} items for room: {room.name}"
         )
 
-        for j in range(actor_count):
-            actor = generate_actor(
-                agent,
-                theme,
-                dest_room=room.name,
-                existing_actors=existing_actors,
-                callback=callback,
-            )
-            callback_wrapper(entity=actor)
-
-            room.actors.append(actor)
-            existing_actors.append(actor.name)
-
-            # generate the actor's inventory
-            item_count = randint(0, 2)
-
-            callback_wrapper(f"Generating {item_count} items for actor {actor.name}")
-
-            for k in range(item_count):
+        for j in range(item_count):
+            try:
                 item = generate_item(
                     agent,
                     theme,
@@ -247,10 +213,56 @@ def generate_world(
                     existing_items=existing_items,
                     callback=callback,
                 )
-                callback_wrapper(entity=item)
+                callback_wrapper(callback, entity=item)
 
-                actor.items.append(item)
+                room.items.append(item)
                 existing_items.append(item.name)
+            except Exception:
+                logger.exception("error generating item")
+
+        actor_count = randint(1, 3)
+        callback_wrapper(
+            callback, message=f"Generating {actor_count} actors for room: {room.name}"
+        )
+
+        for j in range(actor_count):
+            try:
+                actor = generate_actor(
+                    agent,
+                    theme,
+                    dest_room=room.name,
+                    existing_actors=existing_actors,
+                    callback=callback,
+                )
+                callback_wrapper(callback, entity=actor)
+
+                room.actors.append(actor)
+                existing_actors.append(actor.name)
+            except Exception:
+                logger.exception("error generating actor")
+                continue
+
+            # generate the actor's inventory
+            item_count = randint(0, 2)
+            callback_wrapper(
+                callback, f"Generating {item_count} items for actor {actor.name}"
+            )
+
+            for k in range(item_count):
+                try:
+                    item = generate_item(
+                        agent,
+                        theme,
+                        dest_room=room.name,
+                        existing_items=existing_items,
+                        callback=callback,
+                    )
+                    callback_wrapper(callback, entity=item)
+
+                    actor.items.append(item)
+                    existing_items.append(item.name)
+                except Exception:
+                    logger.exception("error generating item")
 
     # generate portals to link the rooms together
     for room in rooms:

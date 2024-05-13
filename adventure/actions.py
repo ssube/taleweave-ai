@@ -4,6 +4,12 @@ from logging import getLogger
 from packit.utils import could_be_json
 
 from adventure.context import broadcast, get_actor_agent_for_name, get_current_context
+from adventure.search import (
+    find_actor_in_room,
+    find_item_in_actor,
+    find_item_in_room,
+    find_room,
+)
 
 logger = getLogger(__name__)
 
@@ -18,30 +24,30 @@ def action_look(target: str) -> str:
     _, action_room, action_actor = get_current_context()
     broadcast(f"{action_actor.name} looks at {target}")
 
-    if target == action_room.name:
+    if target.lower() == action_room.name.lower():
         broadcast(f"{action_actor.name} saw the {action_room.name} room")
         return action_room.description
 
-    for actor in action_room.actors:
-        if actor.name == target:
-            broadcast(
-                f"{action_actor.name} saw the {actor.name} actor in the {action_room.name} room"
-            )
-            return actor.description
+    target_actor = find_actor_in_room(action_room, target)
+    if target_actor:
+        broadcast(
+            f"{action_actor.name} saw the {target_actor.name} actor in the {action_room.name} room"
+        )
+        return target_actor.description
 
-    for item in action_room.items:
-        if item.name == target:
-            broadcast(
-                f"{action_actor.name} saw the {item.name} item in the {action_room.name} room"
-            )
-            return item.description
+    target_item = find_item_in_room(action_room, target)
+    if target_item:
+        broadcast(
+            f"{action_actor.name} saw the {target_item.name} item in the {action_room.name} room"
+        )
+        return target_item.description
 
-    for item in action_actor.items:
-        if item.name == target:
-            broadcast(
-                f"{action_actor.name} saw the {item.name} item in their inventory"
-            )
-            return item.description
+    target_item = find_item_in_actor(action_actor, target)
+    if target_item:
+        broadcast(
+            f"{action_actor.name} saw the {target_item.name} item in their inventory"
+        )
+        return target_item.description
 
     return "You do not see that item or character in the room."
 
@@ -55,13 +61,11 @@ def action_move(direction: str) -> str:
     """
     action_world, action_room, action_actor = get_current_context()
 
-    destination_name = action_room.portals.get(direction)
+    destination_name = action_room.portals.get(direction.lower())
     if not destination_name:
         return f"You cannot move {direction} from here."
 
-    destination_room = next(
-        (room for room in action_world.rooms if room.name == destination_name), None
-    )
+    destination_room = find_room(action_world, destination_name)
     if not destination_room:
         return f"The {destination_name} room does not exist."
 
@@ -81,7 +85,7 @@ def action_take(item_name: str) -> str:
     """
     _, action_room, action_actor = get_current_context()
 
-    item = next((item for item in action_room.items if item.name == item_name), None)
+    item = find_item_in_room(action_room, item_name)
     if item:
         broadcast(f"{action_actor.name} takes the {item_name} item")
         action_room.items.remove(item)
@@ -187,13 +191,11 @@ def action_give(character: str, item_name: str) -> str:
     """
     _, action_room, action_actor = get_current_context()
 
-    destination_actor = next(
-        (actor for actor in action_room.actors if actor.name == character), None
-    )
+    destination_actor = find_actor_in_room(action_room, character)
     if not destination_actor:
         return f"The {character} character is not in the room."
 
-    item = next((item for item in action_actor.items if item.name == item_name), None)
+    item = find_item_in_actor(action_actor, item_name)
     if not item:
         return f"You do not have the {item_name} item in your inventory."
 
@@ -214,7 +216,7 @@ def action_drop(item_name: str) -> str:
 
     _, action_room, action_actor = get_current_context()
 
-    item = next((item for item in action_actor.items if item.name == item_name), None)
+    item = find_item_in_actor(action_actor, item_name)
     if not item:
         return f"You do not have the {item_name} item in your inventory."
 

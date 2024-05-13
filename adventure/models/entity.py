@@ -1,8 +1,8 @@
-from typing import Callable, Dict, List
+from typing import Callable, Dict, List, Literal
 
 from pydantic import Field
 
-from .base import dataclass
+from .base import BaseModel, dataclass, uuid
 
 Actions = Dict[str, Callable]
 AttributeValue = bool | int | str
@@ -10,47 +10,58 @@ Attributes = Dict[str, AttributeValue]
 
 
 @dataclass
-class Item:
+class Item(BaseModel):
     name: str
     description: str
     actions: Actions = Field(default_factory=dict)
     attributes: Attributes = Field(default_factory=dict)
+    items: List["Item"] = Field(default_factory=list)
+    id: str = Field(default_factory=uuid)
+    type: Literal["item"] = "item"
 
 
 @dataclass
-class Actor:
+class Actor(BaseModel):
     name: str
     backstory: str
     description: str
     actions: Actions = Field(default_factory=dict)
-    items: List[Item] = Field(default_factory=list)
     attributes: Attributes = Field(default_factory=dict)
+    items: List[Item] = Field(default_factory=list)
+    id: str = Field(default_factory=uuid)
+    type: Literal["actor"] = "actor"
 
 
 @dataclass
-class Room:
+class Room(BaseModel):
     name: str
     description: str
-    portals: Dict[str, str] = Field(default_factory=dict)
-    items: List[Item] = Field(default_factory=list)
     actors: List[Actor] = Field(default_factory=list)
     actions: Actions = Field(default_factory=dict)
     attributes: Attributes = Field(default_factory=dict)
+    items: List[Item] = Field(default_factory=list)
+    portals: Dict[str, str] = Field(default_factory=dict)
+    id: str = Field(default_factory=uuid)
+    type: Literal["room"] = "room"
 
 
 @dataclass
-class World:
+class World(BaseModel):
     name: str
     order: List[str]
     rooms: List[Room]
     theme: str
+    id: str = Field(default_factory=uuid)
+    type: Literal["world"] = "world"
 
 
 @dataclass
-class WorldState:
+class WorldState(BaseModel):
     memory: Dict[str, List[str | Dict[str, str]]]
     step: int
     world: World
+    id: str = Field(default_factory=uuid)
+    type: Literal["world_state"] = "world_state"
 
 
 WorldEntity = Room | Actor | Item

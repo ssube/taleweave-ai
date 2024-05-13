@@ -1,36 +1,22 @@
 from json import loads
 from typing import Any, Callable, Dict, List, Literal, Union
-from uuid import uuid4
 
 from pydantic import Field
 
-from .base import dataclass
+from .base import BaseModel, dataclass, uuid
 from .entity import Actor, Item, Room, WorldEntity
 
 
-def uuid() -> str:
-    return uuid4().hex
-
-
-class BaseEvent:
-    """
-    A base event class.
-    """
-
-    id: str
-    type: str
-
-
 @dataclass
-class GenerateEvent(BaseEvent):
+class GenerateEvent(BaseModel):
     """
     A new entity has been generated.
     """
 
-    id = Field(default_factory=uuid)
-    type = "generate"
     name: str
     entity: WorldEntity | None = None
+    id: str = Field(default_factory=uuid)
+    type: Literal["generate"] = "generate"
 
     @staticmethod
     def from_name(name: str) -> "GenerateEvent":
@@ -42,19 +28,19 @@ class GenerateEvent(BaseEvent):
 
 
 @dataclass
-class ActionEvent(BaseEvent):
+class ActionEvent(BaseModel):
     """
     An actor has taken an action.
     """
 
-    id = Field(default_factory=uuid)
-    type = "action"
     action: str
     parameters: Dict[str, bool | float | int | str]
 
     room: Room
     actor: Actor
     item: Item | None = None
+    id: str = Field(default_factory=uuid)
+    type: Literal["action"] = "action"
 
     @staticmethod
     def from_json(json: str, room: Room, actor: Actor) -> "ActionEvent":
@@ -69,31 +55,31 @@ class ActionEvent(BaseEvent):
 
 
 @dataclass
-class PromptEvent(BaseEvent):
+class PromptEvent(BaseModel):
     """
     A prompt for an actor to take an action.
     """
 
-    id = Field(default_factory=uuid)
-    type = "prompt"
     prompt: str
     room: Room
     actor: Actor
+    id: str = Field(default_factory=uuid)
+    type: Literal["prompt"] = "prompt"
 
 
 @dataclass
-class ReplyEvent(BaseEvent):
+class ReplyEvent(BaseModel):
     """
     An actor has replied with text.
 
     This is the non-JSON version of an ActionEvent.
     """
 
-    id = Field(default_factory=uuid)
-    type = "reply"
     text: str
     room: Room
     actor: Actor
+    id: str = Field(default_factory=uuid)
+    type: Literal["reply"] = "reply"
 
     @staticmethod
     def from_text(text: str, room: Room, actor: Actor) -> "ReplyEvent":
@@ -101,33 +87,33 @@ class ReplyEvent(BaseEvent):
 
 
 @dataclass
-class ResultEvent(BaseEvent):
+class ResultEvent(BaseModel):
     """
     A result of an action.
     """
 
-    id = Field(default_factory=uuid)
-    type = "result"
     result: str
     room: Room
     actor: Actor
+    id: str = Field(default_factory=uuid)
+    type: Literal["result"] = "result"
 
 
 @dataclass
-class StatusEvent(BaseEvent):
+class StatusEvent(BaseModel):
     """
     A status broadcast event with text.
     """
 
-    id = Field(default_factory=uuid)
-    type = "status"
     text: str
     room: Room | None = None
     actor: Actor | None = None
+    id: str = Field(default_factory=uuid)
+    type: Literal["status"] = "status"
 
 
 @dataclass
-class SnapshotEvent(BaseEvent):
+class SnapshotEvent(BaseModel):
     """
     A snapshot of the world state.
 
@@ -135,47 +121,47 @@ class SnapshotEvent(BaseEvent):
     That is especially important for the memory, which is a dictionary of actor names to lists of messages.
     """
 
-    id = Field(default_factory=uuid)
-    type = "snapshot"
     world: Dict[str, Any]
     memory: Dict[str, List[Any]]
     step: int
+    id: str = Field(default_factory=uuid)
+    type: Literal["snapshot"] = "snapshot"
 
 
 @dataclass
-class PlayerEvent(BaseEvent):
+class PlayerEvent(BaseModel):
     """
     A player joining or leaving the game.
     """
 
-    id = Field(default_factory=uuid)
-    type = "player"
     status: Literal["join", "leave"]
     character: str
     client: str
+    id: str = Field(default_factory=uuid)
+    type: Literal["player"] = "player"
 
 
 @dataclass
-class PlayerListEvent(BaseEvent):
+class PlayerListEvent(BaseModel):
     """
     A list of players in the game and the characters they are playing.
     """
 
-    id = Field(default_factory=uuid)
-    type = "players"
     players: Dict[str, str]
+    id: str = Field(default_factory=uuid)
+    type: Literal["players"] = "players"
 
 
 @dataclass
-class RenderEvent(BaseEvent):
+class RenderEvent(BaseModel):
     """
     Images have been rendered.
     """
 
-    id = Field(default_factory=uuid)
-    type = "render"
     paths: List[str]
     source: Union["GameEvent", WorldEntity]
+    id: str = Field(default_factory=uuid)
+    type: Literal["render"] = "render"
 
 
 # event types

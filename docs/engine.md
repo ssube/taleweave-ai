@@ -4,15 +4,22 @@
 
 - [TaleWeave AI Engine](#taleweave-ai-engine)
   - [Contents](#contents)
-  - [What is a system?](#what-is-a-system)
-  - [What kinds of entities exist in the world?](#what-kinds-of-entities-exist-in-the-world)
-  - [What are actions?](#what-are-actions)
-  - [What are attributes?](#what-are-attributes)
-  - [What are rules?](#what-are-rules)
-  - [What are triggers?](#what-are-triggers)
-  - [What are events?](#what-are-events)
+  - [Concepts](#concepts)
+    - [What is a system?](#what-is-a-system)
+    - [What kinds of entities exist in the world?](#what-kinds-of-entities-exist-in-the-world)
+    - [What are actions?](#what-are-actions)
+    - [What are attributes?](#what-are-attributes)
+    - [What are rules?](#what-are-rules)
+    - [What are triggers?](#what-are-triggers)
+    - [What are events?](#what-are-events)
+  - [Threads](#threads)
+    - [Discord Bot Threads](#discord-bot-threads)
+    - [Render Thread](#render-thread)
+    - [Websocket Server Thread](#websocket-server-thread)
 
-## What is a system?
+## Concepts
+
+### What is a system?
 
 In TaleWeave AI, a system refers to a predefined logical process that governs the interaction and behavior of entities
 within the game world. These systems are essential for modifying the attributes of entities based on the actions taken
@@ -21,7 +28,7 @@ environments where each action has a potential impact, reflecting changes in the
 player decisions. Systems are designed to be modular and scalable, allowing developers to customize or extend the game
 mechanics to suit different types of adventures and narrative styles.
 
-## What kinds of entities exist in the world?
+### What kinds of entities exist in the world?
 
 In the immersive world of TaleWeave AI, entities are categorized into Rooms, Actors, and Items, each playing a vital
 role in crafting the narrative and gameplay experience. Rooms serve as the fundamental spatial units where the story
@@ -30,7 +37,7 @@ possess inventories that hold Items, which are objects that can be interacted wi
 TaleWeave AI does not support Containers—Items that can hold other Items—but the structure is designed to support
 complex interactions within and between these entity types, laying the groundwork for a deeply interactive environment.
 
-## What are actions?
+### What are actions?
 
 Actions in TaleWeave AI are defined as Python functions that enable both human players and AI-driven characters to
 interact with the game world. These actions, which include behaviors like taking an item or moving between rooms, are
@@ -39,7 +46,7 @@ which can significantly alter the attributes of entities, reposition entities be
 game world by adding or removing entities. This framework ensures that every turn is meaningful and that players'
 decisions have direct consequences on the game's progression and outcome.
 
-## What are attributes?
+### What are attributes?
 
 Attributes in TaleWeave AI are key-value pairs that define the properties of an entity. These attributes can be of
 various types—boolean, number, or string—such as an actor’s mood being "happy," their health being quantified as 10, or
@@ -48,7 +55,7 @@ game's logic system by influencing how entities react under different conditions
 specific rules within the game, and their labels are included in prompts to guide language model players in making
 decisions that are contextually appropriate and aligned with their character's current state.
 
-## What are rules?
+### What are rules?
 
 Rules in TaleWeave AI are defined mechanisms within the logic system that facilitate the updating of the game world
 based on specific criteria. Each rule describes a transition from one state of an attribute to another—for instance, an
@@ -57,7 +64,7 @@ a rule engine to execute simple predicates, allowing for sophisticated control o
 change. This structured approach ensures that the game world remains dynamic and responsive, with entities exhibiting
 behaviors that reflect their evolving conditions.
 
-## What are triggers?
+### What are triggers?
 
 Triggers in TaleWeave AI act as the logical counterpart to actions. While actions are initiated by players (either human
 or AI) to interact with the game world, triggers are automated responses invoked by the game’s logic system based on
@@ -66,4 +73,25 @@ can alter the attributes of an entity significantly. These triggered functions a
 system, enabling the game to automate complex behaviors and interactions, thereby enriching the player’s experience with
 a more lifelike and engaging narrative environment.
 
-## What are events?
+### What are events?
+
+TODO
+
+## Threads
+
+The TaleWeave AI engine is multi-threaded. Each bot or server has at least one thread to manage the connections.
+
+### Discord Bot Threads
+
+- bot thread
+- feeder thread
+
+### Render Thread
+
+- render thread
+- feeder queue
+
+### Websocket Server Thread
+
+- server thread
+- feeder queue

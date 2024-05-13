@@ -240,7 +240,7 @@ export function GenerateEventItem(props: EventItemProps) {
     alignItems="flex-start"
     ref={props.focusRef}
     secondaryAction={
-      <IconButton edge="end" aria-label="render" onClick={() => renderEntity(entity.name)}>
+      <IconButton edge="end" aria-label="render" onClick={() => renderEntity(entity.type, entity.name)}>
         <Camera />
       </IconButton>
     }
