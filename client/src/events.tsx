@@ -2,10 +2,10 @@ import { Avatar, IconButton, ImageList, ImageListItem, ListItem, ListItemAvatar,
 import React, { Fragment, MutableRefObject } from 'react';
 
 import { Maybe, doesExist } from '@apextoaster/js-utils';
-import { Camera } from '@mui/icons-material';
+import { Camera, Settings } from '@mui/icons-material';
 import { useStore } from 'zustand';
 import { formatters } from './format.js';
-import { Actor, GameEvent } from './models.js';
+import { Actor } from './models.js';
 import { StoreState, store } from './store.js';
 
 export function openImage(image: string) {
@@ -67,7 +67,7 @@ export function ActionEventItem(props: EventItemProps) {
     }
   >
     <ListItemAvatar>
-      <Avatar alt={actor.name} src="/static/images/avatar/1.jpg" />
+      <Avatar>{room.name.substring(0, 1)}</Avatar>
     </ListItemAvatar>
     <ListItemText
       primary={room.name}
@@ -97,7 +97,7 @@ export function SnapshotEventItem(props: EventItemProps) {
 
   return <ListItem alignItems="flex-start" ref={props.focusRef}>
     <ListItemAvatar>
-      <Avatar alt={step.toString()} src="/static/images/avatar/1.jpg" />
+      <Avatar>{step}</Avatar>
     </ListItemAvatar>
     <ListItemText
       primary={name}
@@ -124,7 +124,9 @@ export function ReplyEventItem(props: EventItemProps) {
 
   return <ListItem alignItems="flex-start" ref={props.focusRef}>
     <ListItemAvatar>
-      <Avatar alt="System" src="/static/images/avatar/1.jpg" />
+      <Avatar alt="System">
+        <Settings />
+      </Avatar>
     </ListItemAvatar>
     <ListItemText
       primary="System"
@@ -162,7 +164,7 @@ export function PlayerEventItem(props: EventItemProps) {
     ref={props.focusRef}
   >
     <ListItemAvatar>
-      <Avatar alt={character} src="/static/images/avatar/1.jpg" />
+      <Avatar>{character.substring(0, 1)}</Avatar>
     </ListItemAvatar>
     <ListItemText
       primary={primary}
@@ -185,9 +187,6 @@ export function RenderEventItem(props: EventItemProps) {
   const { images } = event;
 
   return <ListItem alignItems="flex-start" ref={props.focusRef}>
-    <ListItemAvatar>
-      <Avatar alt="Render" src="/static/images/avatar/1.jpg" />
-    </ListItemAvatar>
     <ImageList cols={3} rowHeight={256}>
       {Object.entries(images).map(([name, image]) => <ImageListItem key={name}>
         <a href='#' onClick={() => openImage(image as string)}>
@@ -212,7 +211,7 @@ export function PromptEventItem(props: EventItemProps) {
 
   return <ListItem alignItems="flex-start" ref={props.focusRef}>
     <ListItemAvatar>
-      <Avatar alt="Prompt" src="/static/images/avatar/1.jpg" />
+      <Avatar>{character.substring(0, 1)}</Avatar>
     </ListItemAvatar>
     <ListItemText
       primary="Prompt"
@@ -246,7 +245,7 @@ export function GenerateEventItem(props: EventItemProps) {
     }
   >
     <ListItemAvatar>
-      <Avatar alt="Generate" src="/static/images/avatar/1.jpg" />
+      <Avatar>{name.substring(0, 1)}</Avatar>
     </ListItemAvatar>
     <ListItemText
       primary="Generate"
