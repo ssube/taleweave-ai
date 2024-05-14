@@ -4,6 +4,7 @@ from adventure.context import (
     get_current_context,
     get_dungeon_master,
 )
+from adventure.search import find_actor_in_room, find_item_in_room
 
 
 def action_attack(target: str) -> str:
@@ -17,12 +18,8 @@ def action_attack(target: str) -> str:
     _, action_room, action_actor = get_current_context()
 
     # make sure the target is in the room
-    target_actor = next(
-        (actor for actor in action_room.actors if actor.name == target), None
-    )
-    target_item = next(
-        (item for item in action_room.items if item.name == target), None
-    )
+    target_actor = find_actor_in_room(action_room, target)
+    target_item = find_item_in_room(action_room, target)
 
     dungeon_master = get_dungeon_master()
     if target_actor:
@@ -73,12 +70,8 @@ def action_cast(target: str, spell: str) -> str:
     _, action_room, action_actor = get_current_context()
 
     # make sure the target is in the room
-    target_actor = next(
-        (actor for actor in action_room.actors if actor.name == target), None
-    )
-    target_item = next(
-        (item for item in action_room.items if item.name == target), None
-    )
+    target_actor = find_actor_in_room(action_room, target)
+    target_item = find_item_in_room(action_room, target)
 
     if not target_actor and not target_item:
         return f"{target} is not in the {action_room.name}."

@@ -12,6 +12,7 @@ from adventure.context import (
     set_dungeon_master,
 )
 from adventure.generate import OPPOSITE_DIRECTIONS, generate_item, generate_room
+from adventure.search import find_actor_in_room
 
 logger = getLogger(__name__)
 
@@ -47,19 +48,23 @@ def action_explore(direction: str) -> str:
         return f"You cannot explore {direction} from here, that direction already leads to {dest_room}. Please use the move action to go there."
 
     existing_rooms = [room.name for room in current_world.rooms]
-    new_room = generate_room(
-        dungeon_master, current_world.theme, existing_rooms=existing_rooms
-    )
-    current_world.rooms.append(new_room)
+    try:
+        new_room = generate_room(
+            dungeon_master, current_world.theme, existing_rooms=existing_rooms
+        )
+        current_world.rooms.append(new_room)
 
-    # link the rooms together
-    current_room.portals[direction] = new_room.name
-    new_room.portals[OPPOSITE_DIRECTIONS[direction]] = current_room.name
+        # link the rooms together
+        current_room.portals[direction] = new_room.name
+        new_room.portals[OPPOSITE_DIRECTIONS[direction]] = current_room.name
 
-    broadcast(
-        f"{current_actor.name} explores {direction} of {current_room.name} and finds a new room: {new_room.name}"
-    )
-    return f"You explore {direction} and find a new room: {new_room.name}"
+        broadcast(
+            f"{current_actor.name} explores {direction} of {current_room.name} and finds a new room: {new_room.name}"
+        )
+        return f"You explore {direction} and find a new room: {new_room.name}"
+    except Exception:
+        logger.exception("error generating room")
+        return f"You cannot explore {direction} from here, there is no room in that direction."
 
 
 def action_search(unused: bool) -> str:
@@ -71,22 +76,26 @@ def action_search(unused: bool) -> str:
     dungeon_master = get_dungeon_master()
 
     if len(action_room.items) > 2:
-        return "You find nothing hidden in the room."
+        return "You find nothing hidden in the room. There is no room for more items."
 
     existing_items = [item.name for item in action_room.items]
 
-    new_item = generate_item(
-        dungeon_master,
-        action_world.theme,
-        existing_items=existing_items,
-        dest_room=action_room.name,
-    )
-    action_room.items.append(new_item)
+    try:
+        new_item = generate_item(
+            dungeon_master,
+            action_world.theme,
+            existing_items=existing_items,
+            dest_room=action_room.name,
+        )
+        action_room.items.append(new_item)
 
-    broadcast(
-        f"{action_actor.name} searches {action_room.name} and finds a new item: {new_item.name}"
-    )
-    return f"You search the room and find a new item: {new_item.name}"
+        broadcast(
+            f"{action_actor.name} searches {action_room.name} and finds a new item: {new_item.name}"
+        )
+        return f"You search the room and find a new item: {new_item.name}"
+    except Exception:
+        logger.exception("error generating item")
+        return "You find nothing hidden in the room."
 
 
 def action_use(item: str, target: str) -> str:
@@ -115,9 +124,7 @@ def action_use(item: str, target: str) -> str:
         target_actor = action_actor
         target = action_actor.name
     else:
-        target_actor = next(
-            (actor for actor in action_room.actors if actor.name == target), None
-        )
+        target_actor = find_actor_in_room(action_room, target)
         if not target_actor:
             return f"The {target} character is not in the room."
 

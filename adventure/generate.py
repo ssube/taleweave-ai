@@ -20,6 +20,8 @@ OPPOSITE_DIRECTIONS = {
 
 def duplicate_name_parser(existing_names: List[str]):
     def name_parser(name: str, **kwargs):
+        logger.debug(f"validating name: {name}")
+
         if name in existing_names:
             raise ValueError(f'"{name}" has already been used.')
 

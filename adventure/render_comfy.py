@@ -12,6 +12,7 @@ from typing import List
 from uuid import uuid4
 
 import websocket  # NOTE: websocket-client (https://github.com/websocket-client/websocket-client)
+from fnvhash import fnv1a_32
 from jinja2 import Environment, FileSystemLoader, select_autoescape
 from PIL import Image
 
@@ -225,7 +226,8 @@ def prompt_from_event(event: GameEvent) -> str | None:
         if event.item:
             return f"{event.actor.name} uses the {event.item.name}. {event.item.description}. {event.actor.description}. {event.room.description}."
 
-        return f"{event.actor.name} {event.action}. {event.actor.description}. {event.room.description}."
+        action_name = event.action.removeprefix("action_")
+        return f"{event.actor.name} uses {action_name}. {event.actor.description}. {event.room.description}."
 
     if isinstance(event, ReplyEvent):
         return event.text
@@ -262,18 +264,24 @@ def sanitize_name(name: str) -> str:
     return valid_name.lower()
 
 
+def fast_hash(text: str) -> str:
+    return hex(fnv1a_32(text.encode("utf-8")))
+
+
 def get_image_prefix(event: GameEvent | WorldEntity) -> str:
     if isinstance(event, ActionEvent):
         return sanitize_name(f"event-action-{event.actor.name}-{event.action}")
 
     if isinstance(event, ReplyEvent):
-        return sanitize_name(f"event-reply-{event.actor.name}")
+        return sanitize_name(f"event-reply-{event.actor.name}-{fast_hash(event.text)}")
 
     if isinstance(event, ResultEvent):
-        return sanitize_name(f"event-result-{event.actor.name}")
+        return sanitize_name(
+            f"event-result-{event.actor.name}-{fast_hash(event.result)}"
+        )
 
     if isinstance(event, StatusEvent):
-        return "status"
+        return sanitize_name(f"event-status-{fast_hash(event.text)}")
 
     if isinstance(event, WorldEntity):
         return sanitize_name(f"entity-{event.__class__.__name__.lower()}-{event.name}")

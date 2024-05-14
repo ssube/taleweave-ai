@@ -35,6 +35,7 @@ from adventure.player import (
     set_player,
 )
 from adventure.render_comfy import render_entity, render_event
+from adventure.search import find_actor, find_item, find_room
 from adventure.state import snapshot_world, world_json
 
 logger = getLogger(__name__)
@@ -214,33 +215,23 @@ def render_input(data):
             logger.error(f"failed to find event {event_id}")
     elif "actor" in data:
         actor_name = data["actor"]
-        actor = next(
-            (a for r in world.rooms for a in r.actors if a.name == actor_name), None
-        )
+        actor = find_actor(world, actor_name)
         if actor:
             render_entity(actor)
         else:
             logger.error(f"failed to find actor {actor_name}")
     elif "room" in data:
         room_name = data["room"]
-        room = next((r for r in world.rooms if r.name == room_name), None)
+        room = find_room(world, room_name)
         if room:
             render_entity(room)
         else:
             logger.error(f"failed to find room {room_name}")
     elif "item" in data:
         item_name = data["item"]
-        item = None
-        for room in world.rooms:
-            item = next((i for i in room.items if i.name == item_name), None)
-            if item:
-                break
-
-            for actor in room.actors:
-                item = next((i for i in actor.items if i.name == item_name), None)
-                if item:
-                    break
-
+        item = find_item(
+            world, item_name, include_actor_inventory=True, include_room_inventory=True
+        )
         if item:
             render_entity(item)
         else:

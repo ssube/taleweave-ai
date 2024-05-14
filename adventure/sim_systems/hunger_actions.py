@@ -1,4 +1,5 @@
 from adventure.context import get_current_context
+from adventure.search import find_item_in_actor
 
 
 def action_cook(item: str) -> str:
@@ -10,7 +11,7 @@ def action_cook(item: str) -> str:
     """
     _, _, action_actor = get_current_context()
 
-    target_item = next((i for i in action_actor.items if i.name == item), None)
+    target_item = find_item_in_actor(action_actor, item)
     if target_item is None:
         return "You don't have the item to cook."
 
@@ -38,7 +39,7 @@ def action_eat(item: str) -> str:
     """
     _, _, action_actor = get_current_context()
 
-    target_item = next((i for i in action_actor.items if i.name == item), None)
+    target_item = find_item_in_actor(action_actor, item)
     if target_item is None:
         return "You don't have the item to eat."
 
