@@ -11,9 +11,11 @@
       "program": "${file}",
       "args": [
         "--world",
-        "worlds/cyber.json",
-        "--world-state",
-        "worlds/cyber-state.json"
+        "worlds/test-1.json",
+        "--rooms",
+        "2",
+        "--server",
+        "--optional-actions"
       ],
       "console": "integratedTerminal",
       "cwd": "${workspaceFolder}",

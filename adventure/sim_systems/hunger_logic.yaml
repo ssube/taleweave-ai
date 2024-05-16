@@ -1,6 +1,7 @@
 rules:
   # cooking logic
-  - match:
+  - group: cooking
+    match:
       type: item
       edible: true
       cooked: false
@@ -8,7 +9,8 @@ rules:
     set:
       spoiled: true
 
-  - match:
+  - group: cooking
+    match:
       type: item
       edible: true
       cooked: true
@@ -17,7 +19,8 @@ rules:
       spoiled: true
 
   # hunger logic
-  - match:
+  - group: hunger
+    match:
       type: actor
       hunger: full
     chance: 0.1
@@ -25,13 +28,15 @@ rules:
       hunger: hungry
 
   # hunger initialization
-  - rule: |
+  - group: hunger
+    rule: |
       "hunger" not in attributes
     set:
       hunger: full
 
   # thirst logic
-  - match:
+  - group: thirst
+    match:
       type: actor
       thirst: hydrated
     chance: 0.1
@@ -39,7 +44,8 @@ rules:
       thirst: thirsty
 
   # thirst initialization
-  - rule: |
+  - group: thirst
+    rule: |
       "thirst" not in attributes
     set:
       thirst: hydrated

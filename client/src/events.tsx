@@ -187,6 +187,12 @@ export function RenderEventItem(props: EventItemProps) {
   const { images } = event;
 
   return <ListItem alignItems="flex-start" ref={props.focusRef}>
+    <ListItemAvatar>
+      <Avatar alt="Render">
+        <Camera />
+      </Avatar>
+    </ListItemAvatar>
+    <ListItemText primary="">Render</ListItemText>
     <ImageList cols={3} rowHeight={256}>
       {Object.entries(images).map(([name, image]) => <ImageListItem key={name}>
         <a href='#' onClick={() => openImage(image as string)}>

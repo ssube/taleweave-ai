@@ -1,5 +1,5 @@
 from logging import getLogger
-from typing import Callable, Sequence, Tuple
+from typing import Callable, Sequence
 
 from packit.loops import loop_retry
 from packit.results import multi_function_or_str_result
@@ -24,8 +24,10 @@ from adventure.context import (
     set_current_room,
     set_current_step,
     set_current_world,
+    set_game_systems,
 )
-from adventure.models.entity import Attributes, World
+from adventure.game_system import GameSystem
+from adventure.models.entity import World
 from adventure.models.event import (
     ActionEvent,
     EventCallback,
@@ -34,6 +36,7 @@ from adventure.models.event import (
     ResultEvent,
     StatusEvent,
 )
+from adventure.utils.world import describe_entity, format_attributes
 
 logger = getLogger(__name__)
 
@@ -62,13 +65,12 @@ def simulate_world(
     world: World,
     steps: int = 10,
     actions: Sequence[Callable[..., str]] = [],
-    systems: Sequence[
-        Tuple[Callable[[World, int], None], Callable[[Attributes], str] | None]
-    ] = [],
     callbacks: Sequence[EventCallback] = [],
+    systems: Sequence[GameSystem] = [],
 ):
     logger.info("Simulating the world")
     set_current_world(world)
+    set_game_systems(systems)
 
     # set up a broadcast callback
     def broadcast_callback(message: str | GameEvent):
@@ -116,11 +118,7 @@ def simulate_world(
             room_items = [item.name for item in room.items]
             room_directions = list(room.portals.keys())
 
-            actor_attributes = " ".join(
-                system_format(actor.attributes)
-                for _, system_format in systems
-                if system_format
-            )
+            actor_attributes = format_attributes(actor)
             actor_items = [item.name for item in actor.items]
 
             def result_parser(value, agent, **kwargs):
@@ -161,7 +159,7 @@ def simulate_world(
                     "attributes": actor_attributes,
                     "directions": room_directions,
                     "room_name": room.name,
-                    "room_description": room.description,
+                    "room_description": describe_entity(room),
                     "visible_actors": room_actors,
                     "visible_items": room_items,
                 },
@@ -176,7 +174,8 @@ def simulate_world(
             for callback in callbacks:
                 callback(result_event)
 
-        for system_update, _ in systems:
-            system_update(world, current_step)
+        for system in systems:
+            if system.simulate:
+                system.simulate(world, current_step)
 
         set_current_step(current_step + 1)

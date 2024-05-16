@@ -1,7 +1,8 @@
-from typing import Callable, Dict, Tuple
+from typing import Callable, Dict, List, Sequence, Tuple
 
 from packit.agent import Agent
 
+from adventure.game_system import GameSystem
 from adventure.models.entity import Actor, Room, World
 from adventure.models.event import GameEvent
 
@@ -11,6 +12,7 @@ current_room: Room | None = None
 current_actor: Actor | None = None
 current_step = 0
 dungeon_master: Agent | None = None
+game_systems: List[GameSystem] = []
 
 
 # TODO: where should this one go?
@@ -71,6 +73,10 @@ def get_dungeon_master() -> Agent:
     return dungeon_master
 
 
+def get_game_systems() -> List[GameSystem]:
+    return game_systems
+
+
 # endregion
 
 
@@ -107,6 +113,11 @@ def set_actor_agent(name, actor, agent):
 def set_dungeon_master(agent):
     global dungeon_master
     dungeon_master = agent
+
+
+def set_game_systems(systems: Sequence[GameSystem]):
+    global game_systems
+    game_systems = list(systems)
 
 
 # endregion

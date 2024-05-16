@@ -5,8 +5,42 @@ from pydantic import Field
 from .base import BaseModel, dataclass, uuid
 
 Actions = Dict[str, Callable]
-AttributeValue = bool | int | str
+AttributeValue = bool | float | int | str
 Attributes = Dict[str, AttributeValue]
+
+
+@dataclass
+class StringAttributeEffect:
+    name: str
+    operation: Literal["set", "append", "prepend"]
+    value: str
+
+
+@dataclass
+class NumberAttributeEffect:
+    name: str
+    operation: Literal["set", "add", "subtract", "multiply", "divide"]
+    # TODO: make this a range
+    value: int | float
+
+
+@dataclass
+class BooleanAttributeEffect:
+    name: str
+    operation: Literal["set", "toggle"]
+    value: bool
+
+
+AttributeEffect = StringAttributeEffect | NumberAttributeEffect | BooleanAttributeEffect
+
+
+@dataclass
+class Effect(BaseModel):
+    name: str
+    description: str
+    attributes: list[AttributeEffect] = Field(default_factory=list)
+    id: str = Field(default_factory=uuid)
+    type: Literal["effect"] = "effect"
 
 
 @dataclass
@@ -15,6 +49,7 @@ class Item(BaseModel):
     description: str
     actions: Actions = Field(default_factory=dict)
     attributes: Attributes = Field(default_factory=dict)
+    effects: List[Effect] = Field(default_factory=list)
     items: List["Item"] = Field(default_factory=list)
     id: str = Field(default_factory=uuid)
     type: Literal["item"] = "item"

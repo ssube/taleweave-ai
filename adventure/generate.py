@@ -4,8 +4,19 @@ from typing import List
 
 from packit.agent import Agent
 from packit.loops import loop_retry
+from packit.utils import could_be_json
 
-from adventure.models.entity import Actor, Item, Room, World, WorldEntity
+from adventure.game_system import GameSystem
+from adventure.models.entity import (
+    Actor,
+    Effect,
+    Item,
+    NumberAttributeEffect,
+    Room,
+    StringAttributeEffect,
+    World,
+    WorldEntity,
+)
 from adventure.models.event import EventCallback, GenerateEvent
 
 logger = getLogger(__name__)
@@ -19,19 +30,22 @@ OPPOSITE_DIRECTIONS = {
 
 
 def duplicate_name_parser(existing_names: List[str]):
-    def name_parser(name: str, **kwargs):
-        logger.debug(f"validating name: {name}")
+    def name_parser(value: str, **kwargs):
+        print(f"validating generated name: {value}")
 
-        if name in existing_names:
-            raise ValueError(f'"{name}" has already been used.')
+        if value in existing_names:
+            raise ValueError(f'"{value}" has already been used.')
 
-        if '"' in name or ":" in name:
+        if could_be_json(value):
+            raise ValueError("The name cannot contain JSON or other commands.")
+
+        if '"' in value or ":" in value:
             raise ValueError("The name cannot contain quotes or colons.")
 
-        if len(name) > 50:
+        if len(value) > 50:
             raise ValueError("The name cannot be longer than 50 characters.")
 
-        return name
+        return value
 
     return name_parser
 
@@ -123,8 +137,23 @@ def generate_item(
     )
 
     actions = {}
+    item = Item(name=name, description=desc, actions=actions)
 
-    return Item(name=name, description=desc, actions=actions)
+    effect_count = randint(1, 2)
+    callback_wrapper(
+        callback, message=f"Generating {effect_count} effects for item: {name}"
+    )
+
+    effects = []
+    for i in range(effect_count):
+        try:
+            effect = generate_effect(agent, world_theme, entity=item, callback=callback)
+            effects.append(effect)
+        except Exception:
+            logger.exception("error generating effect")
+
+    item.effects = effects
+    return item
 
 
 def generate_actor(
@@ -171,6 +200,100 @@ def generate_actor(
     )
 
 
+def generate_effect(
+    agent: Agent, theme: str, entity: Item, callback: EventCallback | None = None
+) -> Effect:
+    entity_type = entity.type
+
+    existing_effects = [effect.name for effect in entity.effects]
+
+    name = loop_retry(
+        agent,
+        "Generate one effect for an {entity_type} named {entity.name} that would make sense in the world of {theme}. "
+        "Only respond with the effect name in title case, do not include a description or any other text. "
+        'Do not prefix the name with "the", do not wrap it in quotes. Use a unique name. '
+        "Do not create any duplicate effects on the same item. The existing effects are: {existing_effects}. "
+        "Some example effects are: 'fire', 'poison', 'frost', 'haste', 'slow', and 'heal'.",
+        context={
+            "entity_type": entity_type,
+            "existing_effects": existing_effects,
+            "theme": theme,
+        },
+        result_parser=duplicate_name_parser(existing_effects),
+    )
+    callback_wrapper(callback, message=f"Generating effect: {name}")
+
+    description = agent(
+        "Generate a detailed description of the {name} effect. What does it look like? What does it do? "
+        "How does it affect the target? Describe the effect from the perspective of an outside observer.",
+        name=name,
+    )
+
+    attribute_names = agent(
+        "Generate a list of attributes that the {name} effect modifies. "
+        "For example, 'heal' increases the target's 'health' attribute, while 'poison' decreases it. "
+        "Use a comma-separated list of attribute names, such as 'health, strength, speed'. "
+        "Only include the attribute names, do not include the question or any JSON.",
+        name=name,
+    )
+
+    attributes = []
+    for attribute_name in attribute_names.split(","):
+        attribute_name = attribute_name.strip()
+        if attribute_name:
+            operation = agent(
+                f"How does the {name} effect modify the {attribute_name} attribute? "
+                "For example, 'heal' might 'add' to the 'health' attribute, while 'poison' might 'subtract' from it."
+                "Another example is 'writing' might 'set' the 'text' attribute, while 'break' might 'set' the 'condition' attribute."
+                "Choose from the following operations: {operations}",
+                name=name,
+                attribute_name=attribute_name,
+                operations=[
+                    "set",
+                    "add",
+                    "subtract",
+                    "multiply",
+                    "divide",
+                    "append",
+                    "prepend",
+                ],
+            )
+            value = agent(
+                f"How much does the {name} effect modify the {attribute_name} attribute? "
+                "For example, 'heal' might 'add' 10 to the 'health' attribute, while 'poison' might 'subtract' 5 from it."
+                "Enter a positive or negative number, or a string value.",
+                name=name,
+                attribute_name=attribute_name,
+            )
+            value = value.strip()
+            if value.isdigit():
+                value = int(value)
+                attribute_effect = NumberAttributeEffect(
+                    name=attribute_name, operation=operation, value=value
+                )
+            elif value.isdecimal():
+                value = float(value)
+                attribute_effect = NumberAttributeEffect(
+                    name=attribute_name, operation=operation, value=value
+                )
+            else:
+                attribute_effect = StringAttributeEffect(
+                    name=attribute_name, operation=operation, value=value
+                )
+
+            attributes.append(attribute_effect)
+
+    return Effect(name=name, description=description, attributes=[])
+
+
+def generate_system_attributes(
+    agent: Agent, theme: str, entity: WorldEntity, systems: List[GameSystem] = []
+) -> None:
+    for system in systems:
+        if system.generate:
+            system.generate(agent, theme, entity)
+
+
 def generate_world(
     agent: Agent,
     name: str,
@@ -178,6 +301,7 @@ def generate_world(
     room_count: int | None = None,
     max_rooms: int = 5,
     callback: EventCallback | None = None,
+    systems: List[GameSystem] = [],
 ) -> World:
     room_count = room_count or randint(3, max_rooms)
 
@@ -194,6 +318,7 @@ def generate_world(
             room = generate_room(
                 agent, theme, existing_rooms=existing_rooms, callback=callback
             )
+            generate_system_attributes(agent, theme, room, systems)
             callback_wrapper(callback, entity=room)
             rooms.append(room)
             existing_rooms.append(room.name)
@@ -215,6 +340,7 @@ def generate_world(
                     existing_items=existing_items,
                     callback=callback,
                 )
+                generate_system_attributes(agent, theme, item, systems)
                 callback_wrapper(callback, entity=item)
 
                 room.items.append(item)
@@ -236,6 +362,7 @@ def generate_world(
                     existing_actors=existing_actors,
                     callback=callback,
                 )
+                generate_system_attributes(agent, theme, actor, systems)
                 callback_wrapper(callback, entity=actor)
 
                 room.actors.append(actor)
@@ -259,6 +386,7 @@ def generate_world(
                         existing_items=existing_items,
                         callback=callback,
                     )
+                    generate_system_attributes(agent, theme, item, systems)
                     callback_wrapper(callback, entity=item)
 
                     actor.items.append(item)

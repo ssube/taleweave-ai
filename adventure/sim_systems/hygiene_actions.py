@@ -1,4 +1,5 @@
 from adventure.context import get_current_context, get_dungeon_master
+from adventure.utils.world import describe_entity
 
 
 def action_wash(unused: bool) -> str:
@@ -11,7 +12,7 @@ def action_wash(unused: bool) -> str:
 
     dungeon_master = get_dungeon_master()
     outcome = dungeon_master(
-        f"{action_actor.name} washes themselves in the {action_room.name}. {action_room.description}. {action_actor.description}"
+        f"{action_actor.name} washes themselves in the {action_room.name}. {describe_entity(action_room)}. {describe_entity(action_actor)}"
         f"{action_actor.name} was {hygiene} to start with. How clean are they after washing? Respond with 'clean' or 'dirty'."
         "If the room has a shower or running water, they should be cleaner. If the room is dirty, they should end up dirtier."
     )

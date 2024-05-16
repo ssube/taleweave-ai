@@ -13,6 +13,8 @@ from adventure.context import (
 )
 from adventure.generate import OPPOSITE_DIRECTIONS, generate_item, generate_room
 from adventure.search import find_actor_in_room
+from adventure.utils.effect import apply_effect
+from adventure.utils.world import describe_actor, describe_entity
 
 logger = getLogger(__name__)
 
@@ -128,10 +130,35 @@ def action_use(item: str, target: str) -> str:
         if not target_actor:
             return f"The {target} character is not in the room."
 
-    broadcast(f"{action_actor.name} uses {item} on {target}")
-    outcome = dungeon_master(
+    effect_names = [effect.name for effect in action_item.effects]
+    chosen_name = dungeon_master(
         f"{action_actor.name} uses {item} on {target}. "
-        f"{action_actor.description}. {target_actor.description}. {action_item.description}. "
+        f"{item} has the following effects: {effect_names}. "
+        "Which effect should be applied? Specify the name of the effect to apply."
+        "Do not include the question or any JSON. Only include the name of the effect to apply."
+    )
+    chosen_name = chosen_name.strip()
+
+    chosen_effect = next(
+        (
+            search_effect
+            for search_effect in action_item.effects
+            if search_effect.name == chosen_name
+        ),
+        None,
+    )
+    if not chosen_effect:
+        # TODO: should retry the question if the effect is not found
+        return f"The {chosen_name} effect is not available to apply."
+
+    apply_effect(chosen_effect, target_actor.attributes)
+
+    broadcast(
+        f"{action_actor.name} uses the {chosen_name} effect of {item} on {target}"
+    )
+    outcome = dungeon_master(
+        f"{action_actor.name} uses the {chosen_name} effect of {item} on {target}. "
+        f"{describe_actor(action_actor)}. {describe_actor(target_actor)}. {describe_entity(action_item)}. "
         f"What happens? How does {target} react? Be creative with the results. The outcome can be good, bad, or neutral."
         "Decide based on the characters involved and the item being used."
         "Specify the outcome of the action. Do not include the question or any JSON. Only include the outcome of the action."

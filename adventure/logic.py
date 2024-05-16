@@ -7,13 +7,12 @@ from pydantic import Field
 from rule_engine import Rule
 from yaml import Loader, load
 
+from adventure.game_system import FormatPerspective, GameSystem
 from adventure.models.entity import (
-    Actor,
     Attributes,
     AttributeValue,
-    Item,
-    Room,
     World,
+    WorldEntity,
     dataclass,
 )
 from adventure.plugins import get_plugin_function
@@ -44,16 +43,15 @@ class LogicTable:
     labels: Dict[str, Dict[AttributeValue, LogicLabel]] = Field(default_factory=dict)
 
 
-LogicTrigger = Callable[[Room | Actor | Item, Attributes], Attributes]
+LogicTrigger = Callable[[WorldEntity], None]
 TriggerTable = Dict[str, LogicTrigger]
 
 
 def update_attributes(
-    entity: Room | Actor | Item,
-    attributes: Attributes,
+    entity: WorldEntity,
     rules: LogicTable,
     triggers: TriggerTable,
-) -> Attributes:
+) -> None:
     entity_type = entity.__class__.__name__.lower()
     skip_groups = set()
 
@@ -64,7 +62,7 @@ def update_attributes(
                 continue
 
         typed_attributes = {
-            **attributes,
+            **entity.attributes,
             "type": entity_type,
         }
 
@@ -93,52 +91,46 @@ def update_attributes(
             skip_groups.add(rule.group)
 
         for key in rule.remove or []:
-            attributes.pop(key, None)
+            entity.attributes.pop(key, None)
 
         if rule.set:
-            attributes.update(rule.set)
+            entity.attributes.update(rule.set)
             logger.info("logic set state: %s", rule.set)
 
         if rule.trigger:
             for trigger in rule.trigger:
                 if trigger in triggers:
-                    attributes = triggers[trigger](entity, attributes)
-
-    return attributes
+                    triggers[trigger](entity)
 
 
 def update_logic(
     world: World, step: int, rules: LogicTable, triggers: TriggerTable
 ) -> None:
     for room in world.rooms:
-        room.attributes = update_attributes(
-            room, room.attributes, rules=rules, triggers=triggers
-        )
+        update_attributes(room, rules=rules, triggers=triggers)
         for actor in room.actors:
-            actor.attributes = update_attributes(
-                actor, actor.attributes, rules=rules, triggers=triggers
-            )
+            update_attributes(actor, rules=rules, triggers=triggers)
             for item in actor.items:
-                item.attributes = update_attributes(
-                    item, item.attributes, rules=rules, triggers=triggers
-                )
+                update_attributes(item, rules=rules, triggers=triggers)
         for item in room.items:
-            item.attributes = update_attributes(
-                item, item.attributes, rules=rules, triggers=triggers
-            )
+            update_attributes(item, rules=rules, triggers=triggers)
 
     logger.info("updated world attributes")
 
 
-def format_logic(attributes: Attributes, rules: LogicTable, self=True) -> str:
+def format_logic(
+    entity: WorldEntity,
+    rules: LogicTable,
+    perspective: FormatPerspective = FormatPerspective.SECOND_PERSON,
+) -> str:
     labels = []
 
-    for attribute, value in attributes.items():
+    for attribute, value in entity.attributes.items():
         if attribute in rules.labels and value in rules.labels[attribute]:
             label = rules.labels[attribute][value]
-            if self:
+            if perspective == FormatPerspective.SECOND_PERSON:
                 labels.append(label.backstory)
-            elif label.description:
+            elif perspective == FormatPerspective.THIRD_PERSON and label.description:
                 labels.append(label.description)
             else:
                 logger.debug("label has no relevant description: %s", label)
@@ -149,7 +141,7 @@ def format_logic(attributes: Attributes, rules: LogicTable, self=True) -> str:
     return " ".join(labels)
 
 
-def init_from_file(filename: str):
+def load_logic(filename: str):
     logger.info("loading logic from file: %s", filename)
     with open(filename) as file:
         logic_rules = LogicTable(**load(file, Loader=Loader))
@@ -161,9 +153,12 @@ def init_from_file(filename: str):
                     logic_triggers[trigger] = get_plugin_function(trigger)
 
     logger.info("initialized logic system")
-    return (
-        wraps(update_logic)(
-            partial(update_logic, rules=logic_rules, triggers=logic_triggers)
-        ),
-        wraps(format_logic)(partial(format_logic, rules=logic_rules)),
+    system_simulate = wraps(update_logic)(
+        partial(update_logic, rules=logic_rules, triggers=logic_triggers)
+    )
+    system_format = wraps(format_logic)(partial(format_logic, rules=logic_rules))
+
+    return GameSystem(
+        format=system_format,
+        simulate=system_simulate,
     )

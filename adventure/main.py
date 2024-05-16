@@ -9,6 +9,7 @@ from packit.utils import logger_with_colors
 from yaml import Loader, load
 
 from adventure.context import set_current_step, set_dungeon_master
+from adventure.game_system import GameSystem
 from adventure.generate import generate_world
 from adventure.models.config import Config
 from adventure.models.entity import World, WorldState
@@ -83,6 +84,7 @@ def parse_args():
     )
     parser.add_argument(
         "--max-rooms",
+        default=6,
         type=int,
         help="The maximum number of rooms to generate",
     )
@@ -113,7 +115,7 @@ def parse_args():
     )
     parser.add_argument(
         "--server",
-        type=str,
+        action="store_true",
         help="The address on which to run the server",
     )
     parser.add_argument(
@@ -220,8 +222,9 @@ def load_or_generate_world(
         save_world(world, world_file)
 
         # run the systems once to initialize everything
-        for system_update, _ in systems:
-            system_update(world, 0)
+        for system in systems:
+            if system.simulate:
+                system.simulate(world, 0)
 
     create_agents(world, memory=memory, players=players)
     return (world, world_state_file)
@@ -299,18 +302,16 @@ def main():
         extra_actions.extend(module_actions)
 
     # load extra systems from plugins
-    extra_systems = []
+    extra_systems: List[GameSystem] = []
     for system_name in args.systems or []:
         logger.info(f"loading extra systems from {system_name}")
         module_systems = load_plugin(system_name)
-        logger.info(
-            f"loaded extra systems: {[component.__name__ for system in module_systems for component in system]}"
-        )
+        logger.info(f"loaded extra systems: {module_systems}")
         extra_systems.extend(module_systems)
 
     # make sure the server system runs after any updates
     if args.server:
-        extra_systems.append((server_system, None))
+        extra_systems.append(GameSystem(simulate=server_system))
 
     # load or generate the world
     world_prompt = get_world_prompt(args)
@@ -323,7 +324,7 @@ def main():
         logger.info("taking snapshot of world state")
         save_world_state(world, step, world_state_file)
 
-    extra_systems.append((snapshot_system, None))
+    extra_systems.append(GameSystem(simulate=snapshot_system))
 
     # hack: send a snapshot to the websocket server
     if args.server:

@@ -5,6 +5,7 @@ from adventure.context import (
     get_dungeon_master,
 )
 from adventure.search import find_actor_in_room, find_item_in_room
+from adventure.utils.world import describe_entity
 
 
 def action_attack(target: str) -> str:
@@ -33,8 +34,8 @@ def action_attack(target: str) -> str:
         )
 
         outcome = dungeon_master(
-            f"{action_actor.name} attacks {target} in the {action_room.name}. {action_room.description}."
-            f"{action_actor.description}. {target_actor.description}."
+            f"{action_actor.name} attacks {target} in the {action_room.name}. {describe_entity(action_room)}."
+            f"{describe_entity(action_actor)}. {describe_entity(target_actor)}."
             f"{target} reacts by {reaction}. What is the outcome of the attack? Describe the result in detail."
         )
 
@@ -46,8 +47,8 @@ def action_attack(target: str) -> str:
         return description
     elif target_item:
         outcome = dungeon_master(
-            f"{action_actor.name} attacks {target} in the {action_room.name}. {action_room.description}."
-            f"{action_actor.description}. {target_item.description}."
+            f"{action_actor.name} attacks {target} in the {action_room.name}. {describe_entity(action_room)}."
+            f"{describe_entity(action_actor)}. {describe_entity(target_item)}."
             f"What is the outcome of the attack? Describe the result in detail."
         )
 
@@ -78,8 +79,8 @@ def action_cast(target: str, spell: str) -> str:
 
     dungeon_master = get_dungeon_master()
     outcome = dungeon_master(
-        f"{action_actor.name} casts {spell} on {target} in the {action_room.name}. {action_room.description}."
-        f"{action_actor.description}. {target_actor.description if target_actor else target_item.description}."
+        f"{action_actor.name} casts {spell} on {target} in the {action_room.name}. {describe_entity(action_room)}."
+        f"{describe_entity(action_actor)}. {describe_entity(target_actor) if target_actor else describe_entity(target_item)}."
         f"What is the outcome of the spell? Describe the result in detail."
     )
 

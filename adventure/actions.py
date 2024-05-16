@@ -10,6 +10,7 @@ from adventure.search import (
     find_item_in_room,
     find_room,
 )
+from adventure.utils.world import describe_entity
 
 logger = getLogger(__name__)
 
@@ -26,28 +27,28 @@ def action_look(target: str) -> str:
 
     if target.lower() == action_room.name.lower():
         broadcast(f"{action_actor.name} saw the {action_room.name} room")
-        return action_room.description
+        return describe_entity(action_room)
 
     target_actor = find_actor_in_room(action_room, target)
     if target_actor:
         broadcast(
             f"{action_actor.name} saw the {target_actor.name} actor in the {action_room.name} room"
         )
-        return target_actor.description
+        return describe_entity(target_actor)
 
     target_item = find_item_in_room(action_room, target)
     if target_item:
         broadcast(
             f"{action_actor.name} saw the {target_item.name} item in the {action_room.name} room"
         )
-        return target_item.description
+        return describe_entity(target_item)
 
     target_item = find_item_in_actor(action_actor, target)
     if target_item:
         broadcast(
             f"{action_actor.name} saw the {target_item.name} item in their inventory"
         )
-        return target_item.description
+        return describe_entity(target_item)
 
     return "You do not see that item or character in the room."
 
@@ -104,18 +105,13 @@ def action_ask(character: str, question: str) -> str:
         question: The question to ask them.
     """
     # capture references to the current actor and room, because they will be overwritten
-    _, action_room, action_actor = get_current_context()
-
-    if not action_actor or not action_room:
-        raise ValueError(
-            "The current actor and room must be set before calling action_ask"
-        )
+    _world, _room, action_actor = get_current_context()
 
     # sanity checks
-    if character == action_actor.name:
+    question_actor, question_agent = get_actor_agent_for_name(character)
+    if question_actor == action_actor:
         return "You cannot ask yourself a question. Stop talking to yourself. Try another action."
 
-    question_actor, question_agent = get_actor_agent_for_name(character)
     if not question_actor:
         return f"The {character} character is not in the room."
 
@@ -147,18 +143,13 @@ def action_tell(character: str, message: str) -> str:
         message: The message to tell them.
     """
     # capture references to the current actor and room, because they will be overwritten
-    _, action_room, action_actor = get_current_context()
-
-    if not action_actor or not action_room:
-        raise ValueError(
-            "The current actor and room must be set before calling action_tell"
-        )
+    _world, _room, action_actor = get_current_context()
 
     # sanity checks
-    if character == action_actor.name:
+    question_actor, question_agent = get_actor_agent_for_name(character)
+    if question_actor == action_actor:
         return "You cannot tell yourself a message. Stop talking to yourself. Try another action."
 
-    question_actor, question_agent = get_actor_agent_for_name(character)
     if not question_actor:
         return f"The {character} character is not in the room."
 

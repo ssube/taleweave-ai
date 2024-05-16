@@ -2,7 +2,7 @@ from .hunger_actions import action_cook, action_eat
 from .hygiene_actions import action_wash
 from .sleeping_actions import action_sleep
 
-from adventure.logic import init_from_file
+from adventure.logic import load_logic
 
 LOGIC_FILES = [
     "./adventure/sim_systems/environment_logic.yaml",
@@ -26,4 +26,4 @@ def init_actions():
 
 
 def init_logic():
-    return [init_from_file(filename) for filename in LOGIC_FILES]
+    return [load_logic(filename) for filename in LOGIC_FILES]
