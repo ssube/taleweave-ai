@@ -12,7 +12,6 @@ class FormatPerspective(Enum):
     THIRD_PERSON = "third-person"
 
 
-# TODO: remove the attributes parameter from all of these
 class SystemFormat(Protocol):
     def __call__(
         self,
@@ -59,6 +58,7 @@ class GameSystem:
         return f"GameSystem(format={format_callable(self.format)}, generate={format_callable(self.generate)}, simulate={format_callable(self.simulate)})"
 
 
+# TODO: move to utils
 def format_callable(fn: Callable | None) -> str:
     if fn:
         return f"{fn.__module__}:{fn.__name__}"

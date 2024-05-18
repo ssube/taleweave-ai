@@ -273,7 +273,7 @@ def main():
     extra_actions = []
     if args.optional_actions:
         logger.info("loading optional actions")
-        from adventure.optional_actions import init as init_optional_actions
+        from adventure.actions.optional import init as init_optional_actions
 
         optional_actions = init_optional_actions()
         logger.info(

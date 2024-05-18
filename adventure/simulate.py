@@ -8,7 +8,7 @@ from packit.results import multi_function_or_str_result
 from packit.toolbox import Toolbox
 from packit.utils import could_be_json
 
-from adventure.actions import (
+from adventure.actions.base import (
     action_ask,
     action_give,
     action_look,
