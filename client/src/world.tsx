@@ -30,6 +30,14 @@ export function itemStateSelector(s: StoreState) {
   };
 }
 
+export function actorStateSelector(s: StoreState) {
+  return {
+    character: s.character,
+    players: s.players,
+    setDetailEntity: s.setDetailEntity,
+  };
+}
+
 export function worldStateSelector(s: StoreState) {
   return {
     world: s.world,
@@ -49,16 +57,24 @@ export function ItemItem(props: { item: Item } & BaseEntityItemProps) {
 
 export function ActorItem(props: { actor: Actor } & BaseEntityItemProps) {
   const { actor, setPlayer } = props;
-  const state = useStore(store, itemStateSelector);
-  const { character, setDetailEntity } = state;
+  const state = useStore(store, actorStateSelector);
+  const { character, players, setDetailEntity } = state;
 
-  // TODO: include other players
-  const active = doesExist(character) && actor.name === character.name;
-  const label = formatLabel(actor.name, active);
+  const activeSelf = doesExist(character) && actor.name === character.name;
+  const activeOther = Object.values(players).some((it) => it === actor.name); // TODO: are these the keys or the values?
+  const label = formatLabel(actor.name, activeSelf);
 
   let playButton;
-  if (active === false) {
-    playButton = <TreeItem itemId={`${actor.name}-play`} label="Play!" onClick={() => setPlayer(actor)} />;
+  if (activeSelf) {
+    playButton = <TreeItem itemId={`${actor.name}-stop`} label="Stop playing" onClick={() => setPlayer(undefined)} />;
+  } else {
+    if (activeOther) {
+      // eslint-disable-next-line no-restricted-syntax
+      const player = Object.entries(players).find((it) => it[1] === actor.name)?.[0];
+      playButton = <TreeItem itemId={`${actor.name}-taken`} label={`Played by ${player}`} />;
+    } else {
+      playButton = <TreeItem itemId={`${actor.name}-play`} label="Play!" onClick={() => setPlayer(actor)} />;
+    }
   }
 
   return <TreeItem itemId={actor.name} label={label}>

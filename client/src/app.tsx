@@ -88,7 +88,7 @@ export function App(props: AppProps) {
       switch (event.type) {
         case 'id':
           // unicast the client id to the player, do not append to history
-          setClientId(event.id);
+          setClientId(event.client);
           return;
         case 'prompt':
           // prompts are broadcast to all players
