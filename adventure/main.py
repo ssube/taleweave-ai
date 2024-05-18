@@ -246,19 +246,19 @@ def main():
     threads = []
 
     if args.render:
-        from adventure.render_comfy import launch_render, render_generated
+        from adventure.render.comfy import launch_render, render_generated
 
         threads.extend(launch_render(config.render))
         if args.render_generated:
             subscribe(GenerateEvent, render_generated)
 
     if args.discord:
-        from adventure.bot_discord import launch_bot
+        from adventure.bot.discord import launch_bot
 
         threads.extend(launch_bot(config.bot.discord))
 
     if args.server:
-        from adventure.server_socket import launch_server, server_system
+        from adventure.server.websocket import launch_server
 
         threads.extend(launch_server(config.server.websocket))
 
@@ -300,6 +300,8 @@ def main():
 
     # make sure the server system runs after any updates
     if args.server:
+        from adventure.server.websocket import server_system
+
         extra_systems.append(GameSystem(simulate=server_system))
 
     # load or generate the world

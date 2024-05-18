@@ -37,14 +37,21 @@ game_systems: List[GameSystem] = []
 # TODO: where should this one go?
 actor_agents: Dict[str, Tuple[Actor, Agent]] = {}
 
+STRING_EVENT_TYPE = "message"
+
+
+def get_event_name(event: GameEvent | Type[GameEvent]):
+    return f"event:{event.type}"
+
 
 def broadcast(message: str | GameEvent):
     if isinstance(message, GameEvent):
-        logger.debug(f"broadcasting {message.type}")
-        event_emitter.emit(message.type, message)
+        event_name = get_event_name(message)
+        logger.debug(f"broadcasting {event_name}")
+        event_emitter.emit(event_name, message)
     else:
         logger.warning("broadcasting a string message is deprecated")
-        event_emitter.emit("message", message)
+        event_emitter.emit(STRING_EVENT_TYPE, message)
 
 
 def is_union(type_: Type | UnionType):
@@ -62,10 +69,13 @@ def subscribe(
 
         return
 
+    if event_type is str:
+        event_name = STRING_EVENT_TYPE
+    else:
+        event_name = get_event_name(event_type)
+
     logger.debug(f"subscribing {callback.__name__} to {event_type}")
-    event_emitter.on(
-        event_type.type, callback
-    )  # TODO: should this use str or __name__?
+    event_emitter.on(event_name, callback)
 
 
 def has_dungeon_master():
@@ -74,9 +84,15 @@ def has_dungeon_master():
 
 # region context manager
 @contextmanager
-def with_action_context():
+def action_context():
     room, actor = get_action_context()
     yield room, actor
+
+
+@contextmanager
+def world_context():
+    world, room, actor = get_world_context()
+    yield world, room, actor
 
 
 # endregion
@@ -94,7 +110,7 @@ def get_action_context() -> Tuple[Room, Actor]:
     return (current_room, current_actor)
 
 
-def get_current_context() -> Tuple[World, Room, Actor]:
+def get_world_context() -> Tuple[World, Room, Actor]:
     if not current_world:
         raise ValueError(
             "The current world must be set before calling action functions"

@@ -36,9 +36,9 @@ from adventure.player import (
     remove_player,
     set_player,
 )
-from adventure.render_comfy import render_entity, render_event
-from adventure.search import find_actor, find_item, find_room
+from adventure.render.comfy import render_entity, render_event
 from adventure.state import snapshot_world, world_json
+from adventure.utils.search import find_actor, find_item, find_room
 
 logger = getLogger(__name__)
 
@@ -233,7 +233,7 @@ def render_input(data):
     elif "item" in data:
         item_name = data["item"]
         item = find_item(
-            world, item_name, include_actor_inventory=True, include_room_inventory=True
+            world, item_name, include_actor_inventory=True, include_item_inventory=True
         )
         if item:
             render_entity(item)

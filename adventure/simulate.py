@@ -146,7 +146,8 @@ def simulate_world(
             )
 
             logger.debug(f"{actor.name} step result: {result}")
-            agent.memory.append(result)
+            if agent.memory:
+                agent.memory.append(result)
 
             result_event = ResultEvent(result=result, room=room, actor=actor)
             broadcast(result_event)

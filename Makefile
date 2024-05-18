@@ -56,4 +56,4 @@ lint-fix:
 style: lint-fix
 
 typecheck:
-	mypy feedme
+	mypy adventure

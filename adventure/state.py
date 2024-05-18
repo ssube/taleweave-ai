@@ -54,7 +54,7 @@ def snapshot_world(world: World, step: int):
     json_memory = {}
 
     for actor, agent in get_all_actor_agents():
-        json_memory[actor.name] = list(agent.memory)
+        json_memory[actor.name] = list(agent.memory or [])
 
     return {
         "world": json_world,

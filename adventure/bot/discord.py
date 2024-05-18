@@ -33,14 +33,14 @@ from adventure.player import (
     remove_player,
     set_player,
 )
-from adventure.render_comfy import render_event
+from adventure.render.comfy import render_event
 
 logger = getLogger(__name__)
 client = None
 bot_config: DiscordBotConfig = DEFAULT_CONFIG.bot.discord
 
 active_tasks = set()
-event_messages: Dict[str, str | GameEvent] = {}
+event_messages: Dict[int, str | GameEvent] = {}
 event_queue: Queue[GameEvent] = Queue()
 
 
@@ -81,13 +81,13 @@ class AdventureClient(Client):
         channel = message.channel
         user_name = author.name  # include nick
 
-        world = get_current_world()
-        if world:
-            active_world = f"Active world: {world.name} (theme: {world.theme})"
-        else:
-            active_world = "No active world"
-
         if message.content.startswith("!adventure"):
+            world = get_current_world()
+            if world:
+                active_world = f"Active world: {world.name} (theme: {world.theme})"
+            else:
+                active_world = "No active world"
+
             await message.channel.send(f"Hello! Welcome to Adventure! {active_world}")
             return
 
@@ -215,7 +215,14 @@ def stop_bot():
     global client
 
     if client:
-        client.close()
+        close_task = client.loop.create_task(client.close())
+        active_tasks.add(close_task)
+
+        def on_close_task_done(future):
+            logger.info("discord client closed")
+            active_tasks.discard(future)
+
+        close_task.add_done_callback(on_close_task_done)
         client = None
 
 
@@ -299,7 +306,7 @@ async def broadcast_event(message: str | GameEvent):
         event_messages[event_message.id] = message
 
 
-def embed_from_event(event: GameEvent) -> Embed:
+def embed_from_event(event: GameEvent) -> Embed | None:
     if isinstance(event, GenerateEvent):
         return embed_from_generate(event)
     elif isinstance(event, ResultEvent):
