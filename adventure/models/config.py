@@ -7,6 +7,7 @@ from .base import dataclass
 class Range:
     min: int
     max: int
+    interval: int = 1
 
 
 @dataclass
@@ -39,3 +40,21 @@ class RenderConfig:
 class Config:
     bot: BotConfig
     render: RenderConfig
+
+
+DEFAULT_CONFIG = Config(
+    bot=BotConfig(discord=DiscordBotConfig(channels=["adventure"])),
+    render=RenderConfig(
+        cfg=Range(min=5, max=8),
+        checkpoints=[
+            "diffusion-sdxl-dynavision-0-5-5-7.safetensors",
+        ],
+        path="/tmp/adventure-images",
+        sizes={
+            "landscape": Size(width=1024, height=768),
+            "portrait": Size(width=768, height=1024),
+            "square": Size(width=768, height=768),
+        },
+        steps=Range(min=30, max=30),
+    ),
+)

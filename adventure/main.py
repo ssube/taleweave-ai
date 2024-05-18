@@ -6,18 +6,8 @@ from typing import List
 from dotenv import load_dotenv
 from packit.agent import Agent, agent_easy_connect
 from packit.utils import logger_with_colors
+from pyee.base import EventEmitter
 from yaml import Loader, load
-
-from adventure.context import set_current_step, set_dungeon_master
-from adventure.game_system import GameSystem
-from adventure.generate import generate_world
-from adventure.models.config import Config
-from adventure.models.entity import World, WorldState
-from adventure.models.event import EventCallback, GameEvent, GenerateEvent
-from adventure.models.files import PromptFile, WorldPrompt
-from adventure.plugins import load_plugin
-from adventure.simulate import simulate_world
-from adventure.state import create_agents, save_world, save_world_state
 
 
 def load_yaml(file):
@@ -42,6 +32,18 @@ logger = logger_with_colors(__name__)  # , level="DEBUG")
 
 load_dotenv(environ.get("ADVENTURE_ENV", ".env"), override=True)
 
+if True:
+    from adventure.context import set_current_step, set_dungeon_master
+    from adventure.game_system import GameSystem
+    from adventure.generate import generate_world
+    from adventure.models.config import Config, DEFAULT_CONFIG
+    from adventure.models.entity import World, WorldState
+    from adventure.models.event import EventCallback, GameEvent, GenerateEvent
+    from adventure.models.files import PromptFile, WorldPrompt
+    from adventure.plugins import load_plugin
+    from adventure.simulate import simulate_world
+    from adventure.state import create_agents, save_world, save_world_state
+
 
 # start the debugger, if needed
 if environ.get("DEBUG", "false").lower() == "true":
@@ -50,6 +52,13 @@ if environ.get("DEBUG", "false").lower() == "true":
     debugpy.listen(5679)
     logger.info("waiting for debugger to attach...")
     debugpy.wait_for_client()
+
+
+def int_or_inf(value: str) -> float | int:
+    if value == "inf":
+        return float("inf")
+
+    return int(value)
 
 
 # main
@@ -68,8 +77,7 @@ def parse_args():
     parser.add_argument(
         "--config",
         type=str,
-        default="config.yml",
-        help="The file to load the configuration from",
+        help="The file to load additional configuration from",
     )
     parser.add_argument(
         "--discord",
@@ -91,7 +99,7 @@ def parse_args():
     parser.add_argument(
         "--optional-actions",
         action="store_true",
-        help="Whether to include optional actions",
+        help="Whether to include optional actions in the simulation",
     )
     parser.add_argument(
         "--player",
@@ -101,7 +109,7 @@ def parse_args():
     parser.add_argument(
         "--render",
         action="store_true",
-        help="Whether to render the simulation",
+        help="Whether to run the render thread",
     )
     parser.add_argument(
         "--render-generated",
@@ -116,7 +124,7 @@ def parse_args():
     parser.add_argument(
         "--server",
         action="store_true",
-        help="The address on which to run the server",
+        help="Whether to run the websocket server",
     )
     parser.add_argument(
         "--state",
@@ -125,7 +133,7 @@ def parse_args():
     )
     parser.add_argument(
         "--steps",
-        type=int,
+        type=int_or_inf,
         default=10,
         help="The number of simulation steps to run",
     )
@@ -233,8 +241,11 @@ def load_or_generate_world(
 def main():
     args = parse_args()
 
-    with open(args.config, "r") as f:
-        config = Config(**load_yaml(f))
+    if args.config:
+        with open(args.config, "r") as f:
+            config = Config(**load_yaml(f))
+    else:
+        config = DEFAULT_CONFIG
 
     players = []
     if args.player:

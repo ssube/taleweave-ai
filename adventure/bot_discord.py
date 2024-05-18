@@ -13,7 +13,7 @@ from adventure.context import (
     get_current_world,
     set_actor_agent,
 )
-from adventure.models.config import DiscordBotConfig
+from adventure.models.config import DiscordBotConfig, DEFAULT_CONFIG
 from adventure.models.event import (
     ActionEvent,
     GameEvent,
@@ -36,7 +36,7 @@ from adventure.render_comfy import render_event
 
 logger = getLogger(__name__)
 client = None
-bot_config: DiscordBotConfig = DiscordBotConfig(channels=["bots"])
+bot_config: DiscordBotConfig = DEFAULT_CONFIG.bot.discord
 
 active_tasks = set()
 event_messages: Dict[str, str | GameEvent] = {}

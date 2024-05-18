@@ -1,17 +1,25 @@
 from typing import Callable, Dict, List, Sequence, Tuple
+from contextlib import contextmanager
 
 from packit.agent import Agent
+from pyee.base import EventEmitter
 
 from adventure.game_system import GameSystem
 from adventure.models.entity import Actor, Room, World
 from adventure.models.event import GameEvent
 
+# TODO: replace with event emitter and a context manager
 current_broadcast: Callable[[str | GameEvent], None] | None = None
+
+# world context
+current_step = 0
 current_world: World | None = None
 current_room: Room | None = None
 current_actor: Actor | None = None
-current_step = 0
 dungeon_master: Agent | None = None
+
+# game context
+event_emitter = EventEmitter()
 game_systems: List[GameSystem] = []
 
 
@@ -28,7 +36,23 @@ def has_dungeon_master():
     return dungeon_master is not None
 
 
+# region context manager
+# TODO
+# endregion
+
+
 # region context getters
+def get_action_context() -> Tuple[Room, Actor]:
+    if not current_room:
+        raise ValueError("The current room must be set before calling action functions")
+    if not current_actor:
+        raise ValueError(
+            "The current actor must be set before calling action functions"
+        )
+
+    return (current_room, current_actor)
+
+
 def get_current_context() -> Tuple[World, Room, Actor]:
     if not current_world:
         raise ValueError(

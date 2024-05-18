@@ -209,12 +209,13 @@ def generate_effect(
 
     name = loop_retry(
         agent,
-        "Generate one effect for an {entity_type} named {entity.name} that would make sense in the world of {theme}. "
+        "Generate one effect for an {entity_type} named {entity_name} that would make sense in the world of {theme}. "
         "Only respond with the effect name in title case, do not include a description or any other text. "
         'Do not prefix the name with "the", do not wrap it in quotes. Use a unique name. '
         "Do not create any duplicate effects on the same item. The existing effects are: {existing_effects}. "
         "Some example effects are: 'fire', 'poison', 'frost', 'haste', 'slow', and 'heal'.",
         context={
+            "entity_name": entity.name,
             "entity_type": entity_type,
             "existing_effects": existing_effects,
             "theme": theme,
@@ -245,6 +246,7 @@ def generate_effect(
                 f"How does the {name} effect modify the {attribute_name} attribute? "
                 "For example, 'heal' might 'add' to the 'health' attribute, while 'poison' might 'subtract' from it."
                 "Another example is 'writing' might 'set' the 'text' attribute, while 'break' might 'set' the 'condition' attribute."
+                "Reply with the operation only, without any other text. Give a single word."
                 "Choose from the following operations: {operations}",
                 name=name,
                 attribute_name=attribute_name,
@@ -260,8 +262,8 @@ def generate_effect(
             )
             value = agent(
                 f"How much does the {name} effect modify the {attribute_name} attribute? "
-                "For example, 'heal' might 'add' 10 to the 'health' attribute, while 'poison' might 'subtract' 5 from it."
-                "Enter a positive or negative number, or a string value.",
+                "For example, heal might add '10' to the health attribute, while poison might subtract '5' from it."
+                "Enter a positive or negative number, or a string value. Do not include any other text. Do not use JSON.",
                 name=name,
                 attribute_name=attribute_name,
             )
@@ -283,7 +285,7 @@ def generate_effect(
 
             attributes.append(attribute_effect)
 
-    return Effect(name=name, description=description, attributes=[])
+    return Effect(name=name, description=description, attributes=attributes)
 
 
 def generate_system_attributes(

@@ -17,7 +17,7 @@ from jinja2 import Environment, FileSystemLoader, select_autoescape
 from PIL import Image
 
 from adventure.context import broadcast
-from adventure.models.config import Range, RenderConfig, Size
+from adventure.models.config import RenderConfig, DEFAULT_CONFIG
 from adventure.models.entity import WorldEntity
 from adventure.models.event import (
     ActionEvent,
@@ -33,19 +33,7 @@ logger = getLogger(__name__)
 
 server_address = environ["COMFY_API"]
 client_id = uuid4().hex
-render_config: RenderConfig = RenderConfig(
-    cfg=Range(min=5, max=8),
-    checkpoints=[
-        "diffusion-sdxl-dynavision-0-5-5-7.safetensors",
-    ],
-    path="/tmp/adventure-images",
-    sizes={
-        "landscape": Size(width=1024, height=768),
-        "portrait": Size(width=768, height=1024),
-        "square": Size(width=768, height=768),
-    },
-    steps=Range(min=30, max=30),
-)
+render_config: RenderConfig = DEFAULT_CONFIG.render
 
 
 # requests to generate images for game events

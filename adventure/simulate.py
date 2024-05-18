@@ -1,5 +1,7 @@
+from itertools import count
 from logging import getLogger
 from typing import Callable, Sequence
+from math import inf
 
 from packit.loops import loop_retry
 from packit.results import multi_function_or_str_result
@@ -63,7 +65,7 @@ def world_result_parser(value, agent, **kwargs):
 
 def simulate_world(
     world: World,
-    steps: int = 10,
+    steps: float | int = inf,
     actions: Sequence[Callable[..., str]] = [],
     callbacks: Sequence[EventCallback] = [],
     systems: Sequence[GameSystem] = [],
@@ -100,9 +102,10 @@ def simulate_world(
     action_names = action_tools.list_tools()
 
     # simulate each actor
-    for i in range(steps):
+    for i in count():
         current_step = get_current_step()
-        logger.info(f"Simulating step {current_step}")
+        logger.info(f"simulating step {i} of {steps} (world step {current_step})")
+
         for actor_name in world.order:
             actor, agent = get_actor_agent_for_name(actor_name)
             if not agent or not actor:
@@ -179,3 +182,6 @@ def simulate_world(
                 system.simulate(world, current_step)
 
         set_current_step(current_step + 1)
+        if i > steps:
+            logger.info("reached step limit at world step %s", current_step + 1)
+            break

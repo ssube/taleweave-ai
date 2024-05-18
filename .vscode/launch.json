@@ -11,7 +11,7 @@
       "program": "${file}",
       "args": [
         "--world",
-        "worlds/test-1.json",
+        "worlds/test-3.json",
         "--rooms",
         "2",
         "--server",
