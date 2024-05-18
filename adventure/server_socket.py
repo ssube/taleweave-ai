@@ -17,7 +17,9 @@ from adventure.context import (
     get_actor_agent_for_name,
     get_current_world,
     set_actor_agent,
+    subscribe,
 )
+from adventure.models.config import DEFAULT_CONFIG, WebsocketServerConfig
 from adventure.models.entity import Actor, Item, Room, World
 from adventure.models.event import (
     GameEvent,
@@ -45,6 +47,7 @@ last_snapshot: str | None = None
 player_names: Dict[str, str] = {}
 recent_events: MutableSequence[GameEvent] = deque(maxlen=100)
 recent_json: MutableSequence[str] = deque(maxlen=100)
+server_config: WebsocketServerConfig = DEFAULT_CONFIG.server.websocket
 
 
 def get_player_name(client_id: str) -> str:
@@ -257,8 +260,12 @@ def send_and_append(id: str, message: Dict):
     return json_message
 
 
-def launch_server():
+def launch_server(config: WebsocketServerConfig):
     global socket_thread
+    global server_config
+
+    logger.info("configuring websocket server: %s", config)
+    server_config = config
 
     def run_sockets():
         asyncio.run(server_main())
@@ -266,6 +273,8 @@ def launch_server():
     logger.info("launching websocket server")
     socket_thread = Thread(target=run_sockets, daemon=True)
     socket_thread.start()
+
+    subscribe(GameEvent, server_event)
 
     return [socket_thread]
 

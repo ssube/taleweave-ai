@@ -17,11 +17,12 @@ from jinja2 import Environment, FileSystemLoader, select_autoescape
 from PIL import Image
 
 from adventure.context import broadcast
-from adventure.models.config import RenderConfig, DEFAULT_CONFIG
+from adventure.models.config import DEFAULT_CONFIG, RenderConfig
 from adventure.models.entity import WorldEntity
 from adventure.models.event import (
     ActionEvent,
     GameEvent,
+    GenerateEvent,
     RenderEvent,
     ReplyEvent,
     ResultEvent,
@@ -325,6 +326,12 @@ def render_entity(entity: WorldEntity):
 
 def render_event(event: GameEvent):
     render_queue.put(event)
+
+
+def render_generated(event: GameEvent):
+    if isinstance(event, GenerateEvent) and event.entity:
+        logger.info("rendering generated entity: %s", event.entity.name)
+        render_entity(event.entity)
 
 
 def launch_render(config: RenderConfig):

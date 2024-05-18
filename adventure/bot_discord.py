@@ -12,8 +12,9 @@ from adventure.context import (
     get_actor_agent_for_name,
     get_current_world,
     set_actor_agent,
+    subscribe,
 )
-from adventure.models.config import DiscordBotConfig, DEFAULT_CONFIG
+from adventure.models.config import DEFAULT_CONFIG, DiscordBotConfig
 from adventure.models.event import (
     ActionEvent,
     GameEvent,
@@ -204,6 +205,8 @@ def launch_bot(config: DiscordBotConfig):
 
     send_thread = Thread(target=send_main, daemon=True)
     send_thread.start()
+
+    subscribe(GameEvent, bot_event)
 
     return [bot_thread, send_thread]
 

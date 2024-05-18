@@ -1,4 +1,5 @@
 from random import randint
+
 from adventure.context import broadcast, get_current_context, get_dungeon_master
 from adventure.search import find_actor_in_room
 

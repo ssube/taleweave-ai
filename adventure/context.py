@@ -1,5 +1,17 @@
-from typing import Callable, Dict, List, Sequence, Tuple
 from contextlib import contextmanager
+from logging import getLogger
+from types import UnionType
+from typing import (
+    Callable,
+    Dict,
+    List,
+    Sequence,
+    Tuple,
+    Type,
+    Union,
+    get_args,
+    get_origin,
+)
 
 from packit.agent import Agent
 from pyee.base import EventEmitter
@@ -8,8 +20,7 @@ from adventure.game_system import GameSystem
 from adventure.models.entity import Actor, Room, World
 from adventure.models.event import GameEvent
 
-# TODO: replace with event emitter and a context manager
-current_broadcast: Callable[[str | GameEvent], None] | None = None
+logger = getLogger(__name__)
 
 # world context
 current_step = 0
@@ -28,8 +39,33 @@ actor_agents: Dict[str, Tuple[Actor, Agent]] = {}
 
 
 def broadcast(message: str | GameEvent):
-    if current_broadcast:
-        current_broadcast(message)
+    if isinstance(message, GameEvent):
+        logger.debug(f"broadcasting {message.type}")
+        event_emitter.emit(message.type, message)
+    else:
+        logger.warning("broadcasting a string message is deprecated")
+        event_emitter.emit("message", message)
+
+
+def is_union(type_: Type | UnionType):
+    origin = get_origin(type_)
+    return origin is UnionType or origin is Union
+
+
+def subscribe(
+    event_type: Type[str] | Type[GameEvent] | UnionType,
+    callback: Callable[[GameEvent], None],
+):
+    if is_union(event_type):
+        for t in get_args(event_type):
+            subscribe(t, callback)
+
+        return
+
+    logger.debug(f"subscribing {callback.__name__} to {event_type}")
+    event_emitter.on(
+        event_type.type, callback
+    )  # TODO: should this use str or __name__?
 
 
 def has_dungeon_master():
@@ -37,7 +73,12 @@ def has_dungeon_master():
 
 
 # region context manager
-# TODO
+@contextmanager
+def with_action_context():
+    room, actor = get_action_context()
+    yield room, actor
+
+
 # endregion
 
 
@@ -80,10 +121,6 @@ def get_current_actor() -> Actor | None:
     return current_actor
 
 
-def get_current_broadcast():
-    return current_broadcast
-
-
 def get_current_step() -> int:
     return current_step
 
@@ -105,11 +142,6 @@ def get_game_systems() -> List[GameSystem]:
 
 
 # region context setters
-def set_current_broadcast(broadcast):
-    global current_broadcast
-    current_broadcast = broadcast
-
-
 def set_current_world(world: World | None):
     global current_world
     current_world = world

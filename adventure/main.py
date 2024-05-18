@@ -6,8 +6,9 @@ from typing import List
 from dotenv import load_dotenv
 from packit.agent import Agent, agent_easy_connect
 from packit.utils import logger_with_colors
-from pyee.base import EventEmitter
 from yaml import Loader, load
+
+from adventure.context import subscribe
 
 
 def load_yaml(file):
@@ -36,9 +37,9 @@ if True:
     from adventure.context import set_current_step, set_dungeon_master
     from adventure.game_system import GameSystem
     from adventure.generate import generate_world
-    from adventure.models.config import Config, DEFAULT_CONFIG
+    from adventure.models.config import DEFAULT_CONFIG, Config
     from adventure.models.entity import World, WorldState
-    from adventure.models.event import EventCallback, GameEvent, GenerateEvent
+    from adventure.models.event import GenerateEvent
     from adventure.models.files import PromptFile, WorldPrompt
     from adventure.plugins import load_plugin
     from adventure.simulate import simulate_world
@@ -181,9 +182,7 @@ def get_world_prompt(args) -> WorldPrompt:
     )
 
 
-def load_or_generate_world(
-    args, players, callbacks, systems, world_prompt: WorldPrompt
-):
+def load_or_generate_world(args, players, systems, world_prompt: WorldPrompt):
     world_file = args.world + ".json"
     world_state_file = args.state or (args.world + ".state.json")
 
@@ -212,20 +211,12 @@ def load_or_generate_world(
             llm,
         )
 
-        world = None
-
-        def broadcast_callback(event: GameEvent):
-            logger.debug("broadcasting generation event: %s", event)
-            for callback in callbacks:
-                callback(event)
-
         world = generate_world(
             world_builder,
             args.world,
             world_prompt.theme,
             room_count=args.rooms,
             max_rooms=args.max_rooms,
-            callback=broadcast_callback,
         )
         save_world(world, world_file)
 
@@ -251,38 +242,25 @@ def main():
     if args.player:
         players.append(args.player)
 
-    # set up callbacks
-    callbacks: List[EventCallback] = []
-
     # launch other threads
     threads = []
 
     if args.render:
-        from adventure.render_comfy import launch_render
+        from adventure.render_comfy import launch_render, render_generated
 
         threads.extend(launch_render(config.render))
-
         if args.render_generated:
-            from adventure.render_comfy import render_entity
-
-            def render_generated(event: GameEvent):
-                if isinstance(event, GenerateEvent) and event.entity:
-                    logger.info("rendering generated entity: %s", event.entity.name)
-                    render_entity(event.entity)
-
-            callbacks.append(render_generated)
+            subscribe(GenerateEvent, render_generated)
 
     if args.discord:
-        from adventure.bot_discord import bot_event, launch_bot
+        from adventure.bot_discord import launch_bot
 
         threads.extend(launch_bot(config.bot.discord))
-        callbacks.append(bot_event)
 
     if args.server:
-        from adventure.server_socket import launch_server, server_event, server_system
+        from adventure.server_socket import launch_server, server_system
 
-        threads.extend(launch_server())
-        callbacks.append(server_event)
+        threads.extend(launch_server(config.server.websocket))
 
     # register the thread shutdown handler
     def shutdown_threads():
@@ -327,7 +305,7 @@ def main():
     # load or generate the world
     world_prompt = get_world_prompt(args)
     world, world_state_file = load_or_generate_world(
-        args, players, callbacks, extra_systems, world_prompt=world_prompt
+        args, players, extra_systems, world_prompt=world_prompt
     )
 
     # make sure the snapshot system runs last
@@ -362,7 +340,6 @@ def main():
         steps=args.steps,
         actions=extra_actions,
         systems=extra_systems,
-        callbacks=callbacks,
     )
 
 

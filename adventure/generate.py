@@ -6,6 +6,7 @@ from packit.agent import Agent
 from packit.loops import loop_retry
 from packit.utils import could_be_json
 
+from adventure.context import broadcast
 from adventure.game_system import GameSystem
 from adventure.models.entity import (
     Actor,
@@ -17,7 +18,7 @@ from adventure.models.entity import (
     World,
     WorldEntity,
 )
-from adventure.models.event import EventCallback, GenerateEvent
+from adventure.models.event import GenerateEvent
 
 logger = getLogger(__name__)
 
@@ -31,7 +32,7 @@ OPPOSITE_DIRECTIONS = {
 
 def duplicate_name_parser(existing_names: List[str]):
     def name_parser(value: str, **kwargs):
-        print(f"validating generated name: {value}")
+        logger.debug(f"validating generated name: {value}")
 
         if value in existing_names:
             raise ValueError(f'"{value}" has already been used.')
@@ -50,8 +51,7 @@ def duplicate_name_parser(existing_names: List[str]):
     return name_parser
 
 
-def callback_wrapper(
-    callback: EventCallback | None,
+def broadcast_generated(
     message: str | None = None,
     entity: WorldEntity | None = None,
 ):
@@ -62,14 +62,12 @@ def callback_wrapper(
     else:
         raise ValueError("Either message or entity must be provided")
 
-    if callable(callback):
-        callback(event)
+    broadcast(event)
 
 
 def generate_room(
     agent: Agent,
     world_theme: str,
-    callback: EventCallback | None = None,
     existing_rooms: List[str] = [],
 ) -> Room:
     name = loop_retry(
@@ -84,7 +82,7 @@ def generate_room(
         result_parser=duplicate_name_parser(existing_rooms),
     )
 
-    callback_wrapper(callback, message=f"Generating room: {name}")
+    broadcast_generated(message=f"Generating room: {name}")
     desc = agent(
         "Generate a detailed description of the {name} area. What does it look like? "
         "What does it smell like? What can be seen or heard?",
@@ -103,7 +101,6 @@ def generate_room(
 def generate_item(
     agent: Agent,
     world_theme: str,
-    callback: EventCallback | None = None,
     dest_room: str | None = None,
     dest_actor: str | None = None,
     existing_items: List[str] = [],
@@ -130,7 +127,7 @@ def generate_item(
         result_parser=duplicate_name_parser(existing_items),
     )
 
-    callback_wrapper(callback, message=f"Generating item: {name}")
+    broadcast_generated(message=f"Generating item: {name}")
     desc = agent(
         "Generate a detailed description of the {name} item. What does it look like? What is it made of? What does it do?",
         name=name,
@@ -140,14 +137,12 @@ def generate_item(
     item = Item(name=name, description=desc, actions=actions)
 
     effect_count = randint(1, 2)
-    callback_wrapper(
-        callback, message=f"Generating {effect_count} effects for item: {name}"
-    )
+    broadcast_generated(message=f"Generating {effect_count} effects for item: {name}")
 
     effects = []
     for i in range(effect_count):
         try:
-            effect = generate_effect(agent, world_theme, entity=item, callback=callback)
+            effect = generate_effect(agent, world_theme, entity=item)
             effects.append(effect)
         except Exception:
             logger.exception("error generating effect")
@@ -160,7 +155,6 @@ def generate_actor(
     agent: Agent,
     world_theme: str,
     dest_room: str,
-    callback: EventCallback | None = None,
     existing_actors: List[str] = [],
 ) -> Actor:
     name = loop_retry(
@@ -179,7 +173,7 @@ def generate_actor(
         result_parser=duplicate_name_parser(existing_actors),
     )
 
-    callback_wrapper(callback, message=f"Generating actor: {name}")
+    broadcast_generated(message=f"Generating actor: {name}")
     description = agent(
         "Generate a detailed description of the {name} character. What do they look like? What are they wearing? "
         "What are they doing? Describe their appearance from the perspective of an outside observer."
@@ -200,9 +194,7 @@ def generate_actor(
     )
 
 
-def generate_effect(
-    agent: Agent, theme: str, entity: Item, callback: EventCallback | None = None
-) -> Effect:
+def generate_effect(agent: Agent, theme: str, entity: Item) -> Effect:
     entity_type = entity.type
 
     existing_effects = [effect.name for effect in entity.effects]
@@ -222,7 +214,7 @@ def generate_effect(
         },
         result_parser=duplicate_name_parser(existing_effects),
     )
-    callback_wrapper(callback, message=f"Generating effect: {name}")
+    broadcast_generated(message=f"Generating effect: {name}")
 
     description = agent(
         "Generate a detailed description of the {name} effect. What does it look like? What does it do? "
@@ -302,12 +294,11 @@ def generate_world(
     theme: str,
     room_count: int | None = None,
     max_rooms: int = 5,
-    callback: EventCallback | None = None,
     systems: List[GameSystem] = [],
 ) -> World:
     room_count = room_count or randint(3, max_rooms)
 
-    callback_wrapper(callback, message=f"Generating a {theme} with {room_count} rooms")
+    broadcast_generated(message=f"Generating a {theme} with {room_count} rooms")
 
     existing_actors: List[str] = []
     existing_items: List[str] = []
@@ -317,11 +308,9 @@ def generate_world(
     rooms = []
     for i in range(room_count):
         try:
-            room = generate_room(
-                agent, theme, existing_rooms=existing_rooms, callback=callback
-            )
+            room = generate_room(agent, theme, existing_rooms=existing_rooms)
             generate_system_attributes(agent, theme, room, systems)
-            callback_wrapper(callback, entity=room)
+            broadcast_generated(entity=room)
             rooms.append(room)
             existing_rooms.append(room.name)
         except Exception:
@@ -329,9 +318,7 @@ def generate_world(
             continue
 
         item_count = randint(1, 3)
-        callback_wrapper(
-            callback, f"Generating {item_count} items for room: {room.name}"
-        )
+        broadcast_generated(f"Generating {item_count} items for room: {room.name}")
 
         for j in range(item_count):
             try:
@@ -340,10 +327,9 @@ def generate_world(
                     theme,
                     dest_room=room.name,
                     existing_items=existing_items,
-                    callback=callback,
                 )
                 generate_system_attributes(agent, theme, item, systems)
-                callback_wrapper(callback, entity=item)
+                broadcast_generated(entity=item)
 
                 room.items.append(item)
                 existing_items.append(item.name)
@@ -351,8 +337,8 @@ def generate_world(
                 logger.exception("error generating item")
 
         actor_count = randint(1, 3)
-        callback_wrapper(
-            callback, message=f"Generating {actor_count} actors for room: {room.name}"
+        broadcast_generated(
+            message=f"Generating {actor_count} actors for room: {room.name}"
         )
 
         for j in range(actor_count):
@@ -362,10 +348,9 @@ def generate_world(
                     theme,
                     dest_room=room.name,
                     existing_actors=existing_actors,
-                    callback=callback,
                 )
                 generate_system_attributes(agent, theme, actor, systems)
-                callback_wrapper(callback, entity=actor)
+                broadcast_generated(entity=actor)
 
                 room.actors.append(actor)
                 existing_actors.append(actor.name)
@@ -375,9 +360,7 @@ def generate_world(
 
             # generate the actor's inventory
             item_count = randint(0, 2)
-            callback_wrapper(
-                callback, f"Generating {item_count} items for actor {actor.name}"
-            )
+            broadcast_generated(f"Generating {item_count} items for actor {actor.name}")
 
             for k in range(item_count):
                 try:
@@ -386,10 +369,9 @@ def generate_world(
                         theme,
                         dest_room=room.name,
                         existing_items=existing_items,
-                        callback=callback,
                     )
                     generate_system_attributes(agent, theme, item, systems)
-                    callback_wrapper(callback, entity=item)
+                    broadcast_generated(entity=item)
 
                     actor.items.append(item)
                     existing_items.append(item.name)

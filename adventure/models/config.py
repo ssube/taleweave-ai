@@ -37,9 +37,21 @@ class RenderConfig:
 
 
 @dataclass
+class WebsocketServerConfig:
+    host: str
+    port: int
+
+
+@dataclass
+class ServerConfig:
+    websocket: WebsocketServerConfig
+
+
+@dataclass
 class Config:
     bot: BotConfig
     render: RenderConfig
+    server: ServerConfig
 
 
 DEFAULT_CONFIG = Config(
@@ -57,4 +69,5 @@ DEFAULT_CONFIG = Config(
         },
         steps=Range(min=30, max=30),
     ),
+    server=ServerConfig(websocket=WebsocketServerConfig(host="localhost", port=8000)),
 )

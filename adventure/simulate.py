@@ -1,7 +1,7 @@
 from itertools import count
 from logging import getLogger
-from typing import Callable, Sequence
 from math import inf
+from typing import Callable, Sequence
 
 from packit.loops import loop_retry
 from packit.results import multi_function_or_str_result
@@ -17,12 +17,12 @@ from adventure.actions import (
     action_tell,
 )
 from adventure.context import (
+    broadcast,
     get_actor_agent_for_name,
     get_actor_for_agent,
     get_current_step,
     get_current_world,
     set_current_actor,
-    set_current_broadcast,
     set_current_room,
     set_current_step,
     set_current_world,
@@ -30,14 +30,7 @@ from adventure.context import (
 )
 from adventure.game_system import GameSystem
 from adventure.models.entity import World
-from adventure.models.event import (
-    ActionEvent,
-    EventCallback,
-    GameEvent,
-    ReplyEvent,
-    ResultEvent,
-    StatusEvent,
-)
+from adventure.models.event import ActionEvent, ReplyEvent, ResultEvent
 from adventure.utils.world import describe_entity, format_attributes
 
 logger = getLogger(__name__)
@@ -67,25 +60,11 @@ def simulate_world(
     world: World,
     steps: float | int = inf,
     actions: Sequence[Callable[..., str]] = [],
-    callbacks: Sequence[EventCallback] = [],
     systems: Sequence[GameSystem] = [],
 ):
     logger.info("Simulating the world")
     set_current_world(world)
     set_game_systems(systems)
-
-    # set up a broadcast callback
-    def broadcast_callback(message: str | GameEvent):
-        logger.info(message)
-        if isinstance(message, str):
-            event = StatusEvent(text=message)
-        else:
-            event = message
-
-        for callback in callbacks:
-            callback(event)
-
-    set_current_broadcast(broadcast_callback)
 
     # build a toolbox for the actions
     action_tools = Toolbox(
@@ -135,11 +114,7 @@ def simulate_world(
                 else:
                     event = ReplyEvent.from_text(value, room, actor)
 
-                for callback in callbacks:
-                    logger.info(
-                        f"calling input callback for {actor_name}: {callback.__name__}"
-                    )
-                    callback(event)
+                broadcast(event)
 
                 return world_result_parser(value, agent, **kwargs)
 
@@ -174,8 +149,7 @@ def simulate_world(
             agent.memory.append(result)
 
             result_event = ResultEvent(result=result, room=room, actor=actor)
-            for callback in callbacks:
-                callback(result_event)
+            broadcast(result_event)
 
         for system in systems:
             if system.simulate:
