@@ -118,14 +118,19 @@ rules:
       mood: happy
 
 labels:
-  mood:
-    happy:
-      backstory: You are feeling happy.
-      description: They look happy.
-    # neutral intentionally left out
-    sad:
-      backstory: You are feeling sad.
-      description: They look sad.
-    angry:
-      backstory: You are feeling angry.
-      description: They look angry.
+  - match:
+      type: actor
+      mood: happy
+    backstory: You are feeling happy.
+    description: They look happy.
+  - match:
+      type: actor
+      mood: sad
+    backstory: You are feeling sad.
+    description: They look sad.
+  - match:
+      type: actor
+      mood: angry
+    backstory: You are feeling angry.
+    description: They look angry.
+  # neutral intentionally omitted

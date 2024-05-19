@@ -8,13 +8,7 @@ from rule_engine import Rule
 from yaml import Loader, load
 
 from adventure.game_system import FormatPerspective, GameSystem
-from adventure.models.entity import (
-    Attributes,
-    AttributeValue,
-    World,
-    WorldEntity,
-    dataclass,
-)
+from adventure.models.entity import Attributes, World, WorldEntity, dataclass
 from adventure.plugins import get_plugin_function
 
 logger = getLogger(__name__)
@@ -24,6 +18,8 @@ logger = getLogger(__name__)
 class LogicLabel:
     backstory: str
     description: str | None = None
+    match: Optional[Attributes] = None
+    rule: Optional[str] = None
 
 
 @dataclass
@@ -39,12 +35,39 @@ class LogicRule:
 
 @dataclass
 class LogicTable:
-    rules: List[LogicRule]
-    labels: Dict[str, Dict[AttributeValue, LogicLabel]] = Field(default_factory=dict)
+    rules: List[LogicRule] = Field(default_factory=list)
+    labels: List[LogicLabel] = Field(default_factory=list)
 
 
 LogicTrigger = Callable[[WorldEntity], None]
 TriggerTable = Dict[str, LogicTrigger]
+
+
+def match_logic(
+    entity: WorldEntity,
+    matcher: LogicLabel | LogicRule,
+) -> bool:
+    typed_attributes = {
+        **entity.attributes,
+        "type": entity.type,
+    }
+
+    if matcher.rule:
+        # TODO: pre-compile rules
+        rule_impl = Rule(matcher.rule)
+        if not rule_impl.matches(
+            {
+                "attributes": typed_attributes,
+            }
+        ):
+            logger.debug("logic rule did not match attributes: %s", matcher.rule)
+            return False
+
+    if matcher.match and not (matcher.match.items() <= typed_attributes.items()):
+        logger.debug("logic did not match attributes: %s", matcher.match)
+        return False
+
+    return True
 
 
 def update_attributes(
@@ -52,7 +75,6 @@ def update_attributes(
     rules: LogicTable,
     triggers: TriggerTable,
 ) -> None:
-    entity_type = entity.__class__.__name__.lower()
     skip_groups = set()
 
     for rule in rules.rules:
@@ -61,24 +83,7 @@ def update_attributes(
                 logger.debug("already ran a rule from group %s, skipping", rule.group)
                 continue
 
-        typed_attributes = {
-            **entity.attributes,
-            "type": entity_type,
-        }
-
-        if rule.rule:
-            # TODO: pre-compile rules
-            rule_impl = Rule(rule.rule)
-            if not rule_impl.matches(
-                {
-                    "attributes": typed_attributes,
-                }
-            ):
-                logger.debug("logic rule did not match attributes: %s", rule.rule)
-                continue
-
-        if rule.match and not (rule.match.items() <= typed_attributes.items()):
-            logger.debug("logic did not match attributes: %s", rule.match)
+        if not match_logic(entity, rule):
             continue
 
         logger.info("matched logic: %s", rule.match)
@@ -125,9 +130,8 @@ def format_logic(
 ) -> str:
     labels = []
 
-    for attribute, value in entity.attributes.items():
-        if attribute in rules.labels and value in rules.labels[attribute]:
-            label = rules.labels[attribute][value]
+    for label in rules.labels:
+        if match_logic(entity, label):
             if perspective == FormatPerspective.SECOND_PERSON:
                 labels.append(label.backstory)
             elif perspective == FormatPerspective.THIRD_PERSON and label.description:

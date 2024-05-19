@@ -14,10 +14,13 @@ rules:
       sleep: tired
 
 labels:
-  sleep:
-    rested:
-      backstory: You are well-rested.
-      description: They look well-rested.
-    tired:
-      backstory: You are tired.
-      description: They look tired.
+  - match:
+      type: actor
+      sleep: rested
+    backstory: You are well-rested.
+    description: They look well-rested.
+  - match:
+      type: actor
+      sleep: tired
+    backstory: You are tired.
+    description: They look tired.

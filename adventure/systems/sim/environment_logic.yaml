@@ -32,8 +32,9 @@ rules:
     trigger: [adventure.sim_systems.environment_triggers:cold_room]
 
 labels:
-  wet:
-    true:
-      backstory: You are soaking wet.
-      description: They are soaking wet and dripping water.
+  - match:
+      type: actor
+      wet: true
+    backstory: You are soaking wet.
+    description: They are soaking wet and dripping water.
     # false intentionally omitted

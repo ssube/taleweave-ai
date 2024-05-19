@@ -51,38 +51,53 @@ rules:
       thirst: hydrated
 
 labels:
-  edible:
-    true:
-      backstory: You are edible.
-      description: This item is edible.
-    false:
-      backstory: You are not edible.
-      description: This item is not edible.
-  cooked:
-    true:
-      backstory: You are cooked.
-      description: This item is cooked.
-    false:
-      backstory: You are raw.
-      description: This item is raw.
-  spoiled:
-    true:
-      backstory: You are rotten and inedible.
-      description: This item is rotten and inedible.
-    false:
-      backstory: You are fresh and edible.
-      description: This item is fresh and edible.
-  hunger:
-    full:
-      backstory: You are have eaten recently and are full.
-      description: ~
-    hungry:
-      backstory: You are hungry and need to eat.
-      description: They look hungry.
-  thirst:
-    hydrated:
-      backstory: You are hydrated.
-      description: ~
-    thirsty:
-      backstory: You are thirsty and need to drink.
-      description: They look thirsty.
+  - match:
+      type: item
+      edible: true
+    backstory: You are edible.
+    description: This item is edible.
+  - match:
+      type: item
+      edible: false
+    backstory: You are not edible.
+    description: This item is not edible.
+  - match:
+      type: item
+      cooked: true
+    backstory: You are cooked.
+    description: This item is cooked.
+  - match:
+      type: item
+      cooked: false
+    backstory: You are raw.
+    description: This item is raw.
+  - match:
+      type: item
+      spoiled: true
+    backstory: You are rotten and inedible.
+    description: This item is rotten and inedible.
+  - match:
+      type: actor
+      spoiled: false
+    backstory: You are fresh and edible.
+    description: This item is fresh and edible.
+  - match:
+      type: actor
+      hunger: full
+    backstory: You are have eaten recently and are full.
+    description: ~
+  - match:
+      type: actor
+      hunger: hungry
+    backstory: You are hungry and need to eat.
+    description: They look hungry.
+  - match:
+      type: actor
+      thirst: hydrated
+    backstory: You are hydrated.
+    description: ~
+  - match:
+      type: actor
+      thirst: thirsty
+    backstory: You are thirsty and need to drink.
+    description: They look thirsty.
