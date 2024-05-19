@@ -1,4 +1,4 @@
-import { Avatar, IconButton, ImageList, ImageListItem, ListItem, ListItemAvatar, ListItemText, Typography } from '@mui/material';
+import { Avatar, IconButton, ImageList, ImageListItem, ListItem, ListItemAvatar, ListItemText, Stack, Typography } from '@mui/material';
 import React, { Fragment, MutableRefObject } from 'react';
 
 import { Maybe, doesExist } from '@apextoaster/js-utils';
@@ -192,24 +192,26 @@ export function RenderEventItem(props: EventItemProps) {
         <Camera />
       </Avatar>
     </ListItemAvatar>
-    <ListItemText
-      primary={title}
-      secondary={
-        <Typography
-          sx={{ display: 'block' }}
-          component="span"
-          variant="body2"
-          color="text.primary"
-        >{prompt}</Typography>
-      }
-    />
-    <ImageList cols={3} rowHeight={256}>
-      {Object.entries(images).map(([name, image]) => <ImageListItem key={name}>
-        <a href='#' onClick={() => openImage(image as string)}>
-          <img src={`data:image/jpeg;base64,${image}`} alt="Render" style={{ maxHeight: 256, maxWidth: 256 }} />
-        </a>
-      </ImageListItem>)}
-    </ImageList>
+    <Stack direction="column" spacing={2}>
+      <ListItemText
+        primary={title}
+        secondary={
+          <Typography
+            sx={{ display: 'block' }}
+            component="span"
+            variant="body2"
+            color="text.primary"
+          >{prompt}</Typography>
+        }
+      />
+      <ImageList cols={3} rowHeight={256}>
+        {Object.entries(images).map(([name, image]) => <ImageListItem key={name}>
+          <a href='#' onClick={() => openImage(image as string)}>
+            <img src={`data:image/jpeg;base64,${image}`} alt="Render" style={{ maxHeight: 256, maxWidth: 256 }} />
+          </a>
+        </ImageListItem>)}
+      </ImageList>
+    </Stack>
   </ListItem>;
 }
 
