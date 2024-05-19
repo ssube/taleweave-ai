@@ -268,22 +268,33 @@ def render_loop():
             logger.info(
                 "using existing images for event %s: %s", event, existing_images
             )
-            broadcast(RenderEvent(paths=existing_images, source=event))
+            broadcast(
+                RenderEvent(
+                    paths=existing_images,
+                    prompt="",
+                    source=event,
+                    title="Existing Images",
+                )
+            )
             continue
 
         # generate the prompt
         if isinstance(event, WorldEntity):
             logger.info("rendering entity %s", event.name)
             prompt = prompt_from_entity(event)
+            title = event.name  # TODO: generate a real title
         else:
             logger.info("rendering event %s", event.id)
             prompt = prompt_from_event(event)
+            title = event.type  # TODO: generate a real title
 
         # render or not
         if prompt:
             logger.debug("rendering prompt for event %s: %s", event, prompt)
             image_paths = generate_images(prompt, 2, prefix=prefix)
-            broadcast(RenderEvent(paths=image_paths, source=event))
+            broadcast(
+                RenderEvent(paths=image_paths, prompt=prompt, source=event, title=title)
+            )
         else:
             logger.warning("no prompt for event %s", event)
 

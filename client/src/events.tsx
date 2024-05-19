@@ -184,7 +184,7 @@ export function PlayerEventItem(props: EventItemProps) {
 
 export function RenderEventItem(props: EventItemProps) {
   const { event } = props;
-  const { images } = event;
+  const { images, prompt, title = 'Render' } = event;
 
   return <ListItem alignItems="flex-start" ref={props.focusRef}>
     <ListItemAvatar>
@@ -192,7 +192,17 @@ export function RenderEventItem(props: EventItemProps) {
         <Camera />
       </Avatar>
     </ListItemAvatar>
-    <ListItemText primary="">Render</ListItemText>
+    <ListItemText
+      primary={title}
+      secondary={
+        <Typography
+          sx={{ display: 'block' }}
+          component="span"
+          variant="body2"
+          color="text.primary"
+        >{prompt}</Typography>
+      }
+    />
     <ImageList cols={3} rowHeight={256}>
       {Object.entries(images).map(([name, image]) => <ImageListItem key={name}>
         <a href='#' onClick={() => openImage(image as string)}>

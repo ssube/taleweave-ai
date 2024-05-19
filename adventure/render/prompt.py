@@ -136,8 +136,13 @@ def generate_keywords_from_scene(scene: str) -> List[str]:
     logger.debug("generating keywords from scene: %s", scene)
 
     # TODO: use a gpt2 model to generate keywords from scene
+
     # hack for now: split on punctuation and whitespace
-    return re.split(r"\W+", scene)
+    words = re.split(r"\W+", scene)
+
+    # downcase and remove empty strings
+    words = [word.lower() for word in words if word]
+    return words
 
 
 def generate_prompt_from_scene(scene: str, example_prompts: List[str]) -> str:
@@ -146,6 +151,7 @@ def generate_prompt_from_scene(scene: str, example_prompts: List[str]) -> str:
         scene,
         example_prompts,
     )
+
     # generate prompt from scene and example prompts
     dungeon_master = get_dungeon_master()
     return dungeon_master(

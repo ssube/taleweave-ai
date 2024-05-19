@@ -161,7 +161,9 @@ class RenderEvent(BaseModel):
     """
 
     paths: List[str]
+    prompt: str
     source: Union["GameEvent", WorldEntity]
+    title: str
     id: str = Field(default_factory=uuid)
     type: Literal["render"] = "render"
 
