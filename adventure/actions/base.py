@@ -91,22 +91,22 @@ def action_move(direction: str) -> str:
         return f"You move {direction} and arrive at {destination_room.name}."
 
 
-def action_take(item_name: str) -> str:
+def action_take(item: str) -> str:
     """
     Take an item from the room and put it in your inventory.
 
     Args:
-        item_name: The name of the item to take.
+        item: The name of the item to take.
     """
     with action_context() as (action_room, action_actor):
-        item = find_item_in_room(action_room, item_name)
-        if not item:
-            return "The {item_name} item is not in the room."
+        action_item = find_item_in_room(action_room, item)
+        if not action_item:
+            return f"The {item} item is not in the room."
 
-        broadcast(f"{action_actor.name} takes the {item_name} item")
-        action_room.items.remove(item)
-        action_actor.items.append(item)
-        return "You take the {item_name} item and put it in your inventory."
+        broadcast(f"{action_actor.name} takes the {item} item")
+        action_room.items.remove(action_item)
+        action_actor.items.append(action_item)
+        return f"You take the {item} item and put it in your inventory."
 
 
 def action_ask(character: str, question: str) -> str:
@@ -184,45 +184,45 @@ def action_tell(character: str, message: str) -> str:
         return f"{character} does not respond."
 
 
-def action_give(character: str, item_name: str) -> str:
+def action_give(character: str, item: str) -> str:
     """
     Give an item to another character in the room.
 
     Args:
         character: The name of the character to give the item to.
-        item_name: The name of the item to give.
+        item: The name of the item to give.
     """
     with action_context() as (action_room, action_actor):
         destination_actor = find_actor_in_room(action_room, character)
         if not destination_actor:
             return f"The {character} character is not in the room."
 
-        item = find_item_in_actor(action_actor, item_name)
-        if not item:
-            return f"You do not have the {item_name} item in your inventory."
+        action_item = find_item_in_actor(action_actor, item)
+        if not action_item:
+            return f"You do not have the {item} item in your inventory."
 
-        broadcast(f"{action_actor.name} gives {character} the {item_name} item.")
-        action_actor.items.remove(item)
-        destination_actor.items.append(item)
+        broadcast(f"{action_actor.name} gives {character} the {item} item.")
+        action_actor.items.remove(action_item)
+        destination_actor.items.append(action_item)
 
-        return f"You give the {item_name} item to {character}."
+        return f"You give the {item} item to {character}."
 
 
-def action_drop(item_name: str) -> str:
+def action_drop(item: str) -> str:
     """
     Drop an item from your inventory into the room.
 
     Args:
-        item_name: The name of the item to drop.
+        item: The name of the item to drop.
     """
 
     with action_context() as (action_room, action_actor):
-        item = find_item_in_actor(action_actor, item_name)
-        if not item:
-            return f"You do not have the {item_name} item in your inventory."
+        action_item = find_item_in_actor(action_actor, item)
+        if not action_item:
+            return f"You do not have the {item} item in your inventory."
 
-        broadcast(f"{action_actor.name} drops the {item_name} item")
-        action_actor.items.remove(item)
-        action_room.items.append(item)
+        broadcast(f"{action_actor.name} drops the {item} item")
+        action_actor.items.remove(action_item)
+        action_room.items.append(action_item)
 
-        return f"You drop the {item_name} item."
+        return f"You drop the {item} item."

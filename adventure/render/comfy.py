@@ -28,7 +28,8 @@ from adventure.models.event import (
     ResultEvent,
     StatusEvent,
 )
-from adventure.utils.world import describe_entity
+
+from .prompt import prompt_from_entity, prompt_from_event
 
 logger = getLogger(__name__)
 
@@ -209,39 +210,6 @@ def generate_images(
         paths.append(image_path)
 
     return paths
-
-
-def prompt_from_event(event: GameEvent) -> str | None:
-    if isinstance(event, ActionEvent):
-        if event.item:
-            return (
-                f"{event.actor.name} uses the {event.item.name}. {describe_entity(event.item)}. "
-                f"{describe_entity(event.actor)}. {describe_entity(event.room)}."
-            )
-
-        action_name = event.action.removeprefix("action_")
-        return f"{event.actor.name} uses {action_name}. {describe_entity(event.actor)}. {describe_entity(event.room)}."
-
-    if isinstance(event, ReplyEvent):
-        return event.text
-
-    if isinstance(event, ResultEvent):
-        return f"{event.result}. {describe_entity(event.actor)}. {describe_entity(event.room)}."
-
-    if isinstance(event, StatusEvent):
-        if event.room:
-            if event.actor:
-                return f"{event.text}. {describe_entity(event.actor)}. {describe_entity(event.room)}."
-
-            return f"{event.text}. {describe_entity(event.room)}."
-
-        return event.text
-
-    return None
-
-
-def prompt_from_entity(entity: WorldEntity) -> str:
-    return describe_entity(entity)
 
 
 def sanitize_name(name: str) -> str:

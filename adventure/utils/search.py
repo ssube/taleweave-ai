@@ -39,6 +39,7 @@ def find_actor_in_room(room: Room, actor_name: str) -> Actor | None:
     return None
 
 
+# TODO: allow item or str
 def find_item(
     world: World,
     item_name: str,

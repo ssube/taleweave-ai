@@ -24,23 +24,23 @@ recipes = {
 }
 
 
-def action_craft(item_name: str) -> str:
+def action_craft(item: str) -> str:
     """
     Craft an item using available recipes and inventory items.
 
     Args:
-        item_name: The name of the item to craft.
+        item: The name of the item to craft.
     """
     with world_context() as (action_world, _, action_actor):
-        if item_name not in recipes:
-            return f"There is no recipe to craft a {item_name}."
+        if item not in recipes:
+            return f"There is no recipe to craft a {item}."
 
-        recipe = recipes[item_name]
+        recipe = recipes[item]
 
         # Check if the actor has the required skill level
         skill = randint(1, 20)
         if skill < recipe.difficulty:
-            return f"You need a crafting skill level of {recipe.difficulty} to craft {item_name}."
+            return f"You need a crafting skill level of {recipe.difficulty} to craft {item}."
 
         # Collect inventory items names
         inventory_items = {item.name for item in action_actor.items}
@@ -50,9 +50,7 @@ def action_craft(item_name: str) -> str:
             item for item in recipe.ingredients if item not in inventory_items
         ]
         if missing_items:
-            return (
-                f"You are missing {' and '.join(missing_items)} to craft {item_name}."
-            )
+            return f"You are missing {' and '.join(missing_items)} to craft {item}."
 
         # Deduct the ingredients from inventory
         for ingredient in recipe.ingredients:
@@ -76,5 +74,5 @@ def action_craft(item_name: str) -> str:
 
         action_actor.items.append(new_item)
 
-        broadcast(f"{action_actor.name} crafts a {item_name}.")
-        return f"You successfully craft a {item_name}."
+        broadcast(f"{action_actor.name} crafts a {item}.")
+        return f"You successfully craft a {item}."

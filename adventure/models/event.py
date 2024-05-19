@@ -73,6 +73,8 @@ class ReplyEvent(BaseModel):
     An actor has replied with text.
 
     This is the non-JSON version of an ActionEvent.
+
+    TODO: add the actor being replied to.
     """
 
     text: str
