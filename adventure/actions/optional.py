@@ -12,7 +12,7 @@ from adventure.context import (
     set_dungeon_master,
     world_context,
 )
-from adventure.generate import OPPOSITE_DIRECTIONS, generate_item, generate_room
+from adventure.generate import generate_item, generate_room
 from adventure.utils.effect import apply_effect
 from adventure.utils.search import find_actor_in_room
 from adventure.utils.world import describe_actor, describe_entity
@@ -55,8 +55,7 @@ def action_explore(direction: str) -> str:
             action_world.rooms.append(new_room)
 
             # link the rooms together
-            action_room.portals[direction] = new_room.name
-            new_room.portals[OPPOSITE_DIRECTIONS[direction]] = action_room.name
+            # TODO: generate portals
 
             broadcast(
                 f"{action_actor.name} explores {direction} of {action_room.name} and finds a new room: {new_room.name}"

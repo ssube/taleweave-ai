@@ -68,6 +68,17 @@ class Actor(BaseModel):
 
 
 @dataclass
+class Portal(BaseModel):
+    name: str
+    description: str
+    destination: str
+    actions: Actions = Field(default_factory=dict)
+    attributes: Attributes = Field(default_factory=dict)
+    id: str = Field(default_factory=uuid)
+    type: Literal["portal"] = "portal"
+
+
+@dataclass
 class Room(BaseModel):
     name: str
     description: str
@@ -75,7 +86,7 @@ class Room(BaseModel):
     actions: Actions = Field(default_factory=dict)
     attributes: Attributes = Field(default_factory=dict)
     items: List[Item] = Field(default_factory=list)
-    portals: Dict[str, str] = Field(default_factory=dict)
+    portals: List[Portal] = Field(default_factory=list)
     id: str = Field(default_factory=uuid)
     type: Literal["room"] = "room"
 

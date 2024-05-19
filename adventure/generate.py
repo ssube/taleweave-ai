@@ -1,6 +1,6 @@
 from logging import getLogger
 from random import choice, randint
-from typing import List
+from typing import List, Tuple
 
 from packit.agent import Agent
 from packit.loops import loop_retry
@@ -8,11 +8,13 @@ from packit.utils import could_be_json
 
 from adventure.context import broadcast
 from adventure.game_system import GameSystem
+from adventure.models.config import DEFAULT_CONFIG, WorldConfig
 from adventure.models.entity import (
     Actor,
     Effect,
     Item,
     NumberAttributeEffect,
+    Portal,
     Room,
     StringAttributeEffect,
     World,
@@ -22,12 +24,7 @@ from adventure.models.event import GenerateEvent
 
 logger = getLogger(__name__)
 
-OPPOSITE_DIRECTIONS = {
-    "north": "south",
-    "south": "north",
-    "east": "west",
-    "west": "east",
-}
+world_config: WorldConfig = DEFAULT_CONFIG.world
 
 
 def duplicate_name_parser(existing_names: List[str]):
@@ -69,6 +66,7 @@ def generate_room(
     agent: Agent,
     world_theme: str,
     existing_rooms: List[str] = [],
+    systems: List[GameSystem] = [],
 ) -> Room:
     name = loop_retry(
         agent,
@@ -89,13 +87,118 @@ def generate_room(
         name=name,
     )
 
-    items = []
-    actors = []
     actions = {}
+
+    item_count = randint(
+        world_config.size.room_items.min, world_config.size.room_items.max
+    )
+    broadcast_generated(f"Generating {item_count} items for room: {name}")
+
+    items = []
+    for j in range(item_count):
+        existing_items = [item.name for item in items]
+
+        try:
+            item = generate_item(
+                agent,
+                world_theme,
+                dest_room=name,
+                existing_items=existing_items,
+            )
+            generate_system_attributes(agent, world_theme, item, systems)
+            broadcast_generated(entity=item)
+
+            items.append(item)
+        except Exception:
+            logger.exception("error generating item")
+
+    actor_count = randint(
+        world_config.size.room_actors.min, world_config.size.room_actors.max
+    )
+    broadcast_generated(message=f"Generating {actor_count} actors for room: {name}")
+
+    actors = []
+    for j in range(actor_count):
+        existing_actors = [actor.name for actor in actors]
+
+        try:
+            actor = generate_actor(
+                agent,
+                world_theme,
+                dest_room=name,
+                existing_actors=existing_actors,
+            )
+            generate_system_attributes(agent, world_theme, actor, systems)
+            broadcast_generated(entity=actor)
+
+            actors.append(actor)
+        except Exception:
+            logger.exception("error generating actor")
+            continue
 
     return Room(
         name=name, description=desc, items=items, actors=actors, actions=actions
     )
+
+
+def generate_portals(
+    agent: Agent,
+    world_theme: str,
+    source_room: Room,
+    dest_room: Room,
+) -> Tuple[Portal, Portal]:
+    existing_source_portals = [portal.name for portal in source_room.portals]
+    existing_dest_portals = [portal.name for portal in dest_room.portals]
+
+    outgoing_name = loop_retry(
+        agent,
+        "Generate the name of a portal that leads from the {source_room} room to the {dest_room} room and fits the world theme of {world_theme}. "
+        "Some example portal names are: 'door', 'gate', 'archway', 'staircase', 'trapdoor', 'mirror', and 'magic circle'. "
+        "Only respond with the portal name in title case, do not include a description or any other text. "
+        'Do not prefix the name with "the", do not wrap it in quotes. Use a unique name. '
+        "Do not create any duplicate portals in the same room. The existing portals are: {existing_portals}",
+        context={
+            "source_room": source_room.name,
+            "dest_room": dest_room.name,
+            "existing_portals": existing_source_portals,
+            "world_theme": world_theme,
+        },
+        result_parser=duplicate_name_parser(existing_source_portals),
+    )
+    broadcast_generated(message=f"Generating portal: {outgoing_name}")
+
+    incoming_name = loop_retry(
+        agent,
+        "Generate the opposite name of the portal that leads from the {dest_room} room to the {source_room} room. "
+        "The name should be the opposite of the {outgoing_name} portal and should fit the world theme of {world_theme}. "
+        "Some example portal names are: 'door', 'gate', 'archway', 'staircase', 'trapdoor', 'mirror', and 'magic circle'. "
+        "Only respond with the portal name in title case, do not include a description or any other text. "
+        'Do not prefix the name with "the", do not wrap it in quotes. Use a unique name. '
+        "Do not create any duplicate portals in the same room. The existing portals are: {existing_portals}",
+        context={
+            "source_room": source_room.name,
+            "dest_room": dest_room.name,
+            "existing_portals": existing_dest_portals,
+            "world_theme": world_theme,
+            "outgoing_name": outgoing_name,
+        },
+        result_parser=duplicate_name_parser(existing_dest_portals),
+    )
+
+    broadcast_generated(message=f"Linking {outgoing_name} to {incoming_name}")
+
+    outgoing_portal = Portal(
+        name=outgoing_name,
+        description=f"A {outgoing_name} leads to the {dest_room.name} room.",
+        destination=dest_room.name,
+    )
+    incoming_portal = Portal(
+        name=incoming_name,
+        description=f"A {incoming_name} leads to the {source_room.name} room.",
+        destination=source_room.name,
+    )
+
+    return (outgoing_portal, incoming_portal)
 
 
 def generate_item(
@@ -136,13 +239,19 @@ def generate_item(
     actions = {}
     item = Item(name=name, description=desc, actions=actions)
 
-    effect_count = randint(1, 2)
+    effect_count = randint(
+        world_config.size.item_effects.min, world_config.size.item_effects.max
+    )
     broadcast_generated(message=f"Generating {effect_count} effects for item: {name}")
 
     effects = []
     for i in range(effect_count):
+        existing_effects = [effect.name for effect in effects]
+
         try:
-            effect = generate_effect(agent, world_theme, entity=item)
+            effect = generate_effect(
+                agent, world_theme, entity=item, existing_effects=existing_effects
+            )
             effects.append(effect)
         except Exception:
             logger.exception("error generating effect")
@@ -156,6 +265,7 @@ def generate_actor(
     world_theme: str,
     dest_room: str,
     existing_actors: List[str] = [],
+    systems: List[GameSystem] = [],
 ) -> Actor:
     name = loop_retry(
         agent,
@@ -186,18 +296,59 @@ def generate_actor(
         name=name,
     )
 
+    # generate the actor's inventory
+    item_count = randint(
+        world_config.size.actor_items.min, world_config.size.actor_items.max
+    )
+    broadcast_generated(f"Generating {item_count} items for actor {name}")
+
+    items = []
+    for k in range(item_count):
+        existing_items = [item.name for item in items]
+
+        try:
+            item = generate_item(
+                agent,
+                world_theme,
+                dest_actor=name,
+                existing_items=existing_items,
+            )
+            generate_system_attributes(agent, world_theme, item, systems)
+            broadcast_generated(entity=item)
+
+            items.append(item)
+        except Exception:
+            logger.exception("error generating item")
+
     return Actor(
         name=name,
         backstory=backstory,
         description=description,
         actions={},
+        items=items,
     )
 
 
-def generate_effect(agent: Agent, theme: str, entity: Item) -> Effect:
-    entity_type = entity.type
+# TODO: move to utils
+def try_parse_int(value: str) -> int | None:
+    try:
+        return int(value)
+    except ValueError:
+        return None
 
-    existing_effects = [effect.name for effect in entity.effects]
+
+# TODO: move to utils
+def try_parse_float(value: str) -> float | None:
+    try:
+        return float(value)
+    except ValueError:
+        return None
+
+
+def generate_effect(
+    agent: Agent, theme: str, entity: Item, existing_effects: List[str] = []
+) -> Effect:
+    entity_type = entity.type
 
     name = loop_retry(
         agent,
@@ -252,28 +403,50 @@ def generate_effect(agent: Agent, theme: str, entity: Item) -> Effect:
                     "prepend",
                 ],
             )
+
+            PROMPT_TYPE_FRAGMENTS = {
+                "both": "Enter a positive or negative number, or a string value",
+                "number": "Enter a positive or negative number",
+                "string": "Enter a string value",
+            }
+
+            PROMPT_OPERATION_TYPES = {
+                "set": "both",
+                "add": "number",
+                "subtract": "number",
+                "multiply": "number",
+                "divide": "number",
+                "append": "string",
+                "prepend": "string",
+            }
+
+            operation_type = PROMPT_OPERATION_TYPES[operation]
+            operation_prompt = PROMPT_TYPE_FRAGMENTS[operation_type]
+
             value = agent(
                 f"How much does the {name} effect modify the {attribute_name} attribute? "
                 "For example, heal might add '10' to the health attribute, while poison might subtract '5' from it."
-                "Enter a positive or negative number, or a string value. Do not include any other text. Do not use JSON.",
+                f"{operation_prompt}. Do not include any other text. Do not use JSON.",
                 name=name,
                 attribute_name=attribute_name,
             )
             value = value.strip()
-            if value.isdigit():
-                value = int(value)
+
+            int_value = try_parse_int(value)
+            if int_value is not None:
                 attribute_effect = NumberAttributeEffect(
-                    name=attribute_name, operation=operation, value=value
-                )
-            elif value.isdecimal():
-                value = float(value)
-                attribute_effect = NumberAttributeEffect(
-                    name=attribute_name, operation=operation, value=value
+                    name=attribute_name, operation=operation, value=int_value
                 )
             else:
-                attribute_effect = StringAttributeEffect(
-                    name=attribute_name, operation=operation, value=value
-                )
+                float_value = try_parse_float(value)
+                if float_value is not None:
+                    attribute_effect = NumberAttributeEffect(
+                        name=attribute_name, operation=operation, value=float_value
+                    )
+                else:
+                    attribute_effect = StringAttributeEffect(
+                        name=attribute_name, operation=operation, value=value
+                    )
 
             attributes.append(attribute_effect)
 
@@ -293,120 +466,66 @@ def generate_world(
     name: str,
     theme: str,
     room_count: int | None = None,
-    max_rooms: int = 5,
     systems: List[GameSystem] = [],
 ) -> World:
-    room_count = room_count or randint(3, max_rooms)
+    room_count = room_count or randint(
+        world_config.size.rooms.min, world_config.size.rooms.max
+    )
 
     broadcast_generated(message=f"Generating a {theme} with {room_count} rooms")
-
-    existing_actors: List[str] = []
-    existing_items: List[str] = []
-    existing_rooms: List[str] = []
 
     # generate the rooms
     rooms = []
     for i in range(room_count):
+        existing_rooms = [room.name for room in rooms]
+
         try:
             room = generate_room(agent, theme, existing_rooms=existing_rooms)
             generate_system_attributes(agent, theme, room, systems)
             broadcast_generated(entity=room)
             rooms.append(room)
-            existing_rooms.append(room.name)
         except Exception:
             logger.exception("error generating room")
             continue
 
-        item_count = randint(1, 3)
-        broadcast_generated(f"Generating {item_count} items for room: {room.name}")
-
-        for j in range(item_count):
-            try:
-                item = generate_item(
-                    agent,
-                    theme,
-                    dest_room=room.name,
-                    existing_items=existing_items,
-                )
-                generate_system_attributes(agent, theme, item, systems)
-                broadcast_generated(entity=item)
-
-                room.items.append(item)
-                existing_items.append(item.name)
-            except Exception:
-                logger.exception("error generating item")
-
-        actor_count = randint(1, 3)
-        broadcast_generated(
-            message=f"Generating {actor_count} actors for room: {room.name}"
-        )
-
-        for j in range(actor_count):
-            try:
-                actor = generate_actor(
-                    agent,
-                    theme,
-                    dest_room=room.name,
-                    existing_actors=existing_actors,
-                )
-                generate_system_attributes(agent, theme, actor, systems)
-                broadcast_generated(entity=actor)
-
-                room.actors.append(actor)
-                existing_actors.append(actor.name)
-            except Exception:
-                logger.exception("error generating actor")
-                continue
-
-            # generate the actor's inventory
-            item_count = randint(0, 2)
-            broadcast_generated(f"Generating {item_count} items for actor {actor.name}")
-
-            for k in range(item_count):
-                try:
-                    item = generate_item(
-                        agent,
-                        theme,
-                        dest_room=room.name,
-                        existing_items=existing_items,
-                    )
-                    generate_system_attributes(agent, theme, item, systems)
-                    broadcast_generated(entity=item)
-
-                    actor.items.append(item)
-                    existing_items.append(item.name)
-                except Exception:
-                    logger.exception("error generating item")
-
     # generate portals to link the rooms together
     for room in rooms:
-        directions = ["north", "south", "east", "west"]
-        for direction in directions:
-            if direction in room.portals:
-                logger.debug(f"Room {room.name} already has a {direction} portal")
+        num_portals = randint(
+            world_config.size.portals.min, world_config.size.portals.max
+        )
+
+        if len(room.portals) >= num_portals:
+            logger.info(f"room {room.name} already has enough portals")
+            continue
+
+        broadcast_generated(
+            message=f"Generating {num_portals} portals for room: {room.name}"
+        )
+
+        for i in range(num_portals):
+            previous_destinations = [portal.destination for portal in room.portals] + [
+                room.name
+            ]
+            remaining_rooms = [r for r in rooms if r.name not in previous_destinations]
+            if len(remaining_rooms) == 0:
+                logger.info(f"no more rooms to link to from {room.name}")
+                break
+
+            # TODO: prompt the DM to choose a destination room
+            dest_room = choice(
+                [r for r in rooms if r.name not in previous_destinations]
+            )
+
+            try:
+                outgoing_portal, incoming_portal = generate_portals(
+                    agent, theme, room, dest_room
+                )
+
+                room.portals.append(outgoing_portal)
+                dest_room.portals.append(incoming_portal)
+            except Exception:
+                logger.exception("error generating portal")
                 continue
-
-            opposite_direction = OPPOSITE_DIRECTIONS[direction]
-
-            if randint(0, 1):
-                dest_room = choice([r for r in rooms if r.name != room.name])
-
-                # make sure not to create duplicate links
-                if room.name in dest_room.portals.values():
-                    logger.debug(
-                        f"Room {dest_room.name} already has a portal to {room.name}"
-                    )
-                    continue
-
-                if opposite_direction in dest_room.portals:
-                    logger.debug(
-                        f"Room {dest_room.name} already has a {opposite_direction} portal"
-                    )
-                    continue
-
-                # create bidirectional links
-                room.portals[direction] = dest_room.name
-                dest_room.portals[OPPOSITE_DIRECTIONS[direction]] = room.name
 
     # ensure actors act in a stable order
     order = [actor.name for room in rooms for actor in room.actors]

@@ -48,10 +48,26 @@ class ServerConfig:
 
 
 @dataclass
+class WorldSizeConfig:
+    actor_items: Range
+    item_effects: Range
+    portals: Range
+    room_actors: Range
+    room_items: Range
+    rooms: Range
+
+
+@dataclass
+class WorldConfig:
+    size: WorldSizeConfig
+
+
+@dataclass
 class Config:
     bot: BotConfig
     render: RenderConfig
     server: ServerConfig
+    world: WorldConfig
 
 
 DEFAULT_CONFIG = Config(
@@ -69,5 +85,15 @@ DEFAULT_CONFIG = Config(
         },
         steps=Range(min=30, max=30),
     ),
-    server=ServerConfig(websocket=WebsocketServerConfig(host="localhost", port=8000)),
+    server=ServerConfig(websocket=WebsocketServerConfig(host="localhost", port=8001)),
+    world=WorldConfig(
+        size=WorldSizeConfig(
+            actor_items=Range(min=1, max=3),
+            item_effects=Range(min=1, max=3),
+            portals=Range(min=1, max=3),
+            rooms=Range(min=3, max=6),
+            room_actors=Range(min=1, max=3),
+            room_items=Range(min=1, max=3),
+        )
+    ),
 )

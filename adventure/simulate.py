@@ -98,7 +98,7 @@ def simulate_world(
 
             room_actors = [actor.name for actor in room.actors]
             room_items = [item.name for item in room.items]
-            room_directions = list(room.portals.keys())
+            room_directions = [portal.name for portal in room.portals]
 
             actor_attributes = format_attributes(actor)
             actor_items = [item.name for item in actor.items]

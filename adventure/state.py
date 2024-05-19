@@ -40,8 +40,8 @@ def graph_world(world: World, step: int):
     for room in world.rooms:
         room_label = "\n".join([room.name, *[actor.name for actor in room.actors]])
         graph.node(room.name, room_label)
-        for direction, destination in room.portals.items():
-            graph.edge(room.name, destination, label=direction)
+        for portal in room.portals:
+            graph.edge(room.name, portal.destination, label=portal.name)
 
     graph_path = path.dirname(world.name)
     graph.render(directory=graph_path)

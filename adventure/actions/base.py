@@ -68,19 +68,22 @@ def action_move(direction: str) -> str:
     """
 
     with world_context() as (action_world, action_room, action_actor):
-        destination_name = action_room.portals.get(direction.lower())
-        if not destination_name:
+        portal = next(
+            (p for p in action_room.portals if p.name.lower() == direction.lower()),
+            None,
+        )
+        if not portal:
             return f"You cannot move {direction} from here."
 
-        destination_room = find_room(action_world, destination_name)
+        destination_room = find_room(action_world, portal.destination)
         if not destination_room:
-            return f"The {destination_name} room does not exist."
+            return f"The {portal.destination} room does not exist."
 
-        broadcast(f"{action_actor.name} moves {direction} to {destination_name}")
+        broadcast(f"{action_actor.name} moves {direction} to {destination_room.name}")
         action_room.actors.remove(action_actor)
         destination_room.actors.append(action_actor)
 
-        return f"You move {direction} and arrive at {destination_name}."
+        return f"You move {direction} and arrive at {destination_room.name}."
 
 
 def action_take(item_name: str) -> str:

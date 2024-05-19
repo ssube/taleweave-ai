@@ -280,7 +280,7 @@ def launch_server(config: WebsocketServerConfig):
 
 
 async def server_main():
-    async with websockets.serve(handler, "", 8001):
+    async with websockets.serve(handler, server_config.host, server_config.port):
         logger.info("websocket server started")
         await asyncio.Future()  # run forever
 

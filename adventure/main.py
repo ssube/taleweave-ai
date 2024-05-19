@@ -92,12 +92,6 @@ def parse_args():
         help="Some additional flavor text for the generated world",
     )
     parser.add_argument(
-        "--max-rooms",
-        default=6,
-        type=int,
-        help="The maximum number of rooms to generate",
-    )
-    parser.add_argument(
         "--optional-actions",
         action="store_true",
         help="Whether to include optional actions in the simulation",
@@ -216,7 +210,6 @@ def load_or_generate_world(args, players, systems, world_prompt: WorldPrompt):
             args.world,
             world_prompt.theme,
             room_count=args.rooms,
-            max_rooms=args.max_rooms,
         )
         save_world(world, world_file)
 
