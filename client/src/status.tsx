@@ -38,10 +38,12 @@ export function statusbarStateSelector(s: StoreState) {
   return {
     autoScroll: s.autoScroll,
     clientName: s.clientName,
+    layoutMode: s.layoutMode,
     readyState: s.readyState,
     themeMode: s.themeMode,
     setAutoScroll: s.setAutoScroll,
     setClientName: s.setClientName,
+    setLayoutMode: s.setLayoutMode,
     setThemeMode: s.setThemeMode,
     eventHistory: s.eventHistory,
   };
@@ -54,7 +56,7 @@ export interface StatusbarProps {
 export function Statusbar(props: StatusbarProps) {
   const { setName } = props;
   const state = useStore(store, statusbarStateSelector);
-  const { autoScroll, clientName, readyState, themeMode, setAutoScroll, setClientName, setThemeMode, eventHistory } = state;
+  const { autoScroll, clientName, layoutMode, readyState, themeMode, setAutoScroll, setClientName, setLayoutMode, setThemeMode, eventHistory } = state;
 
   const connectionStatus = statusStrings[readyState as ReadyState];
 
@@ -76,6 +78,12 @@ export function Statusbar(props: StatusbarProps) {
           inputProps={{ 'aria-label': 'controlled' }}
           sx={{ marginLeft: 'auto' }}
         />} label="Auto Scroll" />
+        <FormControlLabel control={<Switch
+          checked={layoutMode === 'vertical'}
+          onChange={() => setLayoutMode(layoutMode === 'vertical' ? 'horizontal' : 'vertical')}
+          inputProps={{ 'aria-label': 'controlled' }}
+          sx={{ marginLeft: 'auto' }}
+        />} label="Vertical Layout" />
       </FormGroup>
       <FormGroup row>
         <TextField

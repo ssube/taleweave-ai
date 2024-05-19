@@ -31,6 +31,7 @@ export interface AppProps {
 
 export function appStateSelector(s: StoreState) {
   return {
+    layoutMode: s.layoutMode,
     themeMode: s.themeMode,
     setReadyState: s.setReadyState,
   };
@@ -38,12 +39,11 @@ export function appStateSelector(s: StoreState) {
 
 export function App(props: AppProps) {
   const state = useStore(store, appStateSelector);
-  const { themeMode, setReadyState } = state;
+  const { layoutMode, themeMode, setReadyState } = state;
 
   // socket stuff
   const { lastMessage, readyState, sendMessage } = useWebSocket(props.socketUrl);
 
-  // socket senders
   function renderEntity(type: string, entity: string) {
     sendMessage(JSON.stringify({ type: 'render', [type]: entity }));
   }
@@ -120,6 +120,24 @@ export function App(props: AppProps) {
     setReadyState(readyState);
   }, [readyState]);
 
+  function innerLayout(a: React.JSX.Element, b: React.JSX.Element) {
+    switch (layoutMode) {
+      case 'horizontal':
+        return <Allotment className='body-allotment'>{a}{b}</Allotment>;
+      case 'vertical':
+      default:
+        return <Stack direction='column'>{a}{b}</Stack>;
+    }
+  }
+
+  const layoutWidths = {
+    // eslint-disable-next-line @typescript-eslint/no-magic-numbers
+    horizontal: [400, 600],
+    // eslint-disable-next-line @typescript-eslint/no-magic-numbers
+    vertical: [1000, 1000],
+  };
+  const [leftWidth, rightWidth] = layoutWidths[layoutMode];
+
   return <ThemeProvider theme={theme}>
     <CssBaseline />
     <DetailDialog renderEntity={renderEntity} />
@@ -127,15 +145,15 @@ export function App(props: AppProps) {
       <Stack direction="column">
         <Statusbar setName={setName} />
         <Stack direction="row" spacing={2}>
-          <Allotment className='body-allotment'>
-            <Stack direction="column" spacing={2} sx={{ minWidth: 400 }} className="scroll-history">
+          {innerLayout(
+            <Stack direction="column" spacing={2} sx={{ minWidth: leftWidth }} className="scroll-history">
               <PlayerPanel sendInput={sendInput} />
               <WorldPanel setPlayer={setPlayer} />
-            </Stack>
-            <Stack direction="column" sx={{ minWidth: 600 }} className="scroll-history">
+            </Stack>,
+            <Stack direction="column" sx={{ minWidth: rightWidth }} className="scroll-history">
               <HistoryPanel renderEntity={renderEntity} renderEvent={renderEvent} />
             </Stack>
-          </Allotment>
+          )}
         </Stack>
       </Stack>
     </Container>

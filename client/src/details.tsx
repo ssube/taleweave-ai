@@ -105,7 +105,7 @@ export function worldGraph(world: World): string {
 }
 
 export function roomGraph(room: Room): Array<string> {
-  return Object.entries(room.portals).map(([direction, destination]) =>
-    `"${room.name}" -> "${destination}" [label="${direction}"]`
+  return room.portals.map((portal) =>
+    `"${room.name}" -> "${portal.destination}" [label="${portal.name}"]`
   );
 }

@@ -6,12 +6,15 @@ import { PaletteMode } from '@mui/material';
 import { ReadyState } from 'react-use-websocket';
 import { Actor, GameEvent, Item, Room, World } from './models';
 
+export type LayoutMode = 'horizontal' | 'vertical';
+
 export interface ClientState {
   autoScroll: boolean;
   clientId: string;
   clientName: string;
   detailEntity: Maybe<Item | Actor | Room | World>;
   eventHistory: Array<GameEvent>;
+  layoutMode: LayoutMode;
   readyState: ReadyState;
   themeMode: PaletteMode;
 
@@ -20,6 +23,7 @@ export interface ClientState {
   setClientId: (clientId: string) => void;
   setClientName: (name: string) => void;
   setDetailEntity: (entity: Maybe<Item | Actor | Room | World>) => void;
+  setLayoutMode: (mode: LayoutMode) => void;
   setReadyState: (state: ReadyState) => void;
   setThemeMode: (mode: PaletteMode) => void;
 
@@ -59,6 +63,7 @@ export function createClientStore(): StateCreator<ClientState> {
     clientName: '',
     detailEntity: undefined,
     eventHistory: [],
+    layoutMode: 'horizontal',
     readyState: ReadyState.UNINSTANTIATED,
     themeMode: 'light',
     setAutoScroll(autoScroll) {
@@ -72,6 +77,9 @@ export function createClientStore(): StateCreator<ClientState> {
     },
     setDetailEntity(detailEntity) {
       set({ detailEntity });
+    },
+    setLayoutMode(mode) {
+      set({ layoutMode: mode });
     },
     setReadyState(state) {
       set({ readyState: state });

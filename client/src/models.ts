@@ -12,13 +12,20 @@ export interface Actor {
   items: Array<Item>;
 }
 
+export interface Portal {
+  type: 'portal';
+  name: string;
+  description: string;
+  destination: string;
+}
+
 export interface Room {
   type: 'room';
   name: string;
   description: string;
-  portals: Record<string, string>;
   actors: Array<Actor>;
   items: Array<Item>;
+  portals: Array<Portal>;
 }
 
 export interface World {
