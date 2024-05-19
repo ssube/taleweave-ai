@@ -26,9 +26,6 @@ captivate and engage players' imaginations.
   - [Contributing](#contributing)
   - [Support and Community](#support-and-community)
   - [License](#license)
-  - [TODOs](#todos)
-    - [Things That Are Bad](#things-that-are-bad)
-    - [Things That Are Good](#things-that-are-good)
 
 ## Features
 
@@ -145,11 +142,6 @@ world, influencing the behavior of the language models.
 For a detailed guide on how to use TaleWeave AI, customize adventures, and integrate with Discord and web browsers,
 please refer to our [Documentation](./docs). This guide includes comprehensive instructions on:
 
-- **Setting up your first adventure:** Learn how to create and launch your own story.
-- **Customizing characters:** Instructions on how to personalize AI and human characters.
-- **Advanced features:** Explore the more complex functionalities of TaleWeave AI, like AI behavior tweaking and
-  interactive scenario creation.
-
 ## Contributing
 
 TaleWeave AI is a community-driven project, and we welcome contributions of all kinds. If you're interested in improving
@@ -163,23 +155,3 @@ developers. Click here to join: [TaleWeave AI Discord Community](#)
 ## License
 
 TaleWeave AI is released under the MIT License. See the [LICENSE](./LICENSE) file for more details.
-
-## TODOs
-
-- figure out the human input syntax for actions
-- make an admin panel in web UI
-- store long-term memory for actors in a vector DB (RAG and all that)
-- generate and simulate should probably be async
-
-### Things That Are Bad
-
-1. Why are the `generate` and `simulate` functions not async?
-   1. Because I had written them before I realized they should be
-2. Why is the web client in Typescript and React?
-   1. Because I have a template for that and it was easy to set up
-
-### Things That Are Good
-
-1. The system is largely event-driven
-2. Each server or bot has its own thread (for error handling)
-3. Remote players can be implemented with any client, since they use a queue
