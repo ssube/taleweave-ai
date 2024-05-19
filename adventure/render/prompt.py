@@ -160,7 +160,8 @@ def generate_prompt_from_scene(scene: str, example_prompts: List[str]) -> str:
         "Here are some example prompts:\n"
         "{examples}\n"
         "Reply with a comma-separated list of keywords that summarize the visual details of the scene."
-        "Make sure you describe the location, characters, and any items present. Be creative with the details."
+        "Make sure you describe the location, all of the characters, and any items present using keywords and phrases. "
+        "Be creative with the details. Avoid using proper nouns or character names. Describe any actions being taken. "
         "Do not include the question or any JSON. Only include the list of keywords on a single line.",
         examples=example_prompts,
         scene=scene,

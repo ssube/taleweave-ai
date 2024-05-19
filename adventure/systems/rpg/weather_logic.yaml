@@ -1,0 +1,54 @@
+rules:
+  # weather logic
+  - group: weather
+    match:
+      type: room
+      outdoor: true
+      weather: sunny
+    chance: 0.1
+    set:
+      weather: cloudy
+
+  - group: weather
+    match:
+      type: room
+      outdoor: true
+      weather: cloudy
+    chance: 0.1
+    set:
+      weather: rainy
+
+  - group: weather
+    match:
+      type: room
+      outdoor: true
+      weather: rainy
+    chance: 0.1
+    set:
+      weather: sunny
+
+  - group: weather
+    match:
+      type: room
+      outdoor: true
+      weather: cloudy
+    chance: 0.1
+    set:
+      weather: sunny
+
+labels:
+  - match:
+      type: room
+      weather: sunny
+    backstory: The sun is shining brightly.
+    description: The sun is shining brightly.
+  - match:
+      type: room
+      weather: cloudy
+    backstory: The sky is overcast.
+    description: The sky is overcast.
+  - match:
+      type: room
+      weather: rainy
+    backstory: Rain is falling from the sky.
+    description: Rain is falling from the sky.
