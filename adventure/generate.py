@@ -115,6 +115,7 @@ def generate_room(
             "existing_rooms": existing_rooms,
         },
         result_parser=duplicate_name_parser(existing_rooms),
+        toolbox=None,
     )
 
     broadcast_generated(message=f"Generating room: {name}")
@@ -193,6 +194,7 @@ def generate_portals(
             "world_theme": world.theme,
         },
         result_parser=duplicate_name_parser(existing_source_portals),
+        toolbox=None,
     )
     broadcast_generated(message=f"Generating portal: {outgoing_name}")
 
@@ -212,6 +214,7 @@ def generate_portals(
             "outgoing_name": outgoing_name,
         },
         result_parser=duplicate_name_parser(existing_dest_portals),
+        toolbox=None,
     )
 
     broadcast_generated(message=f"Linking {outgoing_name} to {incoming_name}")
@@ -269,6 +272,7 @@ def generate_item(
             "world_theme": world.theme,
         },
         result_parser=duplicate_name_parser(existing_items),
+        toolbox=None,
     )
 
     broadcast_generated(message=f"Generating item: {name}")
@@ -320,6 +324,7 @@ def generate_actor(
             "world_theme": world.theme,
         },
         result_parser=duplicate_name_parser(existing_actors),
+        toolbox=None,
     )
 
     broadcast_generated(message=f"Generating actor: {name}")
@@ -382,6 +387,7 @@ def generate_effect(agent: Agent, world: World, entity: Item) -> Effect:
             "theme": world.theme,
         },
         result_parser=duplicate_name_parser(existing_effects),
+        toolbox=None,
     )
     broadcast_generated(message=f"Generating effect: {name}")
 
@@ -424,6 +430,7 @@ def generate_effect(agent: Agent, world: World, entity: Item) -> Effect:
                     "operations": OPERATIONS,
                 },
                 result_parser=operation_parser,
+                toolbox=None,
             )
 
             operation_type = PROMPT_OPERATION_TYPES[operation]
