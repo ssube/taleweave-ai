@@ -13,6 +13,15 @@ def find_room(world: World, room_name: str) -> Room | None:
     return None
 
 
+def find_portal(world: World, portal_name: str) -> Portal | None:
+    for room in world.rooms:
+        for portal in room.portals:
+            if normalize_name(portal.name) == normalize_name(portal_name):
+                return portal
+
+    return None
+
+
 def find_actor(world: World, actor_name: str) -> Actor | None:
     for room in world.rooms:
         actor = find_actor_in_room(room, actor_name)
