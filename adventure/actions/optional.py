@@ -8,11 +8,12 @@ from adventure.context import (
     broadcast,
     get_agent_for_actor,
     get_dungeon_master,
+    get_game_systems,
     has_dungeon_master,
     set_dungeon_master,
     world_context,
 )
-from adventure.generate import generate_item, generate_room
+from adventure.generate import generate_item, generate_room, link_rooms
 from adventure.utils.effect import apply_effect
 from adventure.utils.search import find_actor_in_room
 from adventure.utils.world import describe_actor, describe_entity
@@ -37,7 +38,7 @@ def action_explore(direction: str) -> str:
     Explore the room in a new direction. You can only explore directions that do not already have a portal.
 
     Args:
-        direction: The direction to explore: north, south, east, or west.
+        direction: The direction to explore. For example: inside, outside, upstairs, downstairs, trapdoor, portal, etc.
     """
 
     with world_context() as (action_world, action_room, action_actor):
@@ -47,15 +48,13 @@ def action_explore(direction: str) -> str:
             dest_room = action_room.portals[direction]
             return f"You cannot explore {direction} from here, that direction already leads to {dest_room}. Please use the move action to go there."
 
-        existing_rooms = [room.name for room in action_world.rooms]
         try:
-            new_room = generate_room(
-                dungeon_master, action_world.theme, existing_rooms=existing_rooms
-            )
+            systems = get_game_systems()
+            new_room = generate_room(dungeon_master, action_world, systems)
             action_world.rooms.append(new_room)
 
             # link the rooms together
-            # TODO: generate portals
+            link_rooms(dungeon_master, action_world, systems, [new_room])
 
             broadcast(
                 f"{action_actor.name} explores {direction} of {action_room.name} and finds a new room: {new_room.name}"
@@ -79,14 +78,13 @@ def action_search(unused: bool) -> str:
                 "You find nothing hidden in the room. There is no room for more items."
             )
 
-        existing_items = [item.name for item in action_room.items]
-
         try:
+            systems = get_game_systems()
             new_item = generate_item(
                 dungeon_master,
-                action_world.theme,
-                existing_items=existing_items,
-                dest_room=action_room.name,
+                action_world,
+                systems,
+                dest_room=action_room,
             )
             action_room.items.append(new_item)
 

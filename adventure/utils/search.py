@@ -100,6 +100,26 @@ def find_item_in_room(
     return None
 
 
+def find_room_with_actor(world: World, actor: Actor) -> Room | None:
+    for room in world.rooms:
+        for room_actor in room.actors:
+            if normalize_name(actor.name) == normalize_name(room_actor.name):
+                return room
+
+    return None
+
+
+def find_containing_room(world: World, entity: Room | Actor | Item) -> Room | None:
+    if isinstance(entity, Room):
+        return entity
+
+    for room in world.rooms:
+        if entity in room.actors or entity in room.items:
+            return room
+
+    return None
+
+
 def list_rooms(world: World) -> Generator[Room, Any, None]:
     for room in world.rooms:
         yield room
@@ -118,14 +138,8 @@ def list_actors(world: World) -> Generator[Actor, Any, None]:
 
 
 def list_items(
-    world: World, include_actor_inventory=False, include_item_inventory=False
+    world: World, include_actor_inventory=True, include_item_inventory=True
 ) -> Generator[Item, Any, None]:
-    def list_items_in_container(container: Item) -> Generator[Item, Any, None]:
-        for item in container.items:
-            yield item
-
-            if include_item_inventory:
-                yield from list_items_in_container(item)
 
     for room in world.rooms:
         for item in room.items:
@@ -138,3 +152,45 @@ def list_items(
             for actor in room.actors:
                 for item in actor.items:
                     yield item
+
+
+def list_actors_in_room(room: Room) -> Generator[Actor, Any, None]:
+    for actor in room.actors:
+        yield actor
+
+
+def list_items_in_actor(
+    actor: Actor, include_item_inventory=True
+) -> Generator[Item, Any, None]:
+    for item in actor.items:
+        yield item
+
+        if include_item_inventory:
+            yield from list_items_in_container(item)
+
+
+def list_items_in_container(
+    container: Item, include_item_inventory=True
+) -> Generator[Item, Any, None]:
+    for item in container.items:
+        yield item
+
+        if include_item_inventory:
+            yield from list_items_in_container(item)
+
+
+def list_items_in_room(
+    room: Room,
+    include_actor_inventory=True,
+    include_item_inventory=True,
+) -> Generator[Item, Any, None]:
+    for item in room.items:
+        yield item
+
+        if include_item_inventory:
+            yield from list_items_in_container(item)
+
+    if include_actor_inventory:
+        for actor in room.actors:
+            for item in actor.items:
+                yield item

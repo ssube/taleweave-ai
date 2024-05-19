@@ -203,6 +203,10 @@ async def handler(websocket):
     logger.info("client disconnected: %s", id)
 
 
+def find_recent_event(event_id: str) -> GameEvent | None:
+    return next((e for e in recent_events if e.id == event_id), None)
+
+
 def render_input(data):
     world = get_current_world()
     if not world:
@@ -211,7 +215,7 @@ def render_input(data):
 
     if "event" in data:
         event_id = data["event"]
-        event = next((e for e in recent_events if e.id == event_id), None)
+        event = find_recent_event(event_id)
         if event:
             render_event(event)
         else:

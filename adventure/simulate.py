@@ -31,6 +31,7 @@ from adventure.context import (
 from adventure.game_system import GameSystem
 from adventure.models.entity import World
 from adventure.models.event import ActionEvent, ReplyEvent, ResultEvent
+from adventure.utils.search import find_room_with_actor
 from adventure.utils.world import describe_entity, format_attributes
 
 logger = getLogger(__name__)
@@ -91,7 +92,7 @@ def simulate_world(
                 logger.error(f"Agent or actor not found for name {actor_name}")
                 continue
 
-            room = next((room for room in world.rooms if actor in room.actors), None)
+            room = find_room_with_actor(world, actor)
             if not room:
                 logger.error(f"Actor {actor_name} is not in a room")
                 continue

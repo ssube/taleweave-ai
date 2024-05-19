@@ -22,7 +22,15 @@ from adventure.models.entity import (
 )
 from adventure.models.event import GenerateEvent
 from adventure.utils import try_parse_float, try_parse_int
-from adventure.utils.search import list_actors, list_items, list_rooms
+from adventure.utils.search import (
+    list_actors,
+    list_actors_in_room,
+    list_items,
+    list_items_in_actor,
+    list_items_in_room,
+    list_rooms,
+)
+from adventure.utils.string import normalize_name
 
 logger = getLogger(__name__)
 
@@ -238,10 +246,13 @@ def generate_item(
             world, include_actor_inventory=True, include_item_inventory=True
         )
     ]
+
     if dest_actor:
         dest_note = f"The item will be held by the {dest_actor.name} character"
+        existing_items += [item.name for item in list_items_in_actor(dest_actor)]
     elif dest_room:
         dest_note = f"The item will be placed in the {dest_room.name} room"
+        existing_items += [item.name for item in list_items_in_room(dest_room)]
     else:
         dest_note = "The item will be placed in the world"
 
@@ -291,7 +302,10 @@ def generate_actor(
     systems: List[GameSystem],
     dest_room: Room,
 ) -> Actor:
-    existing_actors = [actor.name for actor in list_actors(world)]
+    existing_actors = [actor.name for actor in list_actors(world)] + [
+        actor.name for actor in list_actors_in_room(dest_room)
+    ]
+
     name = loop_retry(
         agent,
         "Generate one person or creature that would make sense in the world of {world_theme}. "
@@ -395,7 +409,7 @@ def generate_effect(agent: Agent, world: World, entity: Item) -> Effect:
 
     attributes = []
     for attribute_name in attribute_names.split(","):
-        attribute_name = attribute_name.strip()
+        attribute_name = normalize_name(attribute_name)
         if attribute_name:
             operation = loop_retry(
                 agent,
@@ -445,34 +459,15 @@ def generate_effect(agent: Agent, world: World, entity: Item) -> Effect:
     return Effect(name=name, description=description, attributes=attributes)
 
 
-def generate_world(
+def link_rooms(
     agent: Agent,
-    name: str,
-    theme: str,
+    world: World,
     systems: List[GameSystem],
-    room_count: int | None = None,
-) -> World:
-    room_count = room_count or randint(
-        world_config.size.rooms.min, world_config.size.rooms.max
-    )
+    rooms: List[Room] | None = None,
+) -> None:
+    rooms = rooms or world.rooms
 
-    broadcast_generated(message=f"Generating a {theme} with {room_count} rooms")
-    world = World(name=name, rooms=[], theme=theme, order=[])
-    set_current_world(world)
-
-    # generate the rooms
-    for _ in range(room_count):
-        try:
-            room = generate_room(agent, world, systems)
-            generate_system_attributes(agent, world, room, systems)
-            broadcast_generated(entity=room)
-            world.rooms.append(room)
-        except Exception:
-            logger.exception("error generating room")
-            continue
-
-    # generate portals to link the rooms together
-    for room in world.rooms:
+    for room in rooms:
         num_portals = randint(
             world_config.size.portals.min, world_config.size.portals.max
         )
@@ -511,6 +506,36 @@ def generate_world(
             except Exception:
                 logger.exception("error generating portal")
                 continue
+
+
+def generate_world(
+    agent: Agent,
+    name: str,
+    theme: str,
+    systems: List[GameSystem],
+    room_count: int | None = None,
+) -> World:
+    room_count = room_count or randint(
+        world_config.size.rooms.min, world_config.size.rooms.max
+    )
+
+    broadcast_generated(message=f"Generating a {theme} with {room_count} rooms")
+    world = World(name=name, rooms=[], theme=theme, order=[])
+    set_current_world(world)
+
+    # generate the rooms
+    for _ in range(room_count):
+        try:
+            room = generate_room(agent, world, systems)
+            generate_system_attributes(agent, world, room, systems)
+            broadcast_generated(entity=room)
+            world.rooms.append(room)
+        except Exception:
+            logger.exception("error generating room")
+            continue
+
+    # generate portals to link the rooms together
+    link_rooms(agent, world, systems)
 
     # ensure actors act in a stable order
     world.order = [actor.name for room in world.rooms for actor in room.actors]

@@ -1,6 +1,11 @@
 from random import randint
 
-from adventure.context import broadcast, get_dungeon_master, world_context
+from adventure.context import (
+    broadcast,
+    get_dungeon_master,
+    get_game_systems,
+    world_context,
+)
 from adventure.generate import generate_item
 from adventure.models.base import dataclass
 from adventure.models.entity import Item
@@ -64,9 +69,10 @@ def action_craft(item_name: str) -> str:
             new_item = Item(**vars(result_item))  # Copying the item
         else:
             dungeon_master = get_dungeon_master()
+            systems = get_game_systems()
             new_item = generate_item(
-                dungeon_master, action_world.theme
-            )  # TODO: pass recipe item
+                dungeon_master, action_world, systems
+            )  # TODO: pass crafting recipe and generate from that
 
         action_actor.items.append(new_item)
 

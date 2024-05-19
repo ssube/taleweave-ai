@@ -6,7 +6,6 @@ from typing import Any, Callable, Dict, List, Optional, Sequence
 
 from langchain_core.messages import AIMessage, BaseMessage, HumanMessage
 from packit.agent import Agent
-from packit.utils import could_be_json
 
 from adventure.context import action_context
 from adventure.models.event import PromptEvent
@@ -92,18 +91,7 @@ class BasePlayer:
 
         return self(prompt, **context)
 
-    def parse_input(self, reply: str):
-        # if the reply starts with a tilde, it is a literal response and should be returned without the tilde
-        if reply.startswith("~"):
-            reply = reply[1:]
-            self.memory.append(AIMessage(content=reply))
-            return reply
-
-        # if the reply is JSON or a special command, return it as-is
-        if could_be_json(reply) or reply.lower() in ["end", ""]:
-            self.memory.append(AIMessage(content=reply))
-            return reply
-
+    def parse_pseudo_function(self, reply: str):
         # turn other replies into a JSON function call
         action, *param_rest = reply.split(":", 1)
         param_str = ",".join(param_rest or [])
@@ -133,8 +121,15 @@ class BasePlayer:
                 "parameters": params,
             }
         )
-        self.memory.append(AIMessage(content=reply_json))
         return reply_json
+
+    def parse_input(self, reply: str):
+        # if the reply starts with a tilde, it is a function response and should be parsed without the tilde
+        if reply.startswith("~"):
+            reply = self.parse_pseudo_function(reply[1:])
+
+        self.memory.append(AIMessage(content=reply))
+        return reply
 
     def __call__(self, prompt: str, **kwargs) -> str:
         raise NotImplementedError("Subclasses must implement this method")
