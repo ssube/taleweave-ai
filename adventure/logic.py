@@ -1,7 +1,7 @@
 from functools import partial, wraps
 from logging import getLogger
 from random import random
-from typing import Callable, Dict, List, Optional
+from typing import Dict, List, Optional, Protocol
 
 from pydantic import Field
 from rule_engine import Rule
@@ -23,6 +23,12 @@ class LogicLabel:
 
 
 @dataclass
+class LogicRuleTrigger:
+    function: str
+    parameters: Optional[Attributes] = Field(default_factory=dict)
+
+
+@dataclass
 class LogicRule:
     chance: float = 1.0
     group: Optional[str] = None
@@ -30,7 +36,7 @@ class LogicRule:
     remove: Optional[List[str]] = None
     rule: Optional[str] = None
     set: Optional[Attributes] = None
-    trigger: Optional[List[str]] = None
+    trigger: Optional[List[str | LogicRuleTrigger]] = None
 
 
 @dataclass
@@ -39,7 +45,12 @@ class LogicTable:
     labels: List[LogicLabel] = Field(default_factory=list)
 
 
-LogicTrigger = Callable[[WorldEntity], None]
+class LogicTrigger(Protocol):
+    def __call__(self, entity: WorldEntity, **kwargs):
+        # comment to keep lint from combining this with the next line
+        ...
+
+
 TriggerTable = Dict[str, LogicTrigger]
 
 
@@ -104,8 +115,16 @@ def update_attributes(
 
         if rule.trigger:
             for trigger in rule.trigger:
-                if trigger in triggers:
-                    triggers[trigger](entity)
+                if isinstance(trigger, str):
+                    trigger_name = trigger
+                    trigger_params: Attributes = {}
+                else:
+                    trigger_name = trigger.function
+                    trigger_params = trigger.parameters or {}
+
+                if trigger_name in triggers:
+                    trigger_function = triggers[trigger_name]
+                    trigger_function(entity, **trigger_params)
 
 
 def update_logic(
