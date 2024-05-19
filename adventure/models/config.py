@@ -88,8 +88,8 @@ DEFAULT_CONFIG = Config(
     server=ServerConfig(websocket=WebsocketServerConfig(host="localhost", port=8001)),
     world=WorldConfig(
         size=WorldSizeConfig(
-            actor_items=Range(min=1, max=3),
-            item_effects=Range(min=1, max=3),
+            actor_items=Range(min=0, max=2),
+            item_effects=Range(min=1, max=2),
             portals=Range(min=1, max=3),
             rooms=Range(min=3, max=6),
             room_actors=Range(min=1, max=3),

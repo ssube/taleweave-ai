@@ -22,3 +22,27 @@ render:
   steps:
     min: 30
     max: 50
+server:
+  websocket:
+    host: 0.0.0.0
+    port: 8001
+world:
+  size:
+    actor_items:
+      min: 0
+      max: 3
+    item_effects:
+      min: 0
+      max: 1
+    portals:
+      min: 1
+      max: 3
+    rooms:
+      min: 3
+      max: 6
+    room_actors:
+      min: 1
+      max: 3
+    room_items:
+      min: 0
+      max: 3

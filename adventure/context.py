@@ -19,6 +19,7 @@ from pyee.base import EventEmitter
 from adventure.game_system import GameSystem
 from adventure.models.entity import Actor, Room, World
 from adventure.models.event import GameEvent
+from adventure.utils.string import normalize_name
 
 logger = getLogger(__name__)
 
@@ -223,7 +224,7 @@ def get_actor_agent_for_name(name):
         (
             (actor, agent)
             for actor, agent in actor_agents.values()
-            if actor.name.lower() == name.lower()
+            if normalize_name(actor.name) == normalize_name(name)
         ),
         (None, None),
     )

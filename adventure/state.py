@@ -38,7 +38,8 @@ def graph_world(world: World, step: int):
     graph_name = f"{path.basename(world.name)}-{step}"
     graph = graphviz.Digraph(graph_name, format="png")
     for room in world.rooms:
-        room_label = "\n".join([room.name, *[actor.name for actor in room.actors]])
+        actors = [actor.name for actor in room.actors]
+        room_label = "\n".join([room.name, *actors])
         graph.node(room.name, room_label)
         for portal in room.portals:
             graph.edge(room.name, portal.destination, label=portal.name)

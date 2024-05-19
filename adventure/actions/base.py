@@ -15,6 +15,7 @@ from adventure.utils.search import (
     find_item_in_room,
     find_room,
 )
+from adventure.utils.string import normalize_name
 from adventure.utils.world import describe_entity
 
 logger = getLogger(__name__)
@@ -31,7 +32,7 @@ def action_look(target: str) -> str:
     with action_context() as (action_room, action_actor):
         broadcast(f"{action_actor.name} looks at {target}")
 
-        if target.lower() == action_room.name.lower():
+        if normalize_name(target) == normalize_name(action_room.name):
             broadcast(f"{action_actor.name} saw the {action_room.name} room")
             return describe_entity(action_room)
 
@@ -69,7 +70,11 @@ def action_move(direction: str) -> str:
 
     with world_context() as (action_world, action_room, action_actor):
         portal = next(
-            (p for p in action_room.portals if p.name.lower() == direction.lower()),
+            (
+                p
+                for p in action_room.portals
+                if normalize_name(p.name) == normalize_name(direction)
+            ),
             None,
         )
         if not portal:

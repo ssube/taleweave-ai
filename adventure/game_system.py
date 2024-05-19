@@ -1,9 +1,10 @@
 from enum import Enum
-from typing import Callable, Protocol
+from typing import Protocol
 
 from packit.agent import Agent
 
 from adventure.models.entity import World, WorldEntity
+from adventure.utils import format_callable
 
 
 class FormatPerspective(Enum):
@@ -57,10 +58,5 @@ class GameSystem:
     def __str__(self):
         return f"GameSystem(format={format_callable(self.format)}, generate={format_callable(self.generate)}, simulate={format_callable(self.simulate)})"
 
-
-# TODO: move to utils
-def format_callable(fn: Callable | None) -> str:
-    if fn:
-        return f"{fn.__module__}:{fn.__name__}"
-
-    return "None"
+    def __repr__(self):
+        return str(self)

@@ -209,6 +209,7 @@ def load_or_generate_world(args, players, systems, world_prompt: WorldPrompt):
             world_builder,
             args.world,
             world_prompt.theme,
+            systems,
             room_count=args.rooms,
         )
         save_world(world, world_file)

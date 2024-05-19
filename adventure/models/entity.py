@@ -110,4 +110,4 @@ class WorldState(BaseModel):
     type: Literal["world_state"] = "world_state"
 
 
-WorldEntity = Room | Actor | Item
+WorldEntity = Room | Actor | Item | Portal
