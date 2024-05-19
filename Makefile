@@ -33,24 +33,18 @@ package-upload:
 
 lint-check:
 	black --check adventure/
-	black --check scripts/
 	black --check tests/
 	flake8 adventure
-	flake8 scripts
 	flake8 tests
 	isort --check-only --skip __init__.py --filter-files adventure
-	isort --check-only --skip __init__.py --filter-files scripts
 	isort --check-only --skip __init__.py --filter-files tests
 
 lint-fix:
 	black adventure/
-	black scripts/
 	black tests/
 	flake8 adventure
-	flake8 scripts
 	flake8 tests
 	isort --skip __init__.py --filter-files adventure
-	isort --skip __init__.py --filter-files scripts
 	isort --skip __init__.py --filter-files tests
 
 style: lint-fix
