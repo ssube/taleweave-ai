@@ -6,7 +6,7 @@ import React from 'react';
 
 import { useStore } from 'zustand';
 import { StoreState, store } from './store';
-import { Actor, Item, Room } from './models';
+import { Actor, Item, Portal, Room } from './models';
 
 export type SetDetails = (entity: Maybe<Item | Actor | Room>) => void;
 export type SetPlayer = (actor: Maybe<Actor>) => void;
@@ -43,6 +43,16 @@ export function worldStateSelector(s: StoreState) {
     world: s.world,
     setDetailEntity: s.setDetailEntity,
   };
+}
+
+export function PortalItem(props: { portal: Portal } & BaseEntityItemProps) {
+  const { portal } = props;
+  const state = useStore(store, itemStateSelector);
+  const { setDetailEntity } = state;
+
+  return <TreeItem itemId={`${portal.name}-portal`} label={portal.name}>
+    <TreeItem itemId={`${portal.name}-details`} label="Details" onClick={() => setDetailEntity(portal)} />
+  </TreeItem>;
 }
 
 export function ItemItem(props: { item: Item } & BaseEntityItemProps) {
@@ -101,6 +111,9 @@ export function RoomItem(props: { room: Room } & BaseEntityItemProps) {
     </TreeItem>
     <TreeItem itemId={`${room.name}-items`} label="Items">
       {room.items.map((item) => <ItemItem key={item.name} item={item} setPlayer={setPlayer} />)}
+    </TreeItem>
+    <TreeItem itemId={`${room.name}-portals`} label="Portals">
+      {room.portals.map((portal) => <PortalItem key={portal.name} portal={portal} setPlayer={setPlayer} />)}
     </TreeItem>
   </TreeItem>;
 }

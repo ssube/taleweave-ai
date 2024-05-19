@@ -4,7 +4,7 @@ import { createStore, StateCreator } from 'zustand';
 import { doesExist, Maybe } from '@apextoaster/js-utils';
 import { PaletteMode } from '@mui/material';
 import { ReadyState } from 'react-use-websocket';
-import { Actor, GameEvent, Item, Room, World } from './models';
+import { Actor, GameEvent, Item, Portal, Room, World } from './models';
 
 export type LayoutMode = 'horizontal' | 'vertical';
 
@@ -12,7 +12,7 @@ export interface ClientState {
   autoScroll: boolean;
   clientId: string;
   clientName: string;
-  detailEntity: Maybe<Item | Actor | Room | World>;
+  detailEntity: Maybe<Item | Actor | Portal | Room | World>;
   eventHistory: Array<GameEvent>;
   layoutMode: LayoutMode;
   readyState: ReadyState;
@@ -22,7 +22,7 @@ export interface ClientState {
   setAutoScroll: (autoScroll: boolean) => void;
   setClientId: (clientId: string) => void;
   setClientName: (name: string) => void;
-  setDetailEntity: (entity: Maybe<Item | Actor | Room | World>) => void;
+  setDetailEntity: (entity: Maybe<Item | Actor | Portal | Room | World>) => void;
   setLayoutMode: (mode: LayoutMode) => void;
   setReadyState: (state: ReadyState) => void;
   setThemeMode: (mode: PaletteMode) => void;

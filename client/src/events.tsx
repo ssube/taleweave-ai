@@ -241,14 +241,17 @@ export function GenerateEventItem(props: EventItemProps) {
   const { event, renderEntity } = props;
   const { entity, name } = event;
 
+  let renderButton;
+  if (doesExist(entity)) {
+    renderButton = <IconButton edge="end" aria-label="render" onClick={() => renderEntity(entity.type, entity.name)}>
+      <Camera />
+    </IconButton>;
+  }
+
   return <ListItem
     alignItems="flex-start"
     ref={props.focusRef}
-    secondaryAction={
-      <IconButton edge="end" aria-label="render" onClick={() => renderEntity(entity.type, entity.name)}>
-        <Camera />
-      </IconButton>
-    }
+    secondaryAction={renderButton}
   >
     <ListItemAvatar>
       <Avatar>{name.substring(0, 1)}</Avatar>
