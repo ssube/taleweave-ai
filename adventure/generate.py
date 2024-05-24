@@ -4,22 +4,19 @@ from typing import List, Tuple
 
 from packit.agent import Agent
 from packit.loops import loop_retry
+from packit.results import enum_result, int_result
 from packit.utils import could_be_json
 
 from adventure.context import broadcast, set_current_world
 from adventure.game_system import GameSystem
 from adventure.models.config import DEFAULT_CONFIG, WorldConfig
-from adventure.models.entity import (
-    Actor,
-    Effect,
-    Item,
-    NumberAttributeEffect,
-    Portal,
-    Room,
-    StringAttributeEffect,
-    World,
-    WorldEntity,
+from adventure.models.effect import (
+    EffectPattern,
+    FloatEffectPattern,
+    IntEffectPattern,
+    StringEffectPattern,
 )
+from adventure.models.entity import Actor, Item, Portal, Room, World, WorldEntity
 from adventure.models.event import GenerateEvent
 from adventure.utils import try_parse_float, try_parse_int
 from adventure.utils.search import (
@@ -35,24 +32,6 @@ from adventure.utils.string import normalize_name
 logger = getLogger(__name__)
 
 world_config: WorldConfig = DEFAULT_CONFIG.world
-
-PROMPT_TYPE_FRAGMENTS = {
-    "both": "Enter a positive or negative number, or a string value",
-    "number": "Enter a positive or negative number",
-    "string": "Enter a string value",
-}
-
-PROMPT_OPERATION_TYPES = {
-    "set": "both",
-    "add": "number",
-    "subtract": "number",
-    "multiply": "number",
-    "divide": "number",
-    "append": "string",
-    "prepend": "string",
-}
-
-OPERATIONS = list(PROMPT_OPERATION_TYPES.keys())
 
 
 def duplicate_name_parser(existing_names: List[str]):
@@ -369,7 +348,7 @@ def generate_actor(
     return actor
 
 
-def generate_effect(agent: Agent, world: World, entity: Item) -> Effect:
+def generate_effect(agent: Agent, world: World, entity: Item) -> EffectPattern:
     entity_type = entity.type
     existing_effects = [effect.name for effect in entity.effects]
 
@@ -405,65 +384,78 @@ def generate_effect(agent: Agent, world: World, entity: Item) -> Effect:
         name=name,
     )
 
-    def operation_parser(value: str, **kwargs):
-        if value not in OPERATIONS:
-            raise ValueError(
-                f'"{value}" is not a valid operation. Choose from: {OPERATIONS}'
-            )
-
-        return value
-
     attributes = []
     for attribute_name in attribute_names.split(","):
         attribute_name = normalize_name(attribute_name)
         if attribute_name:
-            operation = loop_retry(
-                agent,
-                f"How does the {name} effect modify the {attribute_name} attribute? "
-                "For example, 'heal' might 'add' to the 'health' attribute, while 'poison' might 'subtract' from it."
-                "Another example is 'writing' might 'set' the 'text' attribute, while 'break' might 'set' the 'condition' attribute."
-                "Reply with the operation only, without any other text. Respond with a single word for the list of operations."
-                "Choose from the following operations: {operations}",
-                context={
-                    "name": name,
-                    "attribute_name": attribute_name,
-                    "operations": OPERATIONS,
-                },
-                result_parser=operation_parser,
-                toolbox=None,
-            )
-
-            operation_type = PROMPT_OPERATION_TYPES[operation]
-            operation_prompt = PROMPT_TYPE_FRAGMENTS[operation_type]
-
             value = agent(
                 f"How much does the {name} effect modify the {attribute_name} attribute? "
-                "For example, heal might add '10' to the health attribute, while poison might subtract '5' from it."
-                f"{operation_prompt}. Do not include any other text. Do not use JSON.",
+                "For example, heal might add 10 to the health attribute, while poison might remove -5 from it."
+                "Enter a positive number to increase the attribute or a negative number to decrease it. "
+                "Do not include any other text. Do not use JSON.",
                 name=name,
                 attribute_name=attribute_name,
             )
             value = value.strip()
 
+            # TODO: support more than just set: offset and multiply
             int_value = try_parse_int(value)
             if int_value is not None:
-                attribute_effect = NumberAttributeEffect(
-                    name=attribute_name, operation=operation, value=int_value
-                )
+                attribute_effect = IntEffectPattern(name=attribute_name, set=int_value)
             else:
                 float_value = try_parse_float(value)
                 if float_value is not None:
-                    attribute_effect = NumberAttributeEffect(
-                        name=attribute_name, operation=operation, value=float_value
+                    attribute_effect = FloatEffectPattern(
+                        name=attribute_name, set=float_value
                     )
                 else:
-                    attribute_effect = StringAttributeEffect(
-                        name=attribute_name, operation=operation, value=value
+                    attribute_effect = StringEffectPattern(
+                        name=attribute_name, set=value
                     )
 
             attributes.append(attribute_effect)
 
-    return Effect(name=name, description=description, attributes=attributes)
+    duration = loop_retry(
+        agent,
+        f"How many turns does the {name} effect last? Enter a positive number to set a duration, or 0 for an instant effect. "
+        "Do not include any other text. Do not use JSON.",
+        context={
+            "name": name,
+        },
+        result_parser=int_result,
+    )
+
+    def parse_application(value: str, **kwargs) -> str:
+        value = enum_result(value, ["temporary", "permanent"])
+        if value:
+            return value
+
+        raise ValueError("The application must be 'temporary' or 'permanent'.")
+
+    application = loop_retry(
+        agent,
+        (
+            f"How should the {name} effect be applied? Respond with 'temporary' for a temporary effect that lasts for a duration, "
+            "or 'permanent' for a permanent effect that immediately modifies the target. "
+            "For example, a healing potion would be a permanent effect that increases health every turn, "
+            "while bleeding would be a temporary effect that decreases health every turn. "
+            "A haste potion would be a temporary effect that increases speed for a duration, "
+            "while a slow spell would be a temporary effect that decreases speed for a duration. "
+            "Do not include any other text. Do not use JSON."
+        ),
+        context={
+            "name": name,
+        },
+        result_parser=parse_application,
+    )
+
+    return EffectPattern(
+        name,
+        description,
+        application,
+        duration=duration,
+        attributes=attributes,
+    )
 
 
 def link_rooms(

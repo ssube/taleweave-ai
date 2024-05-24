@@ -14,8 +14,9 @@ from adventure.context import (
     world_context,
 )
 from adventure.generate import generate_item, generate_room, link_rooms
-from adventure.utils.effect import apply_effect
+from adventure.utils.effect import apply_effects
 from adventure.utils.search import find_actor_in_room
+from adventure.utils.string import normalize_name
 from adventure.utils.world import describe_actor, describe_entity
 
 logger = getLogger(__name__)
@@ -134,13 +135,13 @@ def action_use(item: str, target: str) -> str:
             "Which effect should be applied? Specify the name of the effect to apply."
             "Do not include the question or any JSON. Only include the name of the effect to apply."
         )
-        chosen_name = chosen_name.strip()
+        chosen_name = normalize_name(chosen_name)
 
         chosen_effect = next(
             (
                 search_effect
                 for search_effect in action_item.effects
-                if search_effect.name == chosen_name
+                if normalize_name(search_effect.name) == chosen_name
             ),
             None,
         )
@@ -148,7 +149,11 @@ def action_use(item: str, target: str) -> str:
             # TODO: should retry the question if the effect is not found
             return f"The {chosen_name} effect is not available to apply."
 
-        apply_effect(chosen_effect, target_actor.attributes)
+        try:
+            apply_effects(target_actor, [chosen_effect])
+        except Exception:
+            logger.exception("error applying effect: %s", chosen_effect)
+            return f"There was a problem applying the {chosen_name} effect."
 
         broadcast(
             f"{action_actor.name} uses the {chosen_name} effect of {item} on {target}"

@@ -1,4 +1,38 @@
-from adventure.models.entity import Attributes, AttributeValue
+from adventure.models.base import Attributes, AttributeValue
+
+
+def add_value(value: AttributeValue, offset: int | float) -> AttributeValue:
+    """
+    Add an offset to a value.
+    """
+    if isinstance(value, str):
+        raise ValueError(f"Cannot add a number to a string attribute: {value}")
+
+    return value + offset
+
+
+def multiply_value(value: AttributeValue, factor: int | float) -> AttributeValue:
+    """
+    Multiply a value by a factor.
+    """
+    if isinstance(value, str):
+        raise ValueError(f"Cannot multiply a string attribute: {value}")
+
+    return value * factor
+
+
+def append_value(value: AttributeValue, suffix: str) -> str:
+    """
+    Append a suffix to a string.
+    """
+    return str(value) + suffix
+
+
+def prepend_value(value: AttributeValue, prefix: str) -> str:
+    """
+    Prepend a prefix to a string.
+    """
+    return prefix + str(value)
 
 
 def add_attribute(attributes: Attributes, name: str, value: int | float) -> Attributes:
@@ -7,10 +41,7 @@ def add_attribute(attributes: Attributes, name: str, value: int | float) -> Attr
     """
     if name in attributes:
         previous_value = attributes[name]
-        if isinstance(previous_value, str):
-            raise ValueError(f"Cannot add a number to a string attribute: {name}")
-
-        attributes[name] = value + previous_value
+        attributes[name] = add_value(previous_value, value)
     else:
         attributes[name] = value
 

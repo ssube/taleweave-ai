@@ -117,7 +117,7 @@ def scene_from_event(event: GameEvent) -> str | None:
 def scene_from_entity(entity: WorldEntity) -> str:
     logger.debug("generating scene from entity: %s", entity)
 
-    return f"Describe the {entity.type} called {entity.name}. {describe_entity(entity)}"
+    return f"Describe the {entity.type} named {entity.name} in vivid, visual terms. {describe_entity(entity)}"
 
 
 def make_example_prompts(keywords: List[str], k=5, q=10) -> List[str]:
@@ -162,6 +162,7 @@ def generate_prompt_from_scene(scene: str, example_prompts: List[str]) -> str:
         "Reply with a comma-separated list of keywords that summarize the visual details of the scene."
         "Make sure you describe the location, all of the characters, and any items present using keywords and phrases. "
         "Be creative with the details. Avoid using proper nouns or character names. Describe any actions being taken. "
+        "Describe the characters first, then the location, then the other visual details and general atmosphere. "
         "Do not include the question or any JSON. Only include the list of keywords on a single line.",
         examples=example_prompts,
         scene=scene,

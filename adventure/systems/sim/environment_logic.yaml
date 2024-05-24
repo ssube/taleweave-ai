@@ -22,14 +22,14 @@ rules:
       type: room
       temperature: hot
     chance: 0.2
-    trigger: [adventure.sim_systems.environment_triggers:hot_room]
+    trigger: [adventure.systems.sim.environment_triggers:hot_room]
 
   - group: environment-temperature
     match:
       type: room
       temperature: cold
     chance: 0.2
-    trigger: [adventure.sim_systems.environment_triggers:cold_room]
+    trigger: [adventure.systems.sim.environment_triggers:cold_room]
 
 labels:
   - match:

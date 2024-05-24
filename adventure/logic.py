@@ -173,7 +173,10 @@ def load_logic(filename: str):
         for rule in logic_rules.rules:
             if rule.trigger:
                 for trigger in rule.trigger:
-                    logic_triggers[trigger] = get_plugin_function(trigger)
+                    function_name = (
+                        trigger if isinstance(trigger, str) else trigger.function
+                    )
+                    logic_triggers[trigger] = get_plugin_function(function_name)
 
     logger.info("initialized logic system")
     system_simulate = wraps(update_logic)(

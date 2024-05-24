@@ -31,6 +31,7 @@ from adventure.context import (
 from adventure.game_system import GameSystem
 from adventure.models.entity import World
 from adventure.models.event import ActionEvent, ReplyEvent, ResultEvent
+from adventure.utils.effect import is_active_effect
 from adventure.utils.search import find_room_with_actor
 from adventure.utils.world import describe_entity, format_attributes
 
@@ -97,6 +98,16 @@ def simulate_world(
                 logger.error(f"Actor {actor_name} is not in a room")
                 continue
 
+            # decrement effects on the actor and remove any that have expired
+            for effect in actor.active_effects:
+                if effect.duration is not None:
+                    effect.duration -= 1
+
+            actor.active_effects[:] = [
+                effect for effect in actor.active_effects if is_active_effect(effect)
+            ]
+
+            # collect data for the prompt
             room_actors = [actor.name for actor in room.actors]
             room_items = [item.name for item in room.items]
             room_directions = [portal.name for portal in room.portals]
@@ -104,6 +115,7 @@ def simulate_world(
             actor_attributes = format_attributes(actor)
             actor_items = [item.name for item in actor.items]
 
+            # set up a result parser for the agent
             def result_parser(value, agent, **kwargs):
                 if not room or not actor:
                     raise ValueError(
@@ -119,6 +131,7 @@ def simulate_world(
 
                 return world_result_parser(value, agent, **kwargs)
 
+            # prompt and act
             logger.info("starting turn for actor: %s", actor_name)
             result = loop_retry(
                 agent,

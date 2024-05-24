@@ -1,13 +1,6 @@
 from typing import Dict, List
 
-from .base import dataclass
-
-
-@dataclass
-class Range:
-    min: int
-    max: int
-    interval: int = 1
+from .base import IntRange, dataclass
 
 
 @dataclass
@@ -29,11 +22,11 @@ class BotConfig:
 
 @dataclass
 class RenderConfig:
-    cfg: Range
+    cfg: IntRange
     checkpoints: List[str]
     path: str
     sizes: Dict[str, Size]
-    steps: Range
+    steps: IntRange
 
 
 @dataclass
@@ -49,12 +42,12 @@ class ServerConfig:
 
 @dataclass
 class WorldSizeConfig:
-    actor_items: Range
-    item_effects: Range
-    portals: Range
-    room_actors: Range
-    room_items: Range
-    rooms: Range
+    actor_items: IntRange
+    item_effects: IntRange
+    portals: IntRange
+    room_actors: IntRange
+    room_items: IntRange
+    rooms: IntRange
 
 
 @dataclass
@@ -73,7 +66,7 @@ class Config:
 DEFAULT_CONFIG = Config(
     bot=BotConfig(discord=DiscordBotConfig(channels=["adventure"])),
     render=RenderConfig(
-        cfg=Range(min=5, max=8),
+        cfg=IntRange(min=5, max=8),
         checkpoints=[
             "diffusion-sdxl-dynavision-0-5-5-7.safetensors",
         ],
@@ -83,17 +76,17 @@ DEFAULT_CONFIG = Config(
             "portrait": Size(width=768, height=1024),
             "square": Size(width=768, height=768),
         },
-        steps=Range(min=30, max=30),
+        steps=IntRange(min=30, max=30),
     ),
     server=ServerConfig(websocket=WebsocketServerConfig(host="localhost", port=8001)),
     world=WorldConfig(
         size=WorldSizeConfig(
-            actor_items=Range(min=0, max=2),
-            item_effects=Range(min=1, max=2),
-            portals=Range(min=1, max=3),
-            rooms=Range(min=3, max=6),
-            room_actors=Range(min=1, max=3),
-            room_items=Range(min=1, max=3),
+            actor_items=IntRange(min=0, max=2),
+            item_effects=IntRange(min=1, max=2),
+            portals=IntRange(min=1, max=3),
+            rooms=IntRange(min=3, max=6),
+            room_actors=IntRange(min=1, max=3),
+            room_items=IntRange(min=1, max=3),
         )
     ),
 )
