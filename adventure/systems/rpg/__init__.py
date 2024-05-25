@@ -3,7 +3,7 @@ from .language_actions import action_read
 from .magic_actions import action_cast
 from .movement_actions import action_climb
 
-from adventure.logic import load_logic
+from adventure.systems.logic import load_logic
 
 LOGIC_FILES = [
     "./adventure/systems/rpg/weather_logic.yaml",

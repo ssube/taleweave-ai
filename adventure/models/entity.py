@@ -4,6 +4,7 @@ from pydantic import Field
 
 from .base import Attributes, BaseModel, dataclass, uuid
 from .effect import EffectPattern, EffectResult
+from .planning import Planner
 
 Actions = Dict[str, Callable]
 
@@ -26,6 +27,7 @@ class Actor(BaseModel):
     name: str
     backstory: str
     description: str
+    planner: Planner = Field(default_factory=Planner)
     actions: Actions = Field(default_factory=dict)
     active_effects: List[EffectResult] = Field(default_factory=list)
     attributes: Attributes = Field(default_factory=dict)
@@ -79,3 +81,11 @@ class WorldState(BaseModel):
 
 
 WorldEntity = Room | Actor | Item | Portal
+
+
+@dataclass
+class EntityReference:
+    actor: str | None = None
+    item: str | None = None
+    portal: str | None = None
+    room: str | None = None

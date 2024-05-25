@@ -1,9 +1,12 @@
+from functools import partial
 from itertools import count
 from logging import getLogger
 from math import inf
 from typing import Callable, Sequence
 
-from packit.loops import loop_retry
+from packit.agent import Agent
+from packit.conditions import condition_or, condition_threshold, make_flag_condition
+from packit.loops import loop_reduce, loop_retry
 from packit.results import multi_function_or_str_result
 from packit.toolbox import Toolbox
 from packit.utils import could_be_json
@@ -15,6 +18,16 @@ from adventure.actions.base import (
     action_move,
     action_take,
     action_tell,
+)
+from adventure.actions.planning import (
+    erase_notes,
+    get_recent_notes,
+    get_upcoming_events,
+    read_calendar,
+    read_notes,
+    replace_note,
+    schedule_event,
+    take_note,
 )
 from adventure.context import (
     broadcast,
@@ -29,10 +42,11 @@ from adventure.context import (
     set_game_systems,
 )
 from adventure.game_system import GameSystem
-from adventure.models.entity import World
+from adventure.models.entity import Actor, Room, World
 from adventure.models.event import ActionEvent, ReplyEvent, ResultEvent
-from adventure.utils.effect import is_active_effect
+from adventure.utils.effect import expire_effects
 from adventure.utils.search import find_room_with_actor
+from adventure.utils.string import normalize_name
 from adventure.utils.world import describe_entity, format_attributes
 
 logger = getLogger(__name__)
@@ -58,13 +72,136 @@ def world_result_parser(value, agent, **kwargs):
     return multi_function_or_str_result(value, agent=agent, **kwargs)
 
 
+def prompt_actor_action(room, actor, agent, action_names, action_toolbox) -> str:
+    # collect data for the prompt
+    room_actors = [actor.name for actor in room.actors]
+    room_items = [item.name for item in room.items]
+    room_directions = [portal.name for portal in room.portals]
+
+    actor_attributes = format_attributes(actor)
+    # actor_effects = [effect.name for effect in actor.active_effects]
+    actor_items = [item.name for item in actor.items]
+
+    # set up a result parser for the agent
+    def result_parser(value, agent, **kwargs):
+        if not room or not actor:
+            raise ValueError("Room and actor must be set before parsing results")
+
+        if could_be_json(value):
+            event = ActionEvent.from_json(value, room, actor)
+        else:
+            event = ReplyEvent.from_text(value, room, actor)
+
+        broadcast(event)
+
+        return world_result_parser(value, agent, **kwargs)
+
+    # prompt and act
+    logger.info("starting turn for actor: %s", actor.name)
+    result = loop_retry(
+        agent,
+        (
+            "You are currently in {room_name}. {room_description}. {attributes}. "
+            "The room contains the following characters: {visible_actors}. "
+            "The room contains the following items: {visible_items}. "
+            "Your inventory contains the following items: {actor_items}."
+            "You can take the following actions: {actions}. "
+            "You can move in the following directions: {directions}. "
+            "What will you do next? Reply with a JSON function call, calling one of the actions."
+            "You can only perform one action per turn. What is your next action?"
+        ),
+        context={
+            "actions": action_names,
+            "actor_items": actor_items,
+            "attributes": actor_attributes,
+            "directions": room_directions,
+            "room_name": room.name,
+            "room_description": describe_entity(room),
+            "visible_actors": room_actors,
+            "visible_items": room_items,
+        },
+        result_parser=result_parser,
+        toolbox=action_toolbox,
+    )
+
+    logger.debug(f"{actor.name} step result: {result}")
+    if agent.memory:
+        # TODO: make sure this is not duplicating memories and wasting space
+        agent.memory.append(result)
+
+    return result
+
+
+def prompt_actor_think(
+    room: Room, actor: Actor, agent: Agent, planner_toolbox: Toolbox
+) -> str:
+    recent_notes = get_recent_notes()
+    upcoming_events = get_upcoming_events()
+
+    if len(recent_notes) > 0:
+        notes = "\n".join(recent_notes)
+        notes_prompt = f"Your recent notes are: {notes}\n"
+    else:
+        notes_prompt = "You have no recent notes.\n"
+
+    if len(upcoming_events) > 0:
+        current_step = get_current_step()
+        events = [
+            f"{event.name} in {event.turn - current_step} turns"
+            for event in upcoming_events
+        ]
+        events = "\n".join(events)
+        events_prompt = f"Upcoming events are: {events}\n"
+    else:
+        events_prompt = "You have no upcoming events.\n"
+
+    event_count = len(actor.planner.calendar.events)
+    note_count = len(actor.planner.notes)
+
+    logger.info("starting planning for actor: %s", actor.name)
+    set_end, condition_end = make_flag_condition()
+
+    def result_parser(value, **kwargs):
+        if normalize_name(value) == "end":
+            set_end()
+
+        return multi_function_or_str_result(value, **kwargs)
+
+    stop_condition = condition_or(condition_end, partial(condition_threshold, max=3))
+
+    result = loop_reduce(
+        agent,
+        "You are about to take your turn. Plan your next action carefully. "
+        "You can check your notes for important facts or check your calendar for upcoming events. You have {note_count} notes. "
+        "Try to keep your notes accurate. Replace or erase old notes if they are no longer accurate or useful. "
+        "If you have upcoming events with other characters, schedule them on your calendar. You have {event_count} calendar events. "
+        "Think about your goals and any quests that you are working on, and plan your next action accordingly. "
+        "You can perform up to 3 planning actions in a single turn. When you are done planning, reply with 'END'."
+        "{notes_prompt} {events_prompt}",
+        context={
+            "event_count": event_count,
+            "events_prompt": events_prompt,
+            "note_count": note_count,
+            "notes_prompt": notes_prompt,
+        },
+        result_parser=result_parser,
+        stop_condition=stop_condition,
+        toolbox=planner_toolbox,
+    )
+
+    if agent.memory:
+        agent.memory.append(result)
+
+    return result
+
+
 def simulate_world(
     world: World,
     steps: float | int = inf,
     actions: Sequence[Callable[..., str]] = [],
     systems: Sequence[GameSystem] = [],
 ):
-    logger.info("Simulating the world")
+    logger.info("simulating the world")
     set_current_world(world)
     set_game_systems(systems)
 
@@ -82,6 +219,18 @@ def simulate_world(
     )
     action_names = action_tools.list_tools()
 
+    # build a toolbox for the planners
+    planner_toolbox = Toolbox(
+        [
+            take_note,
+            read_notes,
+            replace_note,
+            erase_notes,
+            schedule_event,
+            read_calendar,
+        ]
+    )
+
     # simulate each actor
     for i in count():
         current_step = get_current_step()
@@ -90,79 +239,31 @@ def simulate_world(
         for actor_name in world.order:
             actor, agent = get_actor_agent_for_name(actor_name)
             if not agent or not actor:
-                logger.error(f"Agent or actor not found for name {actor_name}")
+                logger.error(f"agent or actor not found for name {actor_name}")
                 continue
 
             room = find_room_with_actor(world, actor)
             if not room:
-                logger.error(f"Actor {actor_name} is not in a room")
+                logger.error(f"actor {actor_name} is not in a room")
                 continue
 
+            # prep context
+            set_current_room(room)
+            set_current_actor(actor)
+
             # decrement effects on the actor and remove any that have expired
-            for effect in actor.active_effects:
-                if effect.duration is not None:
-                    effect.duration -= 1
+            expire_effects(actor)
+            # TODO: expire calendar events
 
-            actor.active_effects[:] = [
-                effect for effect in actor.active_effects if is_active_effect(effect)
-            ]
+            # give the actor a chance to think and check their planner
+            if agent.memory and len(agent.memory) > 0:
+                try:
+                    thoughts = prompt_actor_think(room, actor, agent, planner_toolbox)
+                    logger.debug(f"{actor.name} thinks: {thoughts}")
+                except Exception:
+                    logger.exception(f"error during planning for actor {actor.name}")
 
-            # collect data for the prompt
-            room_actors = [actor.name for actor in room.actors]
-            room_items = [item.name for item in room.items]
-            room_directions = [portal.name for portal in room.portals]
-
-            actor_attributes = format_attributes(actor)
-            actor_items = [item.name for item in actor.items]
-
-            # set up a result parser for the agent
-            def result_parser(value, agent, **kwargs):
-                if not room or not actor:
-                    raise ValueError(
-                        "Room and actor must be set before parsing results"
-                    )
-
-                if could_be_json(value):
-                    event = ActionEvent.from_json(value, room, actor)
-                else:
-                    event = ReplyEvent.from_text(value, room, actor)
-
-                broadcast(event)
-
-                return world_result_parser(value, agent, **kwargs)
-
-            # prompt and act
-            logger.info("starting turn for actor: %s", actor_name)
-            result = loop_retry(
-                agent,
-                (
-                    "You are currently in {room_name}. {room_description}. {attributes}. "
-                    "The room contains the following characters: {visible_actors}. "
-                    "The room contains the following items: {visible_items}. "
-                    "Your inventory contains the following items: {actor_items}."
-                    "You can take the following actions: {actions}. "
-                    "You can move in the following directions: {directions}. "
-                    "What will you do next? Reply with a JSON function call, calling one of the actions."
-                    "You can only perform one action per turn. What is your next action?"
-                ),
-                context={
-                    "actions": action_names,
-                    "actor_items": actor_items,
-                    "attributes": actor_attributes,
-                    "directions": room_directions,
-                    "room_name": room.name,
-                    "room_description": describe_entity(room),
-                    "visible_actors": room_actors,
-                    "visible_items": room_items,
-                },
-                result_parser=result_parser,
-                toolbox=action_tools,
-            )
-
-            logger.debug(f"{actor.name} step result: {result}")
-            if agent.memory:
-                agent.memory.append(result)
-
+            result = prompt_actor_action(room, actor, agent, action_names, action_tools)
             result_event = ResultEvent(result=result, room=room, actor=actor)
             broadcast(result_event)
 
@@ -171,6 +272,6 @@ def simulate_world(
                 system.simulate(world, current_step)
 
         set_current_step(current_step + 1)
-        if i > steps:
+        if i >= steps:
             logger.info("reached step limit at world step %s", current_step + 1)
             break

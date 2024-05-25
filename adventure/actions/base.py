@@ -84,7 +84,9 @@ def action_move(direction: str) -> str:
         if not destination_room:
             return f"The {portal.destination} room does not exist."
 
-        broadcast(f"{action_actor.name} moves {direction} to {destination_room.name}")
+        broadcast(
+            f"{action_actor.name} moves through {direction} to {destination_room.name}"
+        )
         action_room.actors.remove(action_actor)
         destination_room.actors.append(action_actor)
 

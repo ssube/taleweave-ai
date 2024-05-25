@@ -298,7 +298,7 @@ def apply_permanent_effects(
 
 def apply_effects(target: Actor, effects: List[EffectPattern]) -> None:
     """
-    Apply a set of effects to a set of attributes.
+    Apply a set of effects to an actor and their attributes.
     """
 
     permanent_effects = [
@@ -312,3 +312,17 @@ def apply_effects(target: Actor, effects: List[EffectPattern]) -> None:
     ]
     temporary_effects = resolve_effects(temporary_effects)
     target.active_effects.extend(temporary_effects)
+
+
+def expire_effects(target: Actor) -> None:
+    """
+    Decrement the duration of effects on an actor and remove any that have expired.
+    """
+
+    for effect in target.active_effects:
+        if effect.duration is not None:
+            effect.duration -= 1
+
+    target.active_effects[:] = [
+        effect for effect in target.active_effects if is_active_effect(effect)
+    ]

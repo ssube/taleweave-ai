@@ -1,7 +1,8 @@
 from functools import partial, wraps
 from logging import getLogger
+from os import path
 from random import random
-from typing import Dict, List, Optional, Protocol
+from typing import Any, Dict, List, Optional, Protocol
 
 from pydantic import Field
 from rule_engine import Rule
@@ -128,7 +129,12 @@ def update_attributes(
 
 
 def update_logic(
-    world: World, step: int, rules: LogicTable, triggers: TriggerTable
+    world: World,
+    step: int,
+    data: Any | None = None,
+    *,
+    rules: LogicTable,
+    triggers: TriggerTable
 ) -> None:
     for room in world.rooms:
         update_attributes(room, rules=rules, triggers=triggers)
@@ -165,7 +171,9 @@ def format_logic(
 
 
 def load_logic(filename: str):
-    logger.info("loading logic from file: %s", filename)
+    system_name = "logic-" + path.splitext(path.basename(filename))[0]
+    logger.info("loading logic from file %s as system %s", filename, system_name)
+
     with open(filename) as file:
         logic_rules = LogicTable(**load(file, Loader=Loader))
         logic_triggers = {}
@@ -179,12 +187,17 @@ def load_logic(filename: str):
                     logic_triggers[trigger] = get_plugin_function(function_name)
 
     logger.info("initialized logic system")
+    system_format = wraps(format_logic)(partial(format_logic, rules=logic_rules))
+    system_initialize = wraps(load_logic)(
+        partial(update_logic, step=0, rules=logic_rules, triggers=logic_triggers)
+    )
     system_simulate = wraps(update_logic)(
         partial(update_logic, rules=logic_rules, triggers=logic_triggers)
     )
-    system_format = wraps(format_logic)(partial(format_logic, rules=logic_rules))
 
     return GameSystem(
+        name=system_name,
         format=system_format,
+        initialize=system_initialize,
         simulate=system_simulate,
     )

@@ -2,7 +2,7 @@ from .hunger_actions import action_cook, action_eat
 from .hygiene_actions import action_wash
 from .sleeping_actions import action_sleep
 
-from adventure.logic import load_logic
+from adventure.systems.logic import load_logic
 
 LOGIC_FILES = [
     "./adventure/systems/sim/environment_logic.yaml",

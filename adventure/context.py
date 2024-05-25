@@ -2,6 +2,7 @@ from contextlib import contextmanager
 from logging import getLogger
 from types import UnionType
 from typing import (
+    Any,
     Callable,
     Dict,
     List,
@@ -33,6 +34,7 @@ dungeon_master: Agent | None = None
 # game context
 event_emitter = EventEmitter()
 game_systems: List[GameSystem] = []
+system_data: Dict[str, Any] = {}
 
 
 # TODO: where should this one go?
@@ -155,6 +157,10 @@ def get_game_systems() -> List[GameSystem]:
     return game_systems
 
 
+def get_system_data(system: str) -> Any | None:
+    return system_data.get(system)
+
+
 # endregion
 
 
@@ -191,6 +197,10 @@ def set_dungeon_master(agent):
 def set_game_systems(systems: Sequence[GameSystem]):
     global game_systems
     game_systems = list(systems)
+
+
+def set_system_data(system: str, data: Any):
+    system_data[system] = data
 
 
 # endregion

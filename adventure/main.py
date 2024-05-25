@@ -6,14 +6,9 @@ from typing import List
 from dotenv import load_dotenv
 from packit.agent import Agent, agent_easy_connect
 from packit.utils import logger_with_colors
-from yaml import Loader, load
 
-from adventure.context import subscribe
-
-
-def load_yaml(file):
-    return load(file, Loader=Loader)
-
+from adventure.context import get_system_data, set_system_data
+from adventure.utils.file import load_yaml
 
 # configure logging
 LOG_PATH = "logging.json"
@@ -34,7 +29,7 @@ logger = logger_with_colors(__name__)  # , level="DEBUG")
 load_dotenv(environ.get("ADVENTURE_ENV", ".env"), override=True)
 
 if True:
-    from adventure.context import set_current_step, set_dungeon_master
+    from adventure.context import set_current_step, set_dungeon_master, subscribe
     from adventure.game_system import GameSystem
     from adventure.generate import generate_world
     from adventure.models.config import DEFAULT_CONFIG, Config
@@ -176,7 +171,34 @@ def get_world_prompt(args) -> WorldPrompt:
     )
 
 
-def load_or_generate_world(args, players, systems, world_prompt: WorldPrompt):
+def load_or_initialize_system_data(args, systems: List[GameSystem], world: World):
+    for system in systems:
+        if system.data:
+            system_data_file = f"{args.world}.{system.name}.json"
+
+            data = None
+            if path.exists(system_data_file):
+                logger.info(f"loading system data from {system_data_file}")
+                data = system.data.load(system_data_file)
+            else:
+                logger.info(f"no system data found at {system_data_file}")
+                if system.initialize:
+                    data = system.initialize(world)
+
+            set_system_data(system.name, data)
+
+
+def save_system_data(args, systems: List[GameSystem]):
+    for system in systems:
+        if system.data:
+            system_data_file = f"{args.world}.{system.name}.json"
+            logger.info(f"saving system data to {system_data_file}")
+            system.data.save(system_data_file, get_system_data(system.name))
+
+
+def load_or_generate_world(
+    args, players, systems: List[GameSystem], world_prompt: WorldPrompt
+):
     world_file = args.world + ".json"
     world_state_file = args.state or (args.world + ".state.json")
 
@@ -187,6 +209,7 @@ def load_or_generate_world(args, players, systems, world_prompt: WorldPrompt):
             state = WorldState(**load_yaml(f))
 
         set_current_step(state.step)
+        load_or_initialize_system_data(args, systems, state.world)
 
         memory = state.memory
         world = state.world
@@ -194,6 +217,8 @@ def load_or_generate_world(args, players, systems, world_prompt: WorldPrompt):
         logger.info(f"loading world from {world_file}")
         with open(world_file, "r") as f:
             world = World(**load_yaml(f))
+
+        load_or_initialize_system_data(args, systems, world)
     else:
         logger.info(f"generating a new world using theme: {world_prompt.theme}")
         llm = agent_easy_connect()
@@ -213,11 +238,7 @@ def load_or_generate_world(args, players, systems, world_prompt: WorldPrompt):
             room_count=args.rooms,
         )
         save_world(world, world_file)
-
-        # run the systems once to initialize everything
-        for system in systems:
-            if system.simulate:
-                system.simulate(world, 0)
+        save_system_data(args, systems)
 
     create_agents(world, memory=memory, players=players)
     return (world, world_state_file)
@@ -296,7 +317,7 @@ def main():
     if args.server:
         from adventure.server.websocket import server_system
 
-        extra_systems.append(GameSystem(simulate=server_system))
+        extra_systems.append(GameSystem(name="server", simulate=server_system))
 
     # load or generate the world
     world_prompt = get_world_prompt(args)
@@ -305,11 +326,11 @@ def main():
     )
 
     # make sure the snapshot system runs last
-    def snapshot_system(world: World, step: int) -> None:
+    def snapshot_system(world: World, step: int, data: None = None) -> None:
         logger.info("taking snapshot of world state")
         save_world_state(world, step, world_state_file)
 
-    extra_systems.append(GameSystem(simulate=snapshot_system))
+    extra_systems.append(GameSystem(name="snapshot", simulate=snapshot_system))
 
     # hack: send a snapshot to the websocket server
     if args.server:

@@ -1,7 +1,20 @@
+export type Attributes = Record<string, boolean | number | string>;
+
+export interface CalendarEvent {
+  name: string;
+  turn: number;
+}
+
+export interface Planner {
+  calendar: Array<CalendarEvent>;
+  notes: Array<string>;
+}
+
 export interface Item {
   type: 'item';
   name: string;
   description: string;
+  attributes: Attributes;
 }
 
 export interface Actor {
@@ -10,6 +23,8 @@ export interface Actor {
   backstory: string;
   description: string;
   items: Array<Item>;
+  attributes: Attributes;
+  planner: Planner;
 }
 
 export interface Portal {
@@ -26,6 +41,7 @@ export interface Room {
   actors: Array<Actor>;
   items: Array<Item>;
   portals: Array<Portal>;
+  attributes: Attributes;
 }
 
 export interface World {

@@ -7,7 +7,7 @@ from packit.loops import loop_retry
 from packit.results import enum_result, int_result
 from packit.utils import could_be_json
 
-from adventure.context import broadcast, set_current_world
+from adventure.context import broadcast, set_current_world, set_system_data
 from adventure.game_system import GameSystem
 from adventure.models.config import DEFAULT_CONFIG, WorldConfig
 from adventure.models.effect import (
@@ -74,6 +74,7 @@ def generate_system_attributes(
 ) -> None:
     for system in systems:
         if system.generate:
+            # TODO: pass the whole world
             system.generate(agent, world.theme, entity)
 
 
@@ -423,6 +424,7 @@ def generate_effect(agent: Agent, world: World, entity: Item) -> EffectPattern:
             "name": name,
         },
         result_parser=int_result,
+        toolbox=None,
     )
 
     def parse_application(value: str, **kwargs) -> str:
@@ -447,6 +449,7 @@ def generate_effect(agent: Agent, world: World, entity: Item) -> EffectPattern:
             "name": name,
         },
         result_parser=parse_application,
+        toolbox=None,
     )
 
     return EffectPattern(
@@ -521,6 +524,12 @@ def generate_world(
     broadcast_generated(message=f"Generating a {theme} with {room_count} rooms")
     world = World(name=name, rooms=[], theme=theme, order=[])
     set_current_world(world)
+
+    # initialize the systems
+    for system in systems:
+        if system.initialize:
+            data = system.initialize(world)
+            set_system_data(system.name, data)
 
     # generate the rooms
     for _ in range(room_count):

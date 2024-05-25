@@ -1,6 +1,14 @@
 from typing import Any, Generator
 
-from adventure.models.entity import Actor, Item, Portal, Room, World
+from adventure.models.entity import (
+    Actor,
+    EntityReference,
+    Item,
+    Portal,
+    Room,
+    World,
+    WorldEntity,
+)
 
 from .string import normalize_name
 
@@ -59,20 +67,11 @@ def find_item(
 def find_item_in_actor(
     actor: Actor, item_name: str, include_item_inventory=False
 ) -> Item | None:
-    for item in actor.items:
-        if normalize_name(item.name) == normalize_name(item_name):
-            return item
-
-        if include_item_inventory:
-            item = find_item_in_container(item, item_name, include_item_inventory)
-            if item:
-                return item
-
-    return None
+    return find_item_in_container(actor, item_name, include_item_inventory)
 
 
 def find_item_in_container(
-    container: Item, item_name: str, include_item_inventory=False
+    container: Actor | Item, item_name: str, include_item_inventory=False
 ) -> Item | None:
     for item in container.items:
         if normalize_name(item.name) == normalize_name(item_name):
@@ -126,6 +125,28 @@ def find_containing_room(world: World, entity: Room | Actor | Item) -> Room | No
     for room in world.rooms:
         if entity in room.actors or entity in room.items:
             return room
+
+    return None
+
+
+def find_entity_reference(
+    world: World, reference: EntityReference
+) -> WorldEntity | None:
+    """
+    Resolve an entity reference to an entity in the world.
+    """
+
+    if reference.room:
+        return find_room(world, reference.room)
+
+    if reference.actor:
+        return find_actor(world, reference.actor)
+
+    if reference.item:
+        return find_item(world, reference.item)
+
+    if reference.portal:
+        return find_portal(world, reference.portal)
 
     return None
 

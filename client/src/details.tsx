@@ -1,13 +1,31 @@
 import { Maybe, doesExist } from '@apextoaster/js-utils';
-import { Button, Dialog, DialogActions, DialogContent, DialogTitle, Typography } from '@mui/material';
+import {
+  Button,
+  Dialog,
+  DialogActions,
+  DialogContent,
+  DialogTitle,
+  List,
+  ListItem,
+  ListItemText,
+  Paper,
+  Stack,
+  Table,
+  TableBody,
+  TableCell,
+  TableContainer,
+  TableHead,
+  TableRow,
+  Typography,
+} from '@mui/material';
 import { instance as graphviz } from '@viz-js/viz';
 import React, { Fragment, useEffect } from 'react';
 import { useStore } from 'zustand';
-import { Actor, Item, Room, World } from './models';
+import { Actor, Attributes, Item, Portal, Room, World } from './models';
 import { StoreState, store } from './store';
 
 export interface EntityDetailsProps {
-  entity: Maybe<Item | Actor | Room>;
+  entity: Maybe<Item | Actor | Portal | Room>;
   onClose: () => void;
   onRender: (type: string, entity: string) => void;
 }
@@ -20,15 +38,58 @@ export function EntityDetails(props: EntityDetailsProps) {
     return <Fragment />;
   }
 
+  const { description, name, type } = entity;
+
+  let attributes: Attributes = {};
+  let planner;
+
+  if (type === 'actor') {
+    const actor = entity as Actor;
+    attributes = actor.attributes;
+    planner = actor.planner;
+  }
+
+  if (type === 'item') {
+    const item = entity as Item;
+    attributes = item.attributes;
+  }
+
   return <Fragment>
-    <DialogTitle>{entity.name}</DialogTitle>
+    <DialogTitle>{name}</DialogTitle>
     <DialogContent dividers>
-      <Typography>
-        {entity.description}
-      </Typography>
+      <Stack direction='column' spacing={2}>
+        <Typography>
+          {description}
+        </Typography>
+        <TableContainer component={Paper}>
+          <Table>
+            <TableHead>
+              <TableRow>
+                <TableCell>Attribute</TableCell>
+                <TableCell>Value</TableCell>
+              </TableRow>
+            </TableHead>
+            <TableBody>
+              {Object.entries(attributes).map(([key, value]) => (
+                <TableRow key={key}>
+                  <TableCell>{key}</TableCell>
+                  <TableCell>{value}</TableCell>
+                </TableRow>
+              ))}
+            </TableBody>
+          </Table>
+        </TableContainer>
+        {doesExist(planner) && <List>
+          {planner.notes.map((note: string) => (
+            <ListItem>
+              <ListItemText primary={note} />
+            </ListItem>
+          ))}
+        </List>}
+      </Stack>
     </DialogContent>
     <DialogActions>
-      <Button onClick={() => onRender(entity.type, entity.name)}>Render</Button>
+      <Button onClick={() => onRender(type, name)}>Render</Button>
       <Button onClick={onClose}>Close</Button>
     </DialogActions>
   </Fragment>;
@@ -94,7 +155,7 @@ export function DetailDialog(props: DetailDialogProps) {
   >{details}</Dialog>;
 }
 
-export function isWorld(entity: Maybe<Item | Actor | Room | World>): entity is World {
+export function isWorld(entity: Maybe<Item | Actor | Portal | Room | World>): entity is World {
   return doesExist(entity) && doesExist(Object.getOwnPropertyDescriptor(entity, 'theme'));
 }
 

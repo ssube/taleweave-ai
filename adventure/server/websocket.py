@@ -296,7 +296,7 @@ async def server_main():
         await asyncio.Future()  # run forever
 
 
-def server_system(world: World, step: int):
+def server_system(world: World, step: int, data: Any | None = None):
     global last_snapshot
     id = uuid4().hex  # TODO: should a server be allowed to generate event IDs?
     json_state = {
