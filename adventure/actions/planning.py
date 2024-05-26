@@ -1,5 +1,6 @@
 from adventure.context import action_context, get_current_step
 from adventure.models.planning import CalendarEvent
+from adventure.utils.planning import get_recent_notes
 
 
 def take_note(fact: str):
@@ -13,10 +14,10 @@ def take_note(fact: str):
 
     with action_context() as (_, action_actor):
         if fact in action_actor.planner.notes:
-            return "You already know that."
+            return "You already have a note about that fact."
 
         action_actor.planner.notes.append(fact)
-        return "You make a note of that."
+        return "You make a note of that fact."
 
 
 def read_notes(unused: bool, count: int = 10):
@@ -27,8 +28,9 @@ def read_notes(unused: bool, count: int = 10):
         count: The number of recent notes to read. 10 is usually a good number.
     """
 
-    facts = get_recent_notes(count=count)
-    return "\n".join(facts)
+    with action_context() as (_, action_actor):
+        facts = get_recent_notes(action_actor, count=count)
+        return "\n".join(facts)
 
 
 def erase_notes(prefix: str) -> str:
@@ -74,7 +76,8 @@ def replace_note(old: str, new: str) -> str:
 def schedule_event(name: str, turns: int):
     """
     Schedule an event to happen at a specific turn. Events are important occurrences that can affect the world in
-    significant ways. You will be notified about upcoming events so you can plan accordingly.
+    significant ways. You will be notified about upcoming events so you can plan accordingly. Make sure you inform
+    other characters about events that involve them, and give them enough time to prepare.
 
     Args:
         name: The name of the event.
@@ -88,7 +91,7 @@ def schedule_event(name: str, turns: int):
         return f"{name} is scheduled to happen in {turns} turns."
 
 
-def read_calendar(unused: bool, count: int = 10):
+def check_calendar(unused: bool, count: int = 10):
     """
     Read your calendar to see upcoming events that you have scheduled.
     """
@@ -103,33 +106,3 @@ def read_calendar(unused: bool, count: int = 10):
                 for event in events
             ]
         )
-
-
-def get_upcoming_events(turns: int = 3):
-    """
-    Get a list of upcoming events within a certain number of turns.
-
-    Args:
-        turns: The number of turns to look ahead for events.
-    """
-
-    current_turn = get_current_step()
-
-    with action_context() as (_, action_actor):
-        calendar = action_actor.planner.calendar
-        # TODO: sort events by turn
-        return [
-            event for event in calendar.events if event.turn - current_turn <= turns
-        ]
-
-
-def get_recent_notes(count: int = 3):
-    """
-    Get the most recent facts from your notes.
-
-    Args:
-        history: The number of recent facts to retrieve.
-    """
-
-    with action_context() as (_, action_actor):
-        return action_actor.planner.notes[-count:]

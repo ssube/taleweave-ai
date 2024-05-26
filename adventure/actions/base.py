@@ -1,14 +1,13 @@
-from json import loads
 from logging import getLogger
-
-from packit.utils import could_be_json
 
 from adventure.context import (
     action_context,
     broadcast,
     get_actor_agent_for_name,
+    get_agent_for_actor,
     world_context,
 )
+from adventure.utils.conversation import loop_conversation
 from adventure.utils.search import (
     find_actor_in_room,
     find_item_in_actor,
@@ -19,6 +18,8 @@ from adventure.utils.string import normalize_name
 from adventure.utils.world import describe_entity
 
 logger = getLogger(__name__)
+
+MAX_CONVERSATION_STEPS = 3
 
 
 def action_look(target: str) -> str:
@@ -90,7 +91,9 @@ def action_move(direction: str) -> str:
         action_room.actors.remove(action_actor)
         destination_room.actors.append(action_actor)
 
-        return f"You move {direction} and arrive at {destination_room.name}."
+        return (
+            f"You move through the {direction} and arrive at {destination_room.name}."
+        )
 
 
 def action_take(item: str) -> str:
@@ -116,11 +119,11 @@ def action_ask(character: str, question: str) -> str:
     Ask another character a question.
 
     Args:
-        character: The name of the character to ask.
+        character: The name of the character to ask. You cannot ask yourself questions.
         question: The question to ask them.
     """
     # capture references to the current actor and room, because they will be overwritten
-    with action_context() as (_, action_actor):
+    with action_context() as (action_room, action_actor):
         # sanity checks
         question_actor, question_agent = get_actor_agent_for_name(character)
         if question_actor == action_actor:
@@ -133,15 +136,33 @@ def action_ask(character: str, question: str) -> str:
             return f"The {character} character does not exist."
 
         broadcast(f"{action_actor.name} asks {character}: {question}")
-        answer = question_agent(
-            f"{action_actor.name} asks you: {question}. Reply with your response to them. "
-            f"Do not include the question or any JSON. Only include your answer for {action_actor.name}."
+        first_prompt = (
+            "{last_actor.name} asks you: {response}\n"
+            "Reply with your response to them. Reply with 'END' to end the conversation. "
+            "Do not include the question or any JSON. Only include your answer for {last_actor.name}."
+        )
+        reply_prompt = (
+            "{last_actor.name} continues the conversation with you. They reply: {response}\n"
+            "Reply with your response to them. Reply with 'END' to end the conversation. "
+            "Do not include the question or any JSON. Only include your answer for {last_actor.name}."
         )
 
-        if could_be_json(answer) and action_tell.__name__ in answer:
-            answer = loads(answer).get("parameters", {}).get("message", "")
+        action_agent = get_agent_for_actor(action_actor)
+        answer = loop_conversation(
+            action_room,
+            [question_actor, action_actor],
+            [question_agent, action_agent],
+            action_actor,
+            first_prompt,
+            reply_prompt,
+            question,
+            "Goodbye",
+            echo_function=action_tell.__name__,
+            echo_parameter="message",
+            max_length=MAX_CONVERSATION_STEPS,
+        )
 
-        if len(answer.strip()) > 0:
+        if answer:
             broadcast(f"{character} responds to {action_actor.name}: {answer}")
             return f"{character} responds: {answer}"
 
@@ -153,12 +174,12 @@ def action_tell(character: str, message: str) -> str:
     Tell another character a message.
 
     Args:
-        character: The name of the character to tell.
+        character: The name of the character to tell. You cannot talk to yourself.
         message: The message to tell them.
     """
     # capture references to the current actor and room, because they will be overwritten
 
-    with action_context() as (_, action_actor):
+    with action_context() as (action_room, action_actor):
         # sanity checks
         question_actor, question_agent = get_actor_agent_for_name(character)
         if question_actor == action_actor:
@@ -171,15 +192,33 @@ def action_tell(character: str, message: str) -> str:
             return f"The {character} character does not exist."
 
         broadcast(f"{action_actor.name} tells {character}: {message}")
-        answer = question_agent(
-            f"{action_actor.name} tells you: {message}. Reply with your response to them. "
-            f"Do not include the message or any JSON. Only include your reply to {action_actor.name}."
+        first_prompt = (
+            "{last_actor.name} starts a conversation with you. They say: {response}\n"
+            "Reply with your response to them. "
+            "Do not include the message or any JSON. Only include your reply to {last_actor.name}."
+        )
+        reply_prompt = (
+            "{last_actor.name} continues the conversation with you. They reply: {response}\n"
+            "Reply with your response to them. "
+            "Do not include the message or any JSON. Only include your reply to {last_actor.name}."
         )
 
-        if could_be_json(answer) and action_tell.__name__ in answer:
-            answer = loads(answer).get("parameters", {}).get("message", "")
+        action_agent = get_agent_for_actor(action_actor)
+        answer = loop_conversation(
+            action_room,
+            [question_actor, action_actor],
+            [question_agent, action_agent],
+            action_actor,
+            first_prompt,
+            reply_prompt,
+            message,
+            "Goodbye",
+            echo_function=action_tell.__name__,
+            echo_parameter="message",
+            max_length=MAX_CONVERSATION_STEPS,
+        )
 
-        if len(answer.strip()) > 0:
+        if answer:
             broadcast(f"{character} responds to {action_actor.name}: {answer}")
             return f"{character} responds: {answer}"
 

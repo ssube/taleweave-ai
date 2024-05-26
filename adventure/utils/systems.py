@@ -4,8 +4,10 @@ from adventure.utils.file import load_yaml, save_yaml
 
 
 def load_system_data(cls, file):
-    with load_yaml(file) as data:
-        return cls(**data)
+    with open(file, "r") as f:
+        data = load_yaml(f)
+
+    return cls(**data)
 
 
 def save_system_data(cls, file, model):

@@ -17,7 +17,7 @@ logger = getLogger(__name__)
 
 @dataclass
 class LogicLabel:
-    backstory: str
+    backstory: str | None = None
     description: str | None = None
     match: Optional[Attributes] = None
     rule: Optional[str] = None
@@ -134,7 +134,7 @@ def update_logic(
     data: Any | None = None,
     *,
     rules: LogicTable,
-    triggers: TriggerTable
+    triggers: TriggerTable,
 ) -> None:
     for room in world.rooms:
         update_attributes(room, rules=rules, triggers=triggers)
@@ -157,7 +157,7 @@ def format_logic(
 
     for label in rules.labels:
         if match_logic(entity, label):
-            if perspective == FormatPerspective.SECOND_PERSON:
+            if perspective == FormatPerspective.SECOND_PERSON and label.backstory:
                 labels.append(label.backstory)
             elif perspective == FormatPerspective.THIRD_PERSON and label.description:
                 labels.append(label.description)
@@ -171,7 +171,8 @@ def format_logic(
 
 
 def load_logic(filename: str):
-    system_name = "logic-" + path.splitext(path.basename(filename))[0]
+    basename = path.splitext(path.basename(filename))[0]
+    system_name = f"logic_{basename}"
     logger.info("loading logic from file %s as system %s", filename, system_name)
 
     with open(filename) as file:
@@ -188,7 +189,7 @@ def load_logic(filename: str):
 
     logger.info("initialized logic system")
     system_format = wraps(format_logic)(partial(format_logic, rules=logic_rules))
-    system_initialize = wraps(load_logic)(
+    system_initialize = wraps(update_logic)(
         partial(update_logic, step=0, rules=logic_rules, triggers=logic_triggers)
     )
     system_simulate = wraps(update_logic)(

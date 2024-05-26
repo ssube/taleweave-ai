@@ -194,18 +194,20 @@ def simulate_quests(world: World, step: int, data: QuestData | None = None) -> N
     3. Generate any new quests.
     """
 
-    if not data:
+    # TODO: switch to using data parameter
+    quests: QuestData | None = get_system_data(QUEST_SYSTEM)
+    if not quests:
         # TODO: initialize quest data for worlds that don't have it
         raise ValueError("Quest data is required for simulation")
 
     for room in world.rooms:
         for actor in room.actors:
-            active_quest = get_active_quest(data, actor)
+            active_quest = get_active_quest(quests, actor)
             if active_quest:
                 logger.info(f"simulating quest for {actor.name}: {active_quest.name}")
                 if is_quest_complete(world, active_quest):
                     logger.info(f"quest complete for {actor.name}: {active_quest.name}")
-                    complete_quest(data, actor, active_quest)
+                    complete_quest(quests, actor, active_quest)
 
 
 def load_quest_data(file: str) -> QuestData:

@@ -124,6 +124,7 @@ def action_use(item: str, target: str) -> str:
             target_actor = action_actor
             target = action_actor.name
         else:
+            # TODO: allow targeting the room itself and items in the room
             target_actor = find_actor_in_room(action_room, target)
             if not target_actor:
                 return f"The {target} character is not in the room."

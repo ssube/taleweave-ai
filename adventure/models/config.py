@@ -41,6 +41,11 @@ class ServerConfig:
 
 
 @dataclass
+class WorldActorConfig:
+    conversation_limit: int
+
+
+@dataclass
 class WorldSizeConfig:
     actor_items: IntRange
     item_effects: IntRange
@@ -52,6 +57,7 @@ class WorldSizeConfig:
 
 @dataclass
 class WorldConfig:
+    actor: WorldActorConfig
     size: WorldSizeConfig
 
 
@@ -80,6 +86,9 @@ DEFAULT_CONFIG = Config(
     ),
     server=ServerConfig(websocket=WebsocketServerConfig(host="localhost", port=8001)),
     world=WorldConfig(
+        actor=WorldActorConfig(
+            conversation_limit=3,
+        ),
         size=WorldSizeConfig(
             actor_items=IntRange(min=0, max=2),
             item_effects=IntRange(min=1, max=2),
@@ -87,6 +96,6 @@ DEFAULT_CONFIG = Config(
             rooms=IntRange(min=3, max=6),
             room_actors=IntRange(min=1, max=3),
             room_items=IntRange(min=1, max=3),
-        )
+        ),
     ),
 )

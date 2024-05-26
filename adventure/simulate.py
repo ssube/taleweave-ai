@@ -5,7 +5,7 @@ from math import inf
 from typing import Callable, Sequence
 
 from packit.agent import Agent
-from packit.conditions import condition_or, condition_threshold, make_flag_condition
+from packit.conditions import condition_or, condition_threshold
 from packit.loops import loop_reduce, loop_retry
 from packit.results import multi_function_or_str_result
 from packit.toolbox import Toolbox
@@ -20,10 +20,9 @@ from adventure.actions.base import (
     action_tell,
 )
 from adventure.actions.planning import (
+    check_calendar,
     erase_notes,
     get_recent_notes,
-    get_upcoming_events,
-    read_calendar,
     read_notes,
     replace_note,
     schedule_event,
@@ -44,9 +43,10 @@ from adventure.context import (
 from adventure.game_system import GameSystem
 from adventure.models.entity import Actor, Room, World
 from adventure.models.event import ActionEvent, ReplyEvent, ResultEvent
+from adventure.utils.conversation import make_keyword_condition, summarize_room
 from adventure.utils.effect import expire_effects
+from adventure.utils.planning import expire_events, get_upcoming_events
 from adventure.utils.search import find_room_with_actor
-from adventure.utils.string import normalize_name
 from adventure.utils.world import describe_entity, format_attributes
 
 logger = getLogger(__name__)
@@ -72,8 +72,12 @@ def world_result_parser(value, agent, **kwargs):
     return multi_function_or_str_result(value, agent=agent, **kwargs)
 
 
-def prompt_actor_action(room, actor, agent, action_names, action_toolbox) -> str:
+def prompt_actor_action(
+    room, actor, agent, action_names, action_toolbox, current_turn
+) -> str:
     # collect data for the prompt
+    notes_prompt, events_prompt = get_notes_events(actor, current_turn)
+
     room_actors = [actor.name for actor in room.actors]
     room_items = [item.name for item in room.items]
     room_directions = [portal.name for portal in room.portals]
@@ -101,12 +105,13 @@ def prompt_actor_action(room, actor, agent, action_names, action_toolbox) -> str
     result = loop_retry(
         agent,
         (
-            "You are currently in {room_name}. {room_description}. {attributes}. "
+            "You are currently in the {room_name} room. {room_description}. {attributes}. "
             "The room contains the following characters: {visible_actors}. "
             "The room contains the following items: {visible_items}. "
             "Your inventory contains the following items: {actor_items}."
             "You can take the following actions: {actions}. "
             "You can move in the following directions: {directions}. "
+            "{notes_prompt} {events_prompt}"
             "What will you do next? Reply with a JSON function call, calling one of the actions."
             "You can only perform one action per turn. What is your next action?"
         ),
@@ -119,6 +124,8 @@ def prompt_actor_action(room, actor, agent, action_names, action_toolbox) -> str
             "room_description": describe_entity(room),
             "visible_actors": room_actors,
             "visible_items": room_items,
+            "notes_prompt": notes_prompt,
+            "events_prompt": events_prompt,
         },
         result_parser=result_parser,
         toolbox=action_toolbox,
@@ -132,11 +139,9 @@ def prompt_actor_action(room, actor, agent, action_names, action_toolbox) -> str
     return result
 
 
-def prompt_actor_think(
-    room: Room, actor: Actor, agent: Agent, planner_toolbox: Toolbox
-) -> str:
-    recent_notes = get_recent_notes()
-    upcoming_events = get_upcoming_events()
+def get_notes_events(actor: Actor, current_turn: int):
+    recent_notes = get_recent_notes(actor)
+    upcoming_events = get_upcoming_events(actor, current_turn)
 
     if len(recent_notes) > 0:
         notes = "\n".join(recent_notes)
@@ -155,27 +160,30 @@ def prompt_actor_think(
     else:
         events_prompt = "You have no upcoming events.\n"
 
+    return notes_prompt, events_prompt
+
+
+def prompt_actor_think(
+    room: Room, actor: Actor, agent: Agent, planner_toolbox: Toolbox, current_turn: int
+) -> str:
+    notes_prompt, events_prompt = get_notes_events(actor, current_turn)
+
     event_count = len(actor.planner.calendar.events)
     note_count = len(actor.planner.notes)
 
     logger.info("starting planning for actor: %s", actor.name)
-    set_end, condition_end = make_flag_condition()
-
-    def result_parser(value, **kwargs):
-        if normalize_name(value) == "end":
-            set_end()
-
-        return multi_function_or_str_result(value, **kwargs)
-
+    _, condition_end, result_parser = make_keyword_condition("You are done planning.")
     stop_condition = condition_or(condition_end, partial(condition_threshold, max=3))
 
     result = loop_reduce(
         agent,
-        "You are about to take your turn. Plan your next action carefully. "
+        "You are about to start your turn. Plan your next action carefully. Take notes and schedule events to help keep track of your goals. "
         "You can check your notes for important facts or check your calendar for upcoming events. You have {note_count} notes. "
-        "Try to keep your notes accurate. Replace or erase old notes if they are no longer accurate or useful. "
-        "If you have upcoming events with other characters, schedule them on your calendar. You have {event_count} calendar events. "
+        "If you have plans with other characters, schedule them on your calendar. You have {event_count} events on your calendar. "
+        "{room_summary}"
         "Think about your goals and any quests that you are working on, and plan your next action accordingly. "
+        "Try to keep your notes accurate and up-to-date. Replace or erase old notes when they are no longer accurate or useful. "
+        "Do not keeps notes about upcoming events, use your calendar for that. "
         "You can perform up to 3 planning actions in a single turn. When you are done planning, reply with 'END'."
         "{notes_prompt} {events_prompt}",
         context={
@@ -183,6 +191,7 @@ def prompt_actor_think(
             "events_prompt": events_prompt,
             "note_count": note_count,
             "notes_prompt": notes_prompt,
+            "room_summary": summarize_room(room, actor),
         },
         result_parser=result_parser,
         stop_condition=stop_condition,
@@ -227,7 +236,7 @@ def simulate_world(
             replace_note,
             erase_notes,
             schedule_event,
-            read_calendar,
+            check_calendar,
         ]
     )
 
@@ -253,17 +262,21 @@ def simulate_world(
 
             # decrement effects on the actor and remove any that have expired
             expire_effects(actor)
-            # TODO: expire calendar events
+            expire_events(actor, current_step)
 
             # give the actor a chance to think and check their planner
             if agent.memory and len(agent.memory) > 0:
                 try:
-                    thoughts = prompt_actor_think(room, actor, agent, planner_toolbox)
+                    thoughts = prompt_actor_think(
+                        room, actor, agent, planner_toolbox, current_step
+                    )
                     logger.debug(f"{actor.name} thinks: {thoughts}")
                 except Exception:
                     logger.exception(f"error during planning for actor {actor.name}")
 
-            result = prompt_actor_action(room, actor, agent, action_names, action_tools)
+            result = prompt_actor_action(
+                room, actor, agent, action_names, action_tools, current_step
+            )
             result_event = ResultEvent(result=result, room=room, actor=actor)
             broadcast(result_event)
 
