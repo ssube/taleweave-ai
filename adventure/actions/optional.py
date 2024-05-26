@@ -13,6 +13,7 @@ from adventure.context import (
     set_dungeon_master,
     world_context,
 )
+from adventure.errors import ActionError
 from adventure.generate import generate_item, generate_room, link_rooms
 from adventure.utils.effect import apply_effects
 from adventure.utils.search import find_actor_in_room
@@ -47,7 +48,10 @@ def action_explore(direction: str) -> str:
 
         if direction in action_room.portals:
             dest_room = action_room.portals[direction]
-            return f"You cannot explore {direction} from here, that direction already leads to {dest_room}. Please use the move action to go there."
+            raise ActionError(
+                f"You cannot explore {direction} from here, that direction already leads to {dest_room}. "
+                "Please use the move action to go there."
+            )
 
         try:
             systems = get_game_systems()
@@ -118,7 +122,7 @@ def action_use(item: str, target: str) -> str:
             None,
         )
         if not action_item:
-            return f"The {item} item is not available to use."
+            raise ActionError(f"The {item} item is not available to use.")
 
         if target == "self":
             target_actor = action_actor
@@ -148,13 +152,15 @@ def action_use(item: str, target: str) -> str:
         )
         if not chosen_effect:
             # TODO: should retry the question if the effect is not found
-            return f"The {chosen_name} effect is not available to apply."
+            raise ValueError(f"The {chosen_name} effect is not available to apply.")
 
         try:
             apply_effects(target_actor, [chosen_effect])
         except Exception:
             logger.exception("error applying effect: %s", chosen_effect)
-            return f"There was a problem applying the {chosen_name} effect."
+            raise ValueError(
+                f"There was a problem applying the {chosen_name} effect while using the {item} item."
+            )
 
         broadcast(
             f"{action_actor.name} uses the {chosen_name} effect of {item} on {target}"

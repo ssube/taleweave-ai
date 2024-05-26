@@ -1,5 +1,6 @@
 from functools import partial
 from itertools import count
+from json import loads
 from logging import getLogger
 from math import inf
 from typing import Callable, Sequence
@@ -90,6 +91,22 @@ def prompt_actor_action(
     def result_parser(value, agent, **kwargs):
         if not room or not actor:
             raise ValueError("Room and actor must be set before parsing results")
+
+        # trim suffixes that are used elsewhere
+        value = value.removesuffix("END").strip()
+
+        # fix unbalanced curly braces
+        if value.startswith("{") and not value.endswith("}"):
+            open_count = value.count("{")
+            close_count = value.count("}")
+
+            if open_count > close_count:
+                fixed_value = value + ("}" * (open_count - close_count))
+                try:
+                    loads(fixed_value)
+                    value = fixed_value
+                except Exception:
+                    pass
 
         if could_be_json(value):
             event = ActionEvent.from_json(value, room, actor)

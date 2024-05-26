@@ -1,8 +1,6 @@
-import random
 from logging import getLogger
 from typing import List
 
-from adventure.models.base import FloatRange, IntRange
 from adventure.models.effect import (
     BooleanEffectPattern,
     BooleanEffectResult,
@@ -22,6 +20,8 @@ from adventure.utils.attribute import (
     multiply_value,
     prepend_value,
 )
+
+from .random import resolve_float_range, resolve_int_range, resolve_string_list
 
 logger = getLogger(__name__)
 
@@ -122,50 +122,6 @@ def effective_attributes(
                 raise ValueError(f"Invalid operation: {attribute.operation}")
 
     return attributes
-
-
-def resolve_float_range(range: float | FloatRange | None) -> float | None:
-    """
-    Resolve a float range to a single value.
-    """
-
-    if range is None:
-        return None
-
-    if isinstance(
-        range, (float, int)
-    ):  # int is not really necessary here, but mypy complains without it
-        return range
-
-    return random.uniform(range.min, range.max)
-
-
-def resolve_int_range(range: int | IntRange | None) -> int | None:
-    """
-    Resolve an integer range to a single value.
-    """
-
-    if range is None:
-        return None
-
-    if isinstance(range, int):
-        return range
-
-    return random.randint(range.min, range.max)
-
-
-def resolve_string_list(result: str | List[str] | None) -> str | None:
-    """
-    Resolve a string result to a single value.
-    """
-
-    if result is None:
-        return None
-
-    if isinstance(result, str):
-        return result
-
-    return random.choice(result)
 
 
 def resolve_boolean_effect(effect: BooleanEffectPattern) -> BooleanEffectResult:

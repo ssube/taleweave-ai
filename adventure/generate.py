@@ -1,5 +1,5 @@
 from logging import getLogger
-from random import choice, randint
+from random import choice
 from typing import List, Tuple
 
 from packit.agent import Agent
@@ -19,6 +19,7 @@ from adventure.models.effect import (
 from adventure.models.entity import Actor, Item, Portal, Room, World, WorldEntity
 from adventure.models.event import GenerateEvent
 from adventure.utils import try_parse_float, try_parse_int
+from adventure.utils.effect import resolve_int_range
 from adventure.utils.search import (
     list_actors,
     list_actors_in_room,
@@ -108,9 +109,7 @@ def generate_room(
     actions = {}
     room = Room(name=name, description=desc, items=[], actors=[], actions=actions)
 
-    item_count = randint(
-        world_config.size.room_items.min, world_config.size.room_items.max
-    )
+    item_count = resolve_int_range(world_config.size.room_items) or 0
     broadcast_generated(f"Generating {item_count} items for room: {name}")
 
     for _ in range(item_count):
@@ -127,9 +126,7 @@ def generate_room(
         except Exception:
             logger.exception("error generating item")
 
-    actor_count = randint(
-        world_config.size.room_actors.min, world_config.size.room_actors.max
-    )
+    actor_count = resolve_int_range(world_config.size.room_actors) or 0
     broadcast_generated(message=f"Generating {actor_count} actors for room: {name}")
 
     for _ in range(actor_count):
@@ -265,9 +262,7 @@ def generate_item(
     item = Item(name=name, description=desc, actions=actions)
     generate_system_attributes(agent, world, item, systems)
 
-    effect_count = randint(
-        world_config.size.item_effects.min, world_config.size.item_effects.max
-    )
+    effect_count = resolve_int_range(world_config.size.item_effects) or 0
     broadcast_generated(message=f"Generating {effect_count} effects for item: {name}")
 
     for _ in range(effect_count):
@@ -326,9 +321,7 @@ def generate_actor(
     generate_system_attributes(agent, world, actor, systems)
 
     # generate the actor's inventory
-    item_count = randint(
-        world_config.size.actor_items.min, world_config.size.actor_items.max
-    )
+    item_count = resolve_int_range(world_config.size.actor_items) or 0
     broadcast_generated(f"Generating {item_count} items for actor {name}")
 
     for k in range(item_count):
@@ -470,9 +463,7 @@ def link_rooms(
     rooms = rooms or world.rooms
 
     for room in rooms:
-        num_portals = randint(
-            world_config.size.portals.min, world_config.size.portals.max
-        )
+        num_portals = resolve_int_range(world_config.size.portals) or 0
 
         if len(room.portals) >= num_portals:
             logger.info(f"room {room.name} already has enough portals")
@@ -517,9 +508,7 @@ def generate_world(
     systems: List[GameSystem],
     room_count: int | None = None,
 ) -> World:
-    room_count = room_count or randint(
-        world_config.size.rooms.min, world_config.size.rooms.max
-    )
+    room_count = room_count or resolve_int_range(world_config.size.rooms) or 0
 
     broadcast_generated(message=f"Generating a {theme} with {room_count} rooms")
     world = World(name=name, rooms=[], theme=theme, order=[])

@@ -28,6 +28,7 @@ from adventure.models.event import (
     ResultEvent,
     StatusEvent,
 )
+from adventure.utils.random import resolve_int_range
 
 from .prompt import prompt_from_entity, prompt_from_event
 
@@ -44,17 +45,11 @@ render_thread: Thread | None = None
 
 
 def generate_cfg():
-    if render_config.cfg.min == render_config.cfg.max:
-        return render_config.cfg.min
-
-    return randint(render_config.cfg.min, render_config.cfg.max)
+    return resolve_int_range(render_config.cfg)
 
 
 def generate_steps():
-    if render_config.steps.min == render_config.steps.max:
-        return render_config.steps.min
-
-    return randint(render_config.steps.min, render_config.steps.max)
+    return resolve_int_range(render_config.steps)
 
 
 def generate_batches(

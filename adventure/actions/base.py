@@ -7,6 +7,7 @@ from adventure.context import (
     get_agent_for_actor,
     world_context,
 )
+from adventure.errors import ActionError
 from adventure.utils.conversation import loop_conversation
 from adventure.utils.search import (
     find_actor_in_room,
@@ -79,11 +80,11 @@ def action_move(direction: str) -> str:
             None,
         )
         if not portal:
-            return f"You cannot move {direction} from here."
+            raise ActionError(f"You cannot move {direction} from here.")
 
         destination_room = find_room(action_world, portal.destination)
         if not destination_room:
-            return f"The {portal.destination} room does not exist."
+            raise ActionError(f"The {portal.destination} room does not exist.")
 
         broadcast(
             f"{action_actor.name} moves through {direction} to {destination_room.name}"
@@ -106,7 +107,7 @@ def action_take(item: str) -> str:
     with action_context() as (action_room, action_actor):
         action_item = find_item_in_room(action_room, item)
         if not action_item:
-            return f"The {item} item is not in the room."
+            raise ActionError(f"The {item} item is not in the room.")
 
         broadcast(f"{action_actor.name} takes the {item} item")
         action_room.items.remove(action_item)
@@ -127,13 +128,15 @@ def action_ask(character: str, question: str) -> str:
         # sanity checks
         question_actor, question_agent = get_actor_agent_for_name(character)
         if question_actor == action_actor:
-            return "You cannot ask yourself a question. Stop talking to yourself. Try another action."
+            raise ActionError(
+                "You cannot ask yourself a question. Stop talking to yourself. Try another action."
+            )
 
         if not question_actor:
-            return f"The {character} character is not in the room."
+            raise ActionError(f"The {character} character is not in the room.")
 
         if not question_agent:
-            return f"The {character} character does not exist."
+            raise ActionError(f"The {character} character does not exist.")
 
         broadcast(f"{action_actor.name} asks {character}: {question}")
         first_prompt = (
@@ -183,13 +186,15 @@ def action_tell(character: str, message: str) -> str:
         # sanity checks
         question_actor, question_agent = get_actor_agent_for_name(character)
         if question_actor == action_actor:
-            return "You cannot tell yourself a message. Stop talking to yourself. Try another action."
+            raise ActionError(
+                "You cannot tell yourself a message. Stop talking to yourself. Try another action."
+            )
 
         if not question_actor:
-            return f"The {character} character is not in the room."
+            raise ActionError(f"The {character} character is not in the room.")
 
         if not question_agent:
-            return f"The {character} character does not exist."
+            raise ActionError(f"The {character} character does not exist.")
 
         broadcast(f"{action_actor.name} tells {character}: {message}")
         first_prompt = (
@@ -236,11 +241,16 @@ def action_give(character: str, item: str) -> str:
     with action_context() as (action_room, action_actor):
         destination_actor = find_actor_in_room(action_room, character)
         if not destination_actor:
-            return f"The {character} character is not in the room."
+            raise ActionError(f"The {character} character is not in the room.")
+
+        if destination_actor == action_actor:
+            raise ActionError(
+                "You cannot give an item to yourself. Try another action."
+            )
 
         action_item = find_item_in_actor(action_actor, item)
         if not action_item:
-            return f"You do not have the {item} item in your inventory."
+            raise ActionError(f"You do not have the {item} item in your inventory.")
 
         broadcast(f"{action_actor.name} gives {character} the {item} item.")
         action_actor.items.remove(action_item)
@@ -260,7 +270,7 @@ def action_drop(item: str) -> str:
     with action_context() as (action_room, action_actor):
         action_item = find_item_in_actor(action_actor, item)
         if not action_item:
-            return f"You do not have the {item} item in your inventory."
+            raise ActionError(f"You do not have the {item} item in your inventory.")
 
         broadcast(f"{action_actor.name} drops the {item} item")
         action_actor.items.remove(action_item)

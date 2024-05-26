@@ -11,6 +11,7 @@ from packit.utils import could_be_json
 from adventure.context import broadcast
 from adventure.models.config import DEFAULT_CONFIG
 from adventure.models.entity import Actor, Room
+from adventure.models.event import ReplyEvent
 
 from .string import normalize_name
 
@@ -125,10 +126,12 @@ def loop_conversation(
     if len(actors) != len(agents):
         raise ValueError("The number of actors and agents must match.")
 
+    # set up the keyword or length-limit compound condition
     _, condition_end, parse_end = make_keyword_condition(end_message)
     stop_length = partial(condition_threshold, max=max_length)
     stop_condition = condition_or(condition_end, stop_length)
 
+    # prepare a result parser looking for the echo function
     def result_parser(value: str, **kwargs) -> str:
         value = parse_end(value, **kwargs)
 
@@ -140,6 +143,7 @@ def loop_conversation(
 
         return value.strip()
 
+    # prepare the loop state
     i = 0
     last_actor = first_actor
     response = first_message
@@ -163,8 +167,9 @@ def loop_conversation(
         )
         response = result_parser(response)
 
-        logger.info(f"{actor.name} response: {response}")
-        broadcast(f"{actor.name} responds to {last_actor.name}: {response}")
+        logger.info(f"{actor.name} responds: {response}")
+        reply_event = ReplyEvent.from_text(response, room, actor)
+        broadcast(reply_event)
 
         # increment the step counter
         i += 1

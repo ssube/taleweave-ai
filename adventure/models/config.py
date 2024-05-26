@@ -22,11 +22,11 @@ class BotConfig:
 
 @dataclass
 class RenderConfig:
-    cfg: IntRange
+    cfg: int | IntRange
     checkpoints: List[str]
     path: str
     sizes: Dict[str, Size]
-    steps: IntRange
+    steps: int | IntRange
 
 
 @dataclass
@@ -47,12 +47,12 @@ class WorldActorConfig:
 
 @dataclass
 class WorldSizeConfig:
-    actor_items: IntRange
-    item_effects: IntRange
-    portals: IntRange
-    room_actors: IntRange
-    room_items: IntRange
-    rooms: IntRange
+    actor_items: int | IntRange
+    item_effects: int | IntRange
+    portals: int | IntRange
+    room_actors: int | IntRange
+    room_items: int | IntRange
+    rooms: int | IntRange
 
 
 @dataclass
@@ -87,11 +87,11 @@ DEFAULT_CONFIG = Config(
     server=ServerConfig(websocket=WebsocketServerConfig(host="localhost", port=8001)),
     world=WorldConfig(
         actor=WorldActorConfig(
-            conversation_limit=3,
+            conversation_limit=2,
         ),
         size=WorldSizeConfig(
             actor_items=IntRange(min=0, max=2),
-            item_effects=IntRange(min=1, max=2),
+            item_effects=IntRange(min=1, max=1),
             portals=IntRange(min=1, max=3),
             rooms=IntRange(min=3, max=6),
             room_actors=IntRange(min=1, max=3),
