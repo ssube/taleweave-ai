@@ -14,7 +14,18 @@
     - [Developers](#developers)
       - [ML Engineer](#ml-engineer)
       - [Project Contributor](#project-contributor)
-      - [Third-Party Mod Developer](#third-party-mod-developer)
+      - [Mod Developer](#mod-developer)
+  - [User Stories](#user-stories)
+    - [User Stories for Staff](#user-stories-for-staff)
+      - [Admin configures and runs a new server](#admin-configures-and-runs-a-new-server)
+      - [Admin removes inappropriate events from the game history](#admin-removes-inappropriate-events-from-the-game-history)
+    - [User Stories for Users](#user-stories-for-users)
+      - [Player joins the game as a character](#player-joins-the-game-as-a-character)
+      - [Player leaves the game during their turn](#player-leaves-the-game-during-their-turn)
+      - [Spectator renders a recent event](#spectator-renders-a-recent-event)
+    - [User Stories for Developers](#user-stories-for-developers)
+      - [Mod Developer creates a new system for the game](#mod-developer-creates-a-new-system-for-the-game)
+      - [Project Contributor fixes a bug in the engine](#project-contributor-fixes-a-bug-in-the-engine)
 
 ## User Profiles
 
@@ -35,7 +46,7 @@ Skills:
 - familiar with JSON and YAML
 - familiar with setting up Discord bots
 - basic knowledge of ComfyUI and Ollama
-- plenty of disk space and 1-2 GPUs
+- access to plenty of disk space and 1-2 GPUs
 
 Notes:
 
@@ -122,7 +133,7 @@ Skills:
 - may be familiar with React and MUI (frontend)
 - may be familiar with Pydantic and other Python dependencies (backend)
 
-#### Third-Party Mod Developer
+#### Mod Developer
 
 Goals:
 
@@ -134,3 +145,39 @@ Skills:
 - familiar with Python
 - probably familiar with JSON and/or YAML
 - basic knowledge of LLMs, especially prompting
+
+## User Stories
+
+### User Stories for Staff
+
+#### Admin configures and runs a new server
+
+> As an Admin, I want to configure a server, create a new world, and host it online so that players can join.
+
+#### Admin removes inappropriate events from the game history
+
+> As an Admin, I want to remove inappropriate events and images from the game history, so that players are comfortable.
+
+### User Stories for Users
+
+#### Player joins the game as a character
+
+> As a Player, I want to join a running world as an existing character, so that I can act as that character.
+
+#### Player leaves the game during their turn
+
+> As a Player, I want to leave a running world at any time, including during my turn, so that I can go touch grass.
+
+#### Spectator renders a recent event
+
+> As a Spectator, I want to render a recent event from the game, so that I can visualize the characters and their actions.
+
+### User Stories for Developers
+
+#### Mod Developer creates a new system for the game
+
+> As a Mod Developer, I want to write a Python module with a new game system and load it into a test world, so that I can develop custom features.
+
+#### Project Contributor fixes a bug in the engine
+
+> As a Project Contributor, I want to fix a bug in the game engine, so that players have a good experience.
