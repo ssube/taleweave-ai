@@ -202,6 +202,8 @@ def load_or_generate_world(
     world_state_file = args.state or (args.world + ".state.json")
 
     memory = {}
+    step = 0
+
     if path.exists(world_state_file):
         logger.info(f"loading world state from {world_state_file}")
         with open(world_state_file, "r") as f:
@@ -211,6 +213,7 @@ def load_or_generate_world(
         load_or_initialize_system_data(args, systems, state.world)
 
         memory = state.memory
+        step = state.step
         world = state.world
     elif path.exists(world_file):
         logger.info(f"loading world from {world_file}")
@@ -240,7 +243,7 @@ def load_or_generate_world(
         save_system_data(args, systems)
 
     create_agents(world, memory=memory, players=players)
-    return (world, world_state_file)
+    return (world, world_state_file, step)
 
 
 def main():
@@ -320,7 +323,7 @@ def main():
 
     # load or generate the world
     world_prompt = get_world_prompt(args)
-    world, world_state_file = load_or_generate_world(
+    world, world_state_file, world_step = load_or_generate_world(
         args, players, extra_systems, world_prompt=world_prompt
     )
 
@@ -333,7 +336,7 @@ def main():
 
     # hack: send a snapshot to the websocket server
     if args.server:
-        server_system(world, 0)
+        server_system(world, world_step)
 
     # create the DM
     llm = agent_easy_connect()
