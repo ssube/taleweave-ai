@@ -15,13 +15,13 @@
     - [Launch Ollama for text generation](#launch-ollama-for-text-generation)
       - [Using vLLM](#using-vllm)
       - [Using OpenAI](#using-openai)
-    - [Optional: Launch ComfyUI for image generation](#optional-launch-comfyui-for-image-generation)
+    - [Recommended: Launch ComfyUI for image generation](#recommended-launch-comfyui-for-image-generation)
   - [Register](#register)
     - [Register a Discord bot](#register-a-discord-bot)
     - [Invite the Discord bot](#invite-the-discord-bot)
   - [Configure](#configure)
     - [Configure the server environment](#configure-the-server-environment)
-    - [Configure image generation](#configure-image-generation)
+    - [Recommended: Configure image generation](#recommended-configure-image-generation)
     - [Optional: Configure websocket server](#optional-configure-websocket-server)
     - [Optional: Configure world size](#optional-configure-world-size)
   - [Run](#run)
@@ -178,7 +178,7 @@ Please see the OpenAI docs for more details:
 
 - https://platform.openai.com/docs/quickstart
 
-### Optional: Launch ComfyUI for image generation
+### Recommended: Launch ComfyUI for image generation
 
 Please see the ComfyUI docs for more details:
 
@@ -254,7 +254,9 @@ DISCORD_TOKEN=YOUR_TOKEN
 COMFY_API="127.0.0.1:8188"
 ```
 
-### Configure image generation
+### Recommended: Configure image generation
+
+_Note:_ This step is _required_ if you are using the `--render` or `--render-generated` command-line arguments.
 
 Copy the `config.yml` file to a file named `custom_config.yml` and edit the `render` section to use your desired
 parameters for image generation. Make sure the `checkpoints` are valid file names in your checkpoints folder. If you
