@@ -145,6 +145,9 @@ OLLAMA_NUM_CTX=8192
 These environment variables need to be set in the terminal where TaleWeave AI will be running, they are _not_ used by
 the Ollama server.
 
+If you receive errors from Ollama and the logs indicate that it has run out of CUDA memory, decrease the number of
+layers that are moved to the GPU by decreasing the value of the `OLLAMA_NUM_GPU` variable.
+
 Please see the Ollama docs for more details:
 
 - https://github.com/ollama/ollama?tab=readme-ov-file#ollama
@@ -256,7 +259,8 @@ COMFY_API="127.0.0.1:8188"
 
 ### Recommended: Configure image generation
 
-_Note:_ This step is _required_ if you are using the `--render` or `--render-generated` command-line arguments.
+_Note:_ This step is _required_ if you are using the `--render` or `--render-generated` command-line arguments. If you
+launched ComfyUI, do this step too.
 
 Copy the `config.yml` file to a file named `custom_config.yml` and edit the `render` section to use your desired
 parameters for image generation. Make sure the `checkpoints` are valid file names in your checkpoints folder. If you
@@ -337,6 +341,37 @@ world:
 ## Run
 
 ### Choose a world prompt or template
+
+The world prompt has two parts: the main theme and the secondary flavor text used by the dungeon master and world
+builder to make a more unique and interesting world.
+
+Some world templates are provided in the [`taleweave/prompts.yml` file](../../taleweave/prompts.yml), which you can
+use to get started, or create your own prompt and generate a unique world.
+
+Example world templates include:
+
+- `outback-animals`
+  - talking animal truckers in the Australian outback
+- `grimdark-hedgehogs`
+  - grimdark future where humans wage a desperate war for survival against hedgehogs
+- `nyc-apartment`
+  - crowded apartment building in New York City
+- `cyberpunk-utopia`
+  - wealthy cyberpunk utopia with a dark secret
+- `haunted-house`
+  - haunted house in the middle of nowhere
+- `magical-kingdom`
+  - dangerous magical fantasy world
+- `cryptid-town`
+  - a mysterious town in the Pacific Northwest filled with strange cryptids and private investigators searching for them
+- `jurassic-park`
+  - opening scenes from Jurassic Park
+- `star-wars`
+  - opening scenes from Star Wars
+
+These templates include a variety of different settings to show how flexible the world generator can be. You can use
+a brief idea, a more detailed setting, summarize a short story, or even use well-known pop culture references (results
+will be better for classic movies and literature than lesser-known media).
 
 ### Launch the game
 
