@@ -43,6 +43,8 @@ class ServerConfig:
 @dataclass
 class WorldActorConfig:
     conversation_limit: int
+    event_limit: int
+    note_limit: int
 
 
 @dataclass
@@ -88,6 +90,8 @@ DEFAULT_CONFIG = Config(
     world=WorldConfig(
         actor=WorldActorConfig(
             conversation_limit=2,
+            event_limit=5,
+            note_limit=10,
         ),
         size=WorldSizeConfig(
             actor_items=IntRange(min=0, max=2),

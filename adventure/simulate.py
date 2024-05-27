@@ -27,6 +27,7 @@ from adventure.actions.planning import (
     read_notes,
     replace_note,
     schedule_event,
+    summarize_notes,
     take_note,
 )
 from adventure.context import (
@@ -248,12 +249,13 @@ def simulate_world(
     # build a toolbox for the planners
     planner_toolbox = Toolbox(
         [
-            take_note,
+            check_calendar,
+            erase_notes,
             read_notes,
             replace_note,
-            erase_notes,
             schedule_event,
-            check_calendar,
+            summarize_notes,
+            take_note,
         ]
     )
 
