@@ -92,12 +92,12 @@ export function ActionEventItem(props: EventItemProps) {
 
 export function SnapshotEventItem(props: EventItemProps) {
   const { event } = props;
-  const { step, world } = event;
+  const { turn, world } = event;
   const { name, theme } = world;
 
   return <ListItem alignItems="flex-start" ref={props.focusRef}>
     <ListItemAvatar>
-      <Avatar>{step}</Avatar>
+      <Avatar>{turn}</Avatar>
     </ListItemAvatar>
     <ListItemText
       primary={name}
@@ -109,7 +109,7 @@ export function SnapshotEventItem(props: EventItemProps) {
             variant="body2"
             color="text.primary"
           >
-            Step: {step}
+            Turn: {turn}
           </Typography>
           World Theme: {theme}
         </Fragment>

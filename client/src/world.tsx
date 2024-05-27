@@ -1,5 +1,5 @@
 import { Maybe, doesExist } from '@apextoaster/js-utils';
-import { Card, CardContent, Typography } from '@mui/material';
+import { Card, CardContent, Divider, Stack, Typography } from '@mui/material';
 import { SimpleTreeView } from '@mui/x-tree-view/SimpleTreeView';
 import { TreeItem } from '@mui/x-tree-view/TreeItem';
 import React from 'react';
@@ -40,6 +40,7 @@ export function characterStateSelector(s: StoreState) {
 
 export function worldStateSelector(s: StoreState) {
   return {
+    turn: s.turn,
     world: s.world,
     setDetailEntity: s.setDetailEntity,
   };
@@ -121,7 +122,7 @@ export function RoomItem(props: { room: Room } & BaseEntityItemProps) {
 export function WorldPanel(props: BaseEntityItemProps) {
   const { setPlayer } = props;
   const state = useStore(store, worldStateSelector);
-  const { world, setDetailEntity } = state;
+  const { turn, world, setDetailEntity } = state;
 
   // eslint-disable-next-line no-restricted-syntax
   if (!doesExist(world)) {
@@ -136,14 +137,20 @@ export function WorldPanel(props: BaseEntityItemProps) {
 
   return <Card style={{ minHeight: 200, overflow: 'auto' }}>
     <CardContent>
-      <Typography gutterBottom variant="h5" component="div">{world.name}</Typography>
-      <Typography variant="body1">
-        Theme: {world.theme}
-      </Typography>
-      <SimpleTreeView>
-        <TreeItem itemId="world-graph" label="Graph" onClick={() => setDetailEntity(world)} />
-        {world.rooms.map((room) => <RoomItem key={room.name} room={room} setPlayer={setPlayer} />)}
-      </SimpleTreeView>
+      <Stack direction="column" spacing={2}>
+        <Typography gutterBottom variant="h5" component="div">{world.name}</Typography>
+        <Typography variant="body1">
+          Theme: {world.theme}
+        </Typography>
+        <Typography variant="body2">
+          Turn: {turn}
+        </Typography>
+        <Divider />
+        <SimpleTreeView>
+          <TreeItem itemId="world-graph" label="Graph" onClick={() => setDetailEntity(world)} />
+          {world.rooms.map((room) => <RoomItem key={room.name} room={room} setPlayer={setPlayer} />)}
+        </SimpleTreeView>
+      </Stack>
     </CardContent>
   </Card>;
 }

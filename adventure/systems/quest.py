@@ -187,7 +187,7 @@ def generate_quests(agent: Agent, theme: str, entity: WorldEntity) -> None:
             # TODO: generate one new quest
 
 
-def simulate_quests(world: World, step: int, data: QuestData | None = None) -> None:
+def simulate_quests(world: World, turn: int, data: QuestData | None = None) -> None:
     """
     1. Check for any completed quests.
     2. Update any active quests.

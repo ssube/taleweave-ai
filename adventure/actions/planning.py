@@ -1,4 +1,4 @@
-from adventure.context import action_context, get_agent_for_character, get_current_step
+from adventure.context import action_context, get_agent_for_character, get_current_turn
 from adventure.errors import ActionError
 from adventure.models.config import DEFAULT_CONFIG
 from adventure.models.planning import CalendarEvent
@@ -148,7 +148,7 @@ def check_calendar(count: int):
     """
 
     count = min(count, character_config.event_limit)
-    current_turn = get_current_step()
+    current_turn = get_current_turn()
 
     with action_context() as (_, action_character):
         if len(action_character.planner.calendar.events) == 0:

@@ -34,11 +34,11 @@ from adventure.context import (
     broadcast,
     get_character_agent_for_name,
     get_character_for_agent,
-    get_current_step,
+    get_current_turn,
     get_current_world,
     set_current_character,
     set_current_room,
-    set_current_step,
+    set_current_turn,
     set_current_world,
     set_game_systems,
 )
@@ -55,7 +55,7 @@ from adventure.utils.world import describe_entity, format_attributes
 logger = getLogger(__name__)
 
 
-step_config = DEFAULT_CONFIG.world.step
+turn_config = DEFAULT_CONFIG.world.turn
 
 
 def world_result_parser(value, agent, **kwargs):
@@ -154,7 +154,7 @@ def prompt_character_action(
         toolbox=action_toolbox,
     )
 
-    logger.debug(f"{character.name} step result: {result}")
+    logger.debug(f"{character.name} action result: {result}")
     if agent.memory:
         # TODO: make sure this is not duplicating memories and wasting space
         agent.memory.append(result)
@@ -173,9 +173,9 @@ def get_notes_events(character: Character, current_turn: int):
         notes_prompt = "You have no recent notes.\n"
 
     if len(upcoming_events) > 0:
-        current_step = get_current_step()
+        current_turn = get_current_turn()
         events = [
-            f"{event.name} in {event.turn - current_step} turns"
+            f"{event.name} in {event.turn - current_turn} turns"
             for event in upcoming_events
         ]
         events = "\n".join(events)
@@ -194,7 +194,7 @@ def prompt_character_think(
     current_turn: int,
     max_steps: int | None = None,
 ) -> str:
-    max_steps = max_steps or step_config.planning_steps
+    max_steps = max_steps or turn_config.planning_steps
 
     notes_prompt, events_prompt = get_notes_events(character, current_turn)
 
@@ -242,7 +242,7 @@ def prompt_character_think(
 
 def simulate_world(
     world: World,
-    steps: float | int = inf,
+    turns: float | int = inf,
     actions: Sequence[Callable[..., str]] = [],
     systems: Sequence[GameSystem] = [],
 ):
@@ -279,8 +279,8 @@ def simulate_world(
 
     # simulate each character
     for i in count():
-        current_step = get_current_step()
-        logger.info(f"simulating step {i} of {steps} (world step {current_step})")
+        current_turn = get_current_turn()
+        logger.info(f"simulating turn {i} of {turns} (world turn {current_turn})")
 
         for character_name in world.order:
             character, agent = get_character_agent_for_name(character_name)
@@ -299,13 +299,13 @@ def simulate_world(
 
             # decrement effects on the character and remove any that have expired
             expire_effects(character)
-            expire_events(character, current_step)
+            expire_events(character, current_turn)
 
             # give the character a chance to think and check their planner
             if agent.memory and len(agent.memory) > 0:
                 try:
                     thoughts = prompt_character_think(
-                        room, character, agent, planner_toolbox, current_step
+                        room, character, agent, planner_toolbox, current_turn
                     )
                     logger.debug(f"{character.name} thinks: {thoughts}")
                 except Exception:
@@ -313,17 +313,22 @@ def simulate_world(
                         f"error during planning for character {character.name}"
                     )
 
-            result = prompt_character_action(
-                room, character, agent, action_names, action_tools, current_step
-            )
-            result_event = ResultEvent(result=result, room=room, character=character)
-            broadcast(result_event)
+            try:
+                result = prompt_character_action(
+                    room, character, agent, action_names, action_tools, current_turn
+                )
+                result_event = ResultEvent(
+                    result=result, room=room, character=character
+                )
+                broadcast(result_event)
+            except Exception:
+                logger.exception(f"error during action for character {character.name}")
 
         for system in systems:
             if system.simulate:
-                system.simulate(world, current_step)
+                system.simulate(world, current_turn)
 
-        set_current_step(current_step + 1)
-        if i >= steps:
-            logger.info("reached step limit at world step %s", current_step + 1)
+        set_current_turn(current_turn + 1)
+        if i >= turns:
+            logger.info("reached turn limit at world turn %s", current_turn + 1)
             break

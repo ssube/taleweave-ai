@@ -80,7 +80,7 @@ export function App(props: AppProps) {
   });
 
   useEffect(() => {
-    const { setClientId, setActiveTurn, setPlayers, appendEvent, setWorld, world, clientId, setPlayerCharacter: setCharacter } = store.getState();
+    const { setClientId, setActiveTurn, setPlayers, appendEvent, setTurn, setWorld, world, clientId, setPlayerCharacter: setCharacter } = store.getState();
     if (doesExist(lastMessage)) {
       const event = JSON.parse(lastMessage.data);
 
@@ -107,6 +107,7 @@ export function App(props: AppProps) {
           return;
         case 'snapshot':
           setWorld(event.world);
+          setTurn(event.turn);
           break;
         default:
           // this is not concerning, other events are kept in history and displayed

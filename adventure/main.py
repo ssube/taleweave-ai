@@ -32,7 +32,7 @@ load_dotenv(environ.get("ADVENTURE_ENV", ".env"), override=True)
 if True:
     from adventure.context import (
         get_system_data,
-        set_current_step,
+        set_current_turn,
         set_dungeon_master,
         set_system_data,
         subscribe,
@@ -142,10 +142,10 @@ def parse_args():
         help="The file to save the world state to. Defaults to $world.state.json, if not set",
     )
     parser.add_argument(
-        "--steps",
+        "--turns",
         type=int_or_inf,
         default=10,
-        help="The number of simulation steps to run",
+        help="The number of simulation turns to run",
     )
     parser.add_argument(
         "--systems",
@@ -223,7 +223,7 @@ def load_or_generate_world(
     add_rooms = args.add_rooms
 
     memory = {}
-    step = 0
+    turn = 0
 
     # prepare an agent for the world builder
     llm = agent_easy_connect()
@@ -241,11 +241,11 @@ def load_or_generate_world(
         with open(world_state_file, "r") as f:
             state = WorldState(**load_yaml(f))
 
-        set_current_step(state.step)
+        set_current_turn(state.turn)
         load_or_initialize_system_data(args, systems, state.world)
 
         memory = state.memory
-        step = state.step
+        turn = state.turn
         world = state.world
     elif path.exists(world_file):
         logger.info(f"loading world from {world_file}")
@@ -276,7 +276,7 @@ def load_or_generate_world(
         link_rooms(world_builder, world, systems, new_rooms)
 
     create_agents(world, memory=memory, players=players)
-    return (world, world_state_file, step)
+    return (world, world_state_file, turn)
 
 
 def main():
@@ -356,20 +356,20 @@ def main():
 
     # load or generate the world
     world_prompt = get_world_prompt(args)
-    world, world_state_file, world_step = load_or_generate_world(
+    world, world_state_file, world_turn = load_or_generate_world(
         args, players, extra_systems, world_prompt=world_prompt
     )
 
     # make sure the snapshot system runs last
-    def snapshot_system(world: World, step: int, data: None = None) -> None:
+    def snapshot_system(world: World, turn: int, data: None = None) -> None:
         logger.info("taking snapshot of world state")
-        save_world_state(world, step, world_state_file)
+        save_world_state(world, turn, world_state_file)
 
     extra_systems.append(GameSystem(name="snapshot", simulate=snapshot_system))
 
     # hack: send a snapshot to the websocket server
     if args.server:
-        server_system(world, world_step)
+        server_system(world, world_turn)
 
     # create the DM
     llm = agent_easy_connect()
@@ -390,7 +390,7 @@ def main():
     logger.debug("simulating world: %s", world)
     simulate_world(
         world,
-        steps=args.steps,
+        turns=args.turns,
         actions=extra_actions,
         systems=extra_systems,
     )

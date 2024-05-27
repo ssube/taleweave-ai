@@ -39,9 +39,9 @@ class SystemInitialize(Protocol):
 
 
 class SystemSimulate(Protocol):
-    def __call__(self, world: World, step: int, data: Any | None = None) -> None:
+    def __call__(self, world: World, turn: int, data: Any | None = None) -> None:
         """
-        Simulate the world for the given step.
+        Simulate the world for the given turn. If this system has stored data, it will be passed in.
         """
         ...
 

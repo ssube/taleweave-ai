@@ -25,7 +25,7 @@ from adventure.utils.string import normalize_name
 logger = getLogger(__name__)
 
 # world context
-current_step = 0
+current_turn = 0
 current_world: World | None = None
 current_room: Room | None = None
 current_character: Character | None = None
@@ -140,8 +140,8 @@ def get_current_character() -> Character | None:
     return current_character
 
 
-def get_current_step() -> int:
-    return current_step
+def get_current_turn() -> int:
+    return current_turn
 
 
 def get_dungeon_master() -> Agent:
@@ -180,9 +180,9 @@ def set_current_character(character: Character | None):
     current_character = character
 
 
-def set_current_step(step: int):
-    global current_step
-    current_step = step
+def set_current_turn(turn: int):
+    global current_turn
+    current_turn = turn
 
 
 def set_character_agent(name, character, agent):

@@ -58,7 +58,7 @@ class WorldSizeConfig:
 
 
 @dataclass
-class WorldStepConfig:
+class WorldTurnConfig:
     action_retries: int
     planning_steps: int
     planning_retries: int
@@ -68,7 +68,7 @@ class WorldStepConfig:
 class WorldConfig:
     character: WorldCharacterConfig
     size: WorldSizeConfig
-    step: WorldStepConfig
+    turn: WorldTurnConfig
 
 
 @dataclass
@@ -109,7 +109,7 @@ DEFAULT_CONFIG = Config(
             room_characters=IntRange(min=1, max=3),
             room_items=IntRange(min=1, max=3),
         ),
-        step=WorldStepConfig(
+        turn=WorldTurnConfig(
             action_retries=5,
             planning_steps=3,
             planning_retries=3,

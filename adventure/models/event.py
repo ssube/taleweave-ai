@@ -125,7 +125,7 @@ class SnapshotEvent(BaseModel):
 
     world: Dict[str, Any]
     memory: Dict[str, List[Any]]
-    step: int
+    turn: int
     id: str = Field(default_factory=uuid)
     type: Literal["snapshot"] = "snapshot"
 

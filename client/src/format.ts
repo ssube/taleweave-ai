@@ -22,7 +22,7 @@ export function formatResult(data: any) {
 }
 
 export function formatWorld(data: any) {
-  return `${data.world.theme} - ${data.step}`;
+  return `${data.world.theme} - ${data.turn}`;
 }
 
 export const formatters: Record<string, any> = {

@@ -74,7 +74,7 @@ class World(BaseModel):
 @dataclass
 class WorldState(BaseModel):
     memory: Dict[str, List[str | Dict[str, str]]]
-    step: int
+    turn: int
     world: World
     id: str = Field(default_factory=uuid)
     type: Literal["world_state"] = "world_state"

@@ -130,7 +130,7 @@ def update_attributes(
 
 def update_logic(
     world: World,
-    step: int,
+    turn: int,
     data: Any | None = None,
     *,
     rules: LogicTable,
@@ -190,7 +190,7 @@ def load_logic(filename: str):
     logger.info("initialized logic system")
     system_format = wraps(format_logic)(partial(format_logic, rules=logic_rules))
     system_initialize = wraps(update_logic)(
-        partial(update_logic, step=0, rules=logic_rules, triggers=logic_triggers)
+        partial(update_logic, turn=0, rules=logic_rules, triggers=logic_triggers)
     )
     system_simulate = wraps(update_logic)(
         partial(update_logic, rules=logic_rules, triggers=logic_triggers)

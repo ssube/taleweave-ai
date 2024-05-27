@@ -35,10 +35,12 @@ export interface ClientState {
 
 export interface WorldState {
   players: Record<string, string>;
+  turn: Maybe<number>;
   world: Maybe<World>;
 
   // setters
   setPlayers: (players: Record<string, string>) => void;
+  setTurn: (turn: Maybe<number>) => void;
   setWorld: (world: Maybe<World>) => void;
 }
 
@@ -105,8 +107,10 @@ export function createClientStore(): StateCreator<ClientState> {
 export function createWorldStore(): StateCreator<WorldState> {
   return (set) => ({
     players: {},
+    turn: undefined,
     world: undefined,
     setPlayers: (players) => set({ players }),
+    setTurn: (turn) => set({ turn }),
     setWorld: (world) => set({ world }),
   });
 }

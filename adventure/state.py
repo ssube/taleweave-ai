@@ -34,10 +34,10 @@ def create_agents(
             set_character_agent(character.name, character, agent)
 
 
-def graph_world(world: World, step: int):
+def graph_world(world: World, turn: int):
     import graphviz
 
-    graph_name = f"{path.basename(world.name)}-{step}"
+    graph_name = f"{path.basename(world.name)}-{turn}"
     graph = graphviz.Digraph(graph_name, format="png")
     for room in world.rooms:
         characters = [character.name for character in room.characters]
@@ -50,8 +50,8 @@ def graph_world(world: World, step: int):
     graph.render(directory=graph_path)
 
 
-def snapshot_world(world: World, step: int):
-    # save the world itself, along with the step number of the memory of each agent
+def snapshot_world(world: World, turn: int):
+    # save the world itself, along with the turn number and the memory of each agent
     json_world = RootModel[World](world).model_dump()
 
     json_memory = {}
@@ -62,7 +62,7 @@ def snapshot_world(world: World, step: int):
     return {
         "world": json_world,
         "memory": json_memory,
-        "step": step,
+        "turn": turn,
     }
 
 
@@ -94,9 +94,9 @@ def save_world(world, filename):
         f.write(json_world)
 
 
-def save_world_state(world, step, filename):
-    graph_world(world, step)
-    json_state = snapshot_world(world, step)
+def save_world_state(world, turn, filename):
+    graph_world(world, turn)
+    json_state = snapshot_world(world, turn)
     with open(filename, "w") as f:
         dump(json_state, f, default=world_json, indent=2)
 

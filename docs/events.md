@@ -154,7 +154,7 @@ The snapshot event is fired at the end of each turn and contains a complete snap
 type: "snapshot"
 world: Dict
 memory: Dict
-step: int
+turn: int
 ```
 
 This is primarily used to save the world state, but can also be used to sync clients and populate the world menu.

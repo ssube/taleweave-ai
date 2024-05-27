@@ -50,6 +50,7 @@ export interface World {
   order: Array<string>;
   rooms: Array<Room>;
   theme: string;
+  turn: number;
 }
 
 // TODO: copy event types from server
