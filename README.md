@@ -77,8 +77,8 @@ game environment.
 ### Step 1: Clone the Repository
 
 ```bash
-git clone https://github.com/ssube/TaleWeaveAI.git
-cd TaleWeaveAI
+git clone https://github.com/ssube/taleweave-ai.git
+cd taleweave-ai
 ```
 
 ### Step 2: Set Up Your Environment

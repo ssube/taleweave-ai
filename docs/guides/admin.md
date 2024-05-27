@@ -91,9 +91,9 @@ balancers in front of the ComfyUI server must be compatible with websockets.
 Clone the TaleWeave AI repository:
 
 ```bash
-git clone https://github.com/ssube/TaleWeaveAI.git
+git clone https://github.com/ssube/taleweave-ai.git
 
-cd TaleWeaveAI
+cd taleweave-ai
 ```
 
 This will clone the `main` branch, which is currently the development branch and may not be totally stable.
