@@ -18,10 +18,10 @@
     - [Optional: Launch ComfyUI for image generation](#optional-launch-comfyui-for-image-generation)
   - [Register](#register)
     - [Register a Discord bot](#register-a-discord-bot)
+    - [Invite the Discord bot](#invite-the-discord-bot)
   - [Configure](#configure)
-    - [Configure the Discord bot](#configure-the-discord-bot)
     - [Configure the server environment](#configure-the-server-environment)
-    - [Optional: Configure image generation](#optional-configure-image-generation)
+    - [Configure image generation](#configure-image-generation)
     - [Optional: Configure websocket server](#optional-configure-websocket-server)
     - [Optional: Configure world size](#optional-configure-world-size)
   - [Run](#run)
@@ -168,10 +168,19 @@ Please see the vLLM docs for more details:
 
 #### Using OpenAI
 
+If you are using the OpenAI API, you will need to set the following variables in your server environment:
+
+```shell
+PACKIT_DRIVER=openai
+```
+
+Please see the OpenAI docs for more details:
+
 - https://platform.openai.com/docs/quickstart
-- `PACKIT_DRIVER=openai`
 
 ### Optional: Launch ComfyUI for image generation
+
+Please see the ComfyUI docs for more details:
 
 - https://github.com/comfyanonymous/ComfyUI?tab=readme-ov-file#installing
 
@@ -179,17 +188,149 @@ Please see the vLLM docs for more details:
 
 ### Register a Discord bot
 
-## Configure
+If you want to play the game through the Discord bot, you need to register a bot and invite it to the server(s) where
+you want to play.
 
-### Configure the Discord bot
+These bots can connect to multiple Discord servers and channels, but the bot token should be kept secret.
+
+Visit the [Discord Developer Portal](https://discord.com/developers/applications) and create a New Application:
+
+TODO: screenshot
+
+On the `Bot` tab, configure the username, icon, and make sure the `Public Bot` option is checked:
+
+TODO: screenshot
+
+Copy the bot's token and save it to your password manager. This is effectively your bot's password and will be used
+when you configure the server.
+
+- https://discordpy.readthedocs.io/en/stable/discord.html
+- https://discordjs.guide/preparations/adding-your-bot-to-servers.html#bot-invite-links
+
+### Invite the Discord bot
+
+Once you have the Discord bot set up, you will need to invite it to any servers where you want to play the game.
+
+On the `OAuth2` tab, use the `URL Generator` to create an invite link.
+
+In the `Scopes` menu, select `bot`.
+
+TODO: screenshot
+
+In the `Bot Permissions` menu, select `Send Messages`, `Send Messages in Threads`, and if you are rendering images,
+`Attach Files`.
+
+TODO: screenshot
+
+Copy the `Generated URL` and paste it into your browser. The authorization screen will show a list of servers that
+you can add the bot to in the `Add To Server` menu:
+
+TODO: screenshot
+
+Select the server where you want to play TaleWeave and click `Continue`. Make sure the permissions shown match the
+ones that you selected before, then click `Authorize`.
+
+TODO: screenshot
+
+You should see a success page, with a redirect to the server that you chose before. You can follow this link or close
+the browser and connect to Discord through the desktop or mobile apps.
+
+## Configure
 
 ### Configure the server environment
 
-### Optional: Configure image generation
+Create a file called `.env` and add the following variables:
+
+```shell
+# ollama
+PACKIT_DRIVER=ollama
+PACKIT_MODEL=dolphin-llama3:70b
+OLLAMA_NUM_GPU=100
+OLLAMA_NUM_CTX=8192
+
+# servers
+OLLAMA_API=http://127.0.0.1:11434
+DISCORD_TOKEN=YOUR_TOKEN
+COMFY_API="127.0.0.1:8188"
+```
+
+### Configure image generation
+
+Copy the `config.yml` file to a file named `custom_config.yml` and edit the `render` section to use your desired
+parameters for image generation. Make sure the `checkpoints` are valid file names in your checkpoints folder. If you
+provide more than one checkpoint, one will be randomly selected for each batch of images. Adjust the `sizes` as needed
+to match the checkpoint and control your memory usage.
+
+```yaml
+render:
+  cfg:
+    min: 5
+    max: 8
+  checkpoints: [
+    "diffusion-sdxl-dynavision-0-5-5-7.safetensors",
+  ]
+  path: /tmp/taleweave-images
+  sizes:
+    landscape:
+      width: 1280
+      height: 960
+    portrait:
+      width: 960
+      height: 1280
+    square:
+      width: 1024
+      height: 1024
+  steps:
+    min: 30
+    max: 50
+```
 
 ### Optional: Configure websocket server
 
+_Note:_ You only need to do this step if you want to change the host or port where the websocket server will listen.
+
+In your `custom_config.yml`, edit the `server` section to change the host and port where the websocket server will
+listen for connections:
+
+```yaml
+server:
+  websocket:
+    host: 0.0.0.0
+    port: 8001
+```
+
+Using ports < 1024 on Linux requires additional permissions. Please consider putting a load balancer like nginx in
+front of the websocket server.
+
 ### Optional: Configure world size
+
+_Note:_ You only need to do this step if you want to change the size of the world during generation.
+
+In your `custom_config.yml`, edit the `world` section to change the size of the rooms and character inventory while
+generating the world.
+
+```yaml
+world:
+  size:
+    character_items:
+      min: 0
+      max: 3
+    item_effects:
+      min: 0
+      max: 1
+    portals:
+      min: 1
+      max: 3
+    rooms:
+      min: 3
+      max: 6
+    room_characters:
+      min: 1
+      max: 3
+    room_items:
+      min: 0
+      max: 3
+```
 
 ## Run
 
