@@ -11,6 +11,8 @@ from adventure.context import get_all_character_agents, set_character_agent
 from adventure.models.entity import World
 from adventure.player import LocalPlayer
 
+MEMORY_LIMIT = 25  # 10
+
 
 def create_agents(
     world: World,
@@ -83,7 +85,7 @@ def restore_memory(
             elif memory_type == "ai":
                 memories.append(AIMessage(content=memory_content))
 
-    return deque(memories, maxlen=10)
+    return deque(memories, maxlen=MEMORY_LIMIT)
 
 
 def save_world(world, filename):

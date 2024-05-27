@@ -1,10 +1,12 @@
 import atexit
+from functools import partial
 from logging.config import dictConfig
 from os import environ, path
 from typing import List
 
 from dotenv import load_dotenv
 from packit.agent import Agent, agent_easy_connect
+from packit.memory import make_limited_memory
 from packit.utils import logger_with_colors
 
 from adventure.utils.file import load_yaml
@@ -43,8 +45,12 @@ if True:
     from adventure.models.files import PromptFile, WorldPrompt
     from adventure.plugins import load_plugin
     from adventure.simulate import simulate_world
-    from adventure.state import create_agents, save_world, save_world_state
-
+    from adventure.state import (
+        MEMORY_LIMIT,
+        create_agents,
+        save_world,
+        save_world_state,
+    )
 
 # start the debugger, if needed
 if environ.get("DEBUG", "false").lower() == "true":
@@ -53,6 +59,9 @@ if environ.get("DEBUG", "false").lower() == "true":
     debugpy.listen(5679)
     logger.info("waiting for debugger to attach...")
     debugpy.wait_for_client()
+
+
+memory_factory = partial(make_limited_memory, limit=MEMORY_LIMIT)
 
 
 def int_or_inf(value: str) -> float | int:
@@ -224,6 +233,7 @@ def load_or_generate_world(
         f"{world_prompt.flavor}. The theme is: {world_prompt.theme}.",
         {},
         llm,
+        memory_factory=memory_factory,
     )
 
     if path.exists(world_state_file):
@@ -372,6 +382,7 @@ def main():
         ),
         {},
         llm,
+        memory_factory=memory_factory,
     )
     set_dungeon_master(world_builder)
 
