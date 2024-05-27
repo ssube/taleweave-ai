@@ -1,6 +1,6 @@
 bot:
   discord:
-    channels: [bots]
+    channels: [taleweave]
 render:
   cfg:
     min: 5

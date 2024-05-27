@@ -21,6 +21,7 @@
     - [Invite the Discord bot to your server](#invite-the-discord-bot-to-your-server)
   - [Configure](#configure)
     - [Configure the server environment](#configure-the-server-environment)
+    - [Configure the Discord bot](#configure-the-discord-bot)
     - [Recommended: Configure image generation](#recommended-configure-image-generation)
     - [Optional: Configure websocket server](#optional-configure-websocket-server)
     - [Optional: Configure world size](#optional-configure-world-size)
@@ -184,6 +185,11 @@ is compatible with the OpenAI API should work, and vLLM seems to work in general
 on the HuggingFace Hub that are not available for Ollama, and performance differs on different hardware. Use the server
 that works for you.
 
+```shell
+python -m vllm.entrypoints.openai.api_server \
+    --model cognitivecomputations/dolphin-2.9-llama3-70b
+```
+
 If you are using vLLM, you will need to set the following variables in your server environment:
 
 ```shell
@@ -199,6 +205,12 @@ Please see the vLLM docs for more details:
 ### Recommended: Launch ComfyUI for image generation
 
 You can use ComfyUI to generate images of the characters, places, and events happening in the game.
+
+In your ComfyUI folder, launch the server:
+
+```shell
+python main.py
+```
 
 Please see the ComfyUI docs for more details:
 
@@ -280,15 +292,32 @@ DISCORD_TOKEN=YOUR_TOKEN
 COMFY_API="127.0.0.1:8188"
 ```
 
+### Configure the Discord bot
+
+Copy the `config.yml` file to a file named `custom_config.yml` and edit the `bot` section to use your desired
+parameters for the Discord bot. Make sure the list of `channels` includes one or more valid channels in the servers
+to which you invited the bot. By default, this is a channel named `taleweave`.
+
+```yaml
+bot:
+  discord:
+    channels: [taleweave]
+    command_prefix: "!"
+    name_command: taleweave
+    name_title: TaleWeave AI
+```
+
+The `name_*` fields are used by the bot to refer to itself in messages.
+
 ### Recommended: Configure image generation
 
 _Note:_ This step is _required_ if you are using the `--render` or `--render-generated` command-line arguments. If you
 launched ComfyUI, do this step too.
 
-Copy the `config.yml` file to a file named `custom_config.yml` and edit the `render` section to use your desired
-parameters for image generation. Make sure the `checkpoints` are valid file names in your checkpoints folder. If you
-provide more than one checkpoint, one will be randomly selected for each batch of images. Adjust the `sizes` as needed
-to match the checkpoint and control your memory usage.
+In your `custom_config.yml`, edit the `render` section to use your desired parameters for image generation. Make sure
+the `checkpoints` are valid file names in your checkpoints folder. If you provide more than one checkpoint, one will be
+randomly selected for each batch of images. Adjust the `sizes` as needed to match the checkpoint and control your memory
+usage.
 
 ```yaml
 render:
