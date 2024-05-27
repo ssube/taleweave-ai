@@ -16,6 +16,7 @@ class TimeOfDay:
     end: int
 
 
+GAME_START_HOUR = 8
 TURNS_PER_DAY = 24
 
 TIMES_OF_DAY: List[TimeOfDay] = [
@@ -28,11 +29,17 @@ TIMES_OF_DAY: List[TimeOfDay] = [
 
 
 def get_time_of_day(turn: int) -> TimeOfDay:
-    hour = turn % TURNS_PER_DAY
+    hour = (turn + GAME_START_HOUR) % TURNS_PER_DAY
     for time in TIMES_OF_DAY:
         if time.start <= hour <= time.end:
             return time
     return TIMES_OF_DAY[0]
+
+
+def initialize_weather(world: World):
+    time_of_day = get_time_of_day(0)
+    for room in world.rooms:
+        room.attributes["time"] = time_of_day.name
 
 
 def simulate_weather(world: World, turn: int, data: None = None):
@@ -41,9 +48,9 @@ def simulate_weather(world: World, turn: int, data: None = None):
         room.attributes["time"] = time_of_day.name
 
 
-def init_systems():
-    return [GameSystem("weather", simulate=simulate_weather)]
-
-
-def init_logic():
-    return [load_logic(filename) for filename in LOGIC_FILES]
+def init():
+    logic_systems = [load_logic(filename) for filename in LOGIC_FILES]
+    return [
+        *logic_systems,
+        GameSystem("weather", initialize=initialize_weather, simulate=simulate_weather),
+    ]
