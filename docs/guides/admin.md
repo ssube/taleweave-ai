@@ -13,12 +13,12 @@
     - [Set up a virtual environment](#set-up-a-virtual-environment)
     - [Install the pip dependencies](#install-the-pip-dependencies)
     - [Launch Ollama for text generation](#launch-ollama-for-text-generation)
-      - [Using vLLM](#using-vllm)
       - [Using OpenAI](#using-openai)
+      - [Using vLLM](#using-vllm)
     - [Recommended: Launch ComfyUI for image generation](#recommended-launch-comfyui-for-image-generation)
   - [Register](#register)
     - [Register a Discord bot](#register-a-discord-bot)
-    - [Invite the Discord bot](#invite-the-discord-bot)
+    - [Invite the Discord bot to your server](#invite-the-discord-bot-to-your-server)
   - [Configure](#configure)
     - [Configure the server environment](#configure-the-server-environment)
     - [Recommended: Configure image generation](#recommended-configure-image-generation)
@@ -61,6 +61,8 @@ need to run image generation on the CPU.
 The required amount of VRAM depends on which models you choose and their memory requirements, which is related to
 parameter size and quantization.
 
+Recommended VRAM:
+
 | LLM / SD | SD v1.5               | SDXL                   |
 | -------- | --------------------- | ---------------------- |
 | 7-8b     | 1x 16GB               | 1x 24GB or 8GB + 16GB  |
@@ -71,7 +73,7 @@ parameter size and quantization.
 Notes:
 
 1. 70b models need to be quantized to 4-bit or so to run on a 48GB GPU
-2. While it may be possible to run both text and image generation on the same GPU, two GPUs is recommended
+2. While it may be possible to run both text and image generation on the same GPU, two GPUs are recommended
 
 ### Networking and ports
 
@@ -128,8 +130,14 @@ to work with locally-hosted LLM servers, like [Ollama](https://github.com/ollama
 Ollama releases binaries for Linux, Mac, and Windows, along with a Docker container that works on RunPod and other GPU
 container services.
 
+Launch an Ollama server and pull the model that you plan on using:
+
 ```shell
-TODO
+# Start the server
+ollama serve
+
+# From a different terminal or tab, pull the model
+ollama pull dolphin-llama3:70b
 ```
 
 If you are using Ollama, you will need to set the following variables in your server environment:
@@ -156,6 +164,19 @@ Please see the Ollama docs for more details:
 
 - https://github.com/ollama/ollama?tab=readme-ov-file#ollama
 
+#### Using OpenAI
+
+If you are using the OpenAI API, you will need to set the following variables in your server environment:
+
+```shell
+PACKIT_DRIVER=openai
+OPENAI_API_KEY=YOUR_API_KEY
+```
+
+Please see the OpenAI docs for more details:
+
+- https://platform.openai.com/docs/quickstart
+
 #### Using vLLM
 
 You can use vLLM for text generation instead of Ollama. This has not been thoroughly tested, but anything server that
@@ -167,23 +188,13 @@ If you are using vLLM, you will need to set the following variables in your serv
 
 ```shell
 PACKIT_DRIVER=openai
+OPENAI_API_BASE=http://127.0.0.1:8000/v1
+OPENAI_API_KEY=empty
 ```
 
 Please see the vLLM docs for more details:
 
 - https://docs.vllm.ai/en/latest/getting_started/installation.html
-
-#### Using OpenAI
-
-If you are using the OpenAI API, you will need to set the following variables in your server environment:
-
-```shell
-PACKIT_DRIVER=openai
-```
-
-Please see the OpenAI docs for more details:
-
-- https://platform.openai.com/docs/quickstart
 
 ### Recommended: Launch ComfyUI for image generation
 
@@ -220,7 +231,7 @@ when you configure the server.
 - https://discordpy.readthedocs.io/en/stable/discord.html
 - https://discordjs.guide/preparations/adding-your-bot-to-servers.html#bot-invite-links
 
-### Invite the Discord bot
+### Invite the Discord bot to your server
 
 Once you have the Discord bot set up, you will need to invite it to any servers where you want to play the game.
 
@@ -399,7 +410,7 @@ python3 -m taleweave.main \
   --server \
   --rooms 3 \
   --turns 30 \
-  --optional-actions=true \
+  --optional-actions \
   --actions taleweave.systems.sim:init_actions \
   --systems taleweave.systems.sim:init_logic
 ```
@@ -414,9 +425,13 @@ steps by running the server again with the same arguments.
 > Note: `module.name:function_name` and `path/filename.yml:key` are patterns you will see repeated throughout TaleWeave AI.
 > They indicate a Python module and function within it, or a data file and key within it, respectively.
 
-The `sim_systems` provide many mechanics from popular life simulations, including hunger, thirst, exhaustion, and mood.
-Custom actions and systems can be used to provide any other mechanics that are desired for your setting. The logic
-system uses a combination of Python and YAML to modify the prompts connected to rooms, characters, and items in the
-world, influencing the behavior of the language models.
+The optional actions are actions that allow characters to explore and expand the world during the game,
+discovering new rooms and generating new items. These can be slower than the base game actions, so you may want to
+disable them if you are running the LLM on CPU.
+
+The sim systems provide many mechanics from popular life simulations, including hunger, thirst, exhaustion, and mood
+(only SFW mechanics are included, I'm afraid). Custom actions and systems can be used to provide any other mechanics
+that are desired for your setting. The logic system uses a combination of Python and YAML to modify the prompts
+connected to rooms, characters, and items in the world, influencing the behavior of the language models.
 
 ### Connect and play
