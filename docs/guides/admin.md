@@ -79,6 +79,9 @@ If you want to make the websocket server accessible over the internet, you will 
 
 If you are using a load balancer, make sure it is compatible with websockets.
 
+If you are running Ollama and ComfyUI on separate pods or servers, they will each need one open port. Any load
+balancers in front of the ComfyUI server must be compatible with websockets.
+
 ## Setup
 
 ### Clone the git repository
@@ -87,6 +90,7 @@ Clone the TaleWeave AI repository:
 
 ```bash
 git clone https://github.com/ssube/TaleWeaveAI.git
+
 cd TaleWeaveAI
 ```
 
@@ -113,7 +117,7 @@ Install the pip dependencies into your virtual environment:
 
 ```bash
 # Install dependencies
-pip install -r requirements.txt
+pip install -r requirements/base.txt
 ```
 
 ### Launch Ollama for text generation
@@ -183,6 +187,8 @@ Please see the OpenAI docs for more details:
 
 ### Recommended: Launch ComfyUI for image generation
 
+You can use ComfyUI to generate images of the characters, places, and events happening in the game.
+
 Please see the ComfyUI docs for more details:
 
 - https://github.com/comfyanonymous/ComfyUI?tab=readme-ov-file#installing
@@ -198,11 +204,15 @@ These bots can connect to multiple Discord servers and channels, but the bot tok
 
 Visit the [Discord Developer Portal](https://discord.com/developers/applications) and create a New Application:
 
-TODO: screenshot
+![Discord developer portal showing 2 registered apps](https://docs-cdn.taleweave.ai/taleweave-admin-discord-1.png)
+
+![Discord developer portal showing new app name prompt](https://docs-cdn.taleweave.ai/taleweave-admin-discord-2.png)
 
 On the `Bot` tab, configure the username, icon, and make sure the `Public Bot` option is checked:
 
-TODO: screenshot
+![Discord application details showing Build-A-Bot section](https://docs-cdn.taleweave.ai/taleweave-admin-discord-3.png)
+
+![Discord application details showing Public Bot option](https://docs-cdn.taleweave.ai/taleweave-admin-discord-4.png)
 
 Copy the bot's token and save it to your password manager. This is effectively your bot's password and will be used
 when you configure the server.
@@ -218,25 +228,27 @@ On the `OAuth2` tab, use the `URL Generator` to create an invite link.
 
 In the `Scopes` menu, select `bot`.
 
-TODO: screenshot
+![Discord OAuth2 URL Generator showing bot scope](https://docs-cdn.taleweave.ai/taleweave-admin-discord-5.png)
 
 In the `Bot Permissions` menu, select `Send Messages`, `Send Messages in Threads`, and if you are rendering images,
 `Attach Files`.
 
-TODO: screenshot
+![Discord OAuth2 URL Generator showing necessary permissions](https://docs-cdn.taleweave.ai/taleweave-admin-discord-6.png)
 
 Copy the `Generated URL` and paste it into your browser. The authorization screen will show a list of servers that
 you can add the bot to in the `Add To Server` menu:
 
-TODO: screenshot
+![Discord bot invite screen showing server dropdown menu](https://docs-cdn.taleweave.ai/taleweave-admin-discord-7.png)
 
 Select the server where you want to play TaleWeave and click `Continue`. Make sure the permissions shown match the
 ones that you selected before, then click `Authorize`.
 
-TODO: screenshot
+![Discord bot invite screen showing permission confirmation](https://docs-cdn.taleweave.ai/taleweave-admin-discord-8.png)
 
 You should see a success page, with a redirect to the server that you chose before. You can follow this link or close
 the browser and connect to Discord through the desktop or mobile apps.
+
+![Discord bot invite screen showing success](https://docs-cdn.taleweave.ai/taleweave-admin-discord-9.png)
 
 ## Configure
 
