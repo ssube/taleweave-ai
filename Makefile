@@ -32,22 +32,22 @@ package-upload:
 	twine upload dist/*
 
 lint-check:
-	black --check adventure/
+	black --check taleweave/
 	black --check tests/
-	flake8 adventure
+	flake8 taleweave
 	flake8 tests
-	isort --check-only --skip __init__.py --filter-files adventure
+	isort --check-only --skip __init__.py --filter-files taleweave
 	isort --check-only --skip __init__.py --filter-files tests
 
 lint-fix:
-	black adventure/
+	black taleweave/
 	black tests/
-	flake8 adventure
+	flake8 taleweave
 	flake8 tests
-	isort --skip __init__.py --filter-files adventure
+	isort --skip __init__.py --filter-files taleweave
 	isort --skip __init__.py --filter-files tests
 
 style: lint-fix
 
 typecheck:
-	mypy adventure
+	mypy taleweave

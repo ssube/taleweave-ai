@@ -1,8 +1,7 @@
-adventure/custom_*
-adventure/user_config.yaml
 worlds/
 __pycache__/
 .env
 venv/
 client/node_modules/
 client/out/
+taleweave/custom_*
