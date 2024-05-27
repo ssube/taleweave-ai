@@ -5,11 +5,11 @@ from .sleeping_actions import action_sleep
 from taleweave.systems.logic import load_logic
 
 LOGIC_FILES = [
-    "./adventure/systems/sim/environment_logic.yaml",
-    "./adventure/systems/sim/hunger_logic.yaml",
-    "./adventure/systems/sim/hygiene_logic.yaml",
-    "./adventure/systems/sim/mood_logic.yaml",
-    "./adventure/systems/sim/sleeping_logic.yaml",
+    "./taleweave/systems/sim/environment_logic.yaml",
+    "./taleweave/systems/sim/hunger_logic.yaml",
+    "./taleweave/systems/sim/hygiene_logic.yaml",
+    "./taleweave/systems/sim/mood_logic.yaml",
+    "./taleweave/systems/sim/sleeping_logic.yaml",
 ]
 
 

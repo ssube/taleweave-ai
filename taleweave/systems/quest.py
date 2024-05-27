@@ -29,6 +29,7 @@ logger = getLogger(__name__)
 QUEST_SYSTEM = "quest"
 
 
+# region models
 @dataclass
 class QuestGoalContains:
     """
@@ -82,7 +83,47 @@ class QuestData:
     completed: Dict[str, List[Quest]]
 
 
-# region quest completion
+# endregion
+
+
+# region state helpers
+def complete_quest(quests: QuestData, character: Character, quest: Quest) -> None:
+    """
+    Complete the given quest for the given character.
+    """
+    if quest in quests.available.get(character.name, []):
+        quests.available[character.name].remove(quest)
+
+    if quest == quests.active.get(character.name, None):
+        del quests.active[character.name]
+
+    if character.name not in quests.completed:
+        quests.completed[character.name] = []
+
+    quests.completed[character.name].append(quest)
+
+
+def get_quests_for_character(quests: QuestData, character: Character) -> List[Quest]:
+    """
+    Get all quests for the given character.
+    """
+    return quests.available.get(character.name, [])
+
+
+def set_active_quest(quests: QuestData, character: Character, quest: Quest) -> None:
+    """
+    Set the active quest for the given character.
+    """
+    quests.active[character.name] = quest
+
+
+def get_active_quest(quests: QuestData, character: Character) -> Quest | None:
+    """
+    Get the active quest for the given character.
+    """
+    return quests.active.get(character.name)
+
+
 def is_quest_complete(world: World, quest: Quest) -> bool:
     """
     Check if the given quest is complete.
@@ -121,47 +162,7 @@ def is_quest_complete(world: World, quest: Quest) -> bool:
 # endregion
 
 
-# region state management
-def get_quests_for_character(quests: QuestData, character: Character) -> List[Quest]:
-    """
-    Get all quests for the given character.
-    """
-    return quests.available.get(character.name, [])
-
-
-def set_active_quest(quests: QuestData, character: Character, quest: Quest) -> None:
-    """
-    Set the active quest for the given character.
-    """
-    quests.active[character.name] = quest
-
-
-def get_active_quest(quests: QuestData, character: Character) -> Quest | None:
-    """
-    Get the active quest for the given character.
-    """
-    return quests.active.get(character.name)
-
-
-def complete_quest(quests: QuestData, character: Character, quest: Quest) -> None:
-    """
-    Complete the given quest for the given character.
-    """
-    if quest in quests.available.get(character.name, []):
-        quests.available[character.name].remove(quest)
-
-    if quest == quests.active.get(character.name, None):
-        del quests.active[character.name]
-
-    if character.name not in quests.completed:
-        quests.completed[character.name] = []
-
-    quests.completed[character.name].append(quest)
-
-
-# endregion
-
-
+# region game system callbacks
 def initialize_quests(world: World) -> QuestData:
     """
     Initialize quests for the world.
@@ -214,6 +215,10 @@ def simulate_quests(world: World, turn: int, data: QuestData | None = None) -> N
                     complete_quest(quests, character, active_quest)
 
 
+# endregion
+
+
+# region I/O
 def load_quest_data(file: str) -> QuestData:
     logger.info(f"loading quest data from {file}")
     return load_system_data(QuestData, file)
@@ -222,6 +227,9 @@ def load_quest_data(file: str) -> QuestData:
 def save_quest_data(file: str, data: QuestData) -> None:
     logger.info(f"saving quest data to {file}")
     return save_system_data(QuestData, file, data)
+
+
+# endregion
 
 
 def init() -> List[GameSystem]:

@@ -4,51 +4,60 @@ rules:
     match:
       type: room
       outdoor: true
-      weather: sunny
+      weather: clear
     chance: 0.1
     set:
-      weather: cloudy
+      weather: clouds
 
   - group: weather
     match:
       type: room
       outdoor: true
-      weather: cloudy
+      weather: clouds
     chance: 0.1
     set:
-      weather: rainy
+      weather: rain
 
   - group: weather
     match:
       type: room
       outdoor: true
-      weather: rainy
+      weather: rain
     chance: 0.1
     set:
-      weather: sunny
+      weather: clear
 
   - group: weather
     match:
       type: room
       outdoor: true
-      weather: cloudy
+      weather: clouds
     chance: 0.1
     set:
-      weather: sunny
+      weather: clear
 
 labels:
   - match:
       type: room
-      weather: sunny
+      weather: clear
+    rule: |
+      "time" not in attributes or attributes&.time in ["morning", "day"]
     backstory: The sun is shining brightly.
     description: The sun is shining brightly.
   - match:
       type: room
-      weather: cloudy
+      weather: clear
+    rule: |
+      "time" in attributes and attributes&.time in ["evening", "night"]
+    backstory: The moon is shining brightly.
+    description: The moon is shining brightly.
+  - match:
+      type: room
+      weather: clouds
     backstory: The sky is overcast.
     description: The sky is overcast.
   - match:
       type: room
-      weather: rainy
-    backstory: Rain is falling from the sky.
-    description: Rain is falling from the sky.
+      weather: rain
+    backstory: Rain is falling from the cloudy sky.
+    description: Rain is falling from the cloudy sky.

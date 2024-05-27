@@ -113,7 +113,7 @@ python3 -m adventure.main \
   --discord=true  \
   --server=true \
   --rooms 3 \
-  --steps 30 \
+  --turns 30 \
   --optional-actions=true \
   --actions adventure.sim_systems:init_actions \
   --systems adventure.sim_systems:init_logic
