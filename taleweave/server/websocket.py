@@ -20,7 +20,7 @@ from taleweave.context import (
     subscribe,
 )
 from taleweave.models.config import DEFAULT_CONFIG, WebsocketServerConfig
-from taleweave.models.entity import Character, Item, Room, World
+from taleweave.models.entity import World, WorldEntity
 from taleweave.models.event import (
     GameEvent,
     PlayerEvent,
@@ -128,14 +128,39 @@ async def handler(websocket):
 
                     elif "become" in data:
                         character_name = data["become"]
-                        if has_player(character_name):
+                        if character_name is not None and has_player(character_name):
                             logger.error(
                                 f"character {character_name} is already in use"
                             )
                             continue
 
-                        # TODO: should this always remove?
-                        remove_player(id)
+                        player = get_player(id)
+                        if player and isinstance(player, RemotePlayer):
+                            remove_player(id)
+
+                            # TODO: deduplicate this leaving block
+                            if character_name is None:
+                                player_name = get_player_name(id)
+                                logger.info(
+                                    "disconnecting player %s from %s",
+                                    player_name,
+                                    player.name,
+                                )
+                                broadcast_player_event(
+                                    player.name, player_name, "leave"
+                                )
+                                broadcast_player_list()
+
+                                character, _ = get_character_agent_for_name(player.name)
+                                if character and player.fallback_agent:
+                                    logger.info(
+                                        "restoring LLM agent for %s", player.name
+                                    )
+                                    set_character_agent(
+                                        player.name, character, player.fallback_agent
+                                    )
+
+                                continue
 
                         character, llm_agent = get_character_agent_for_name(
                             character_name
@@ -263,7 +288,7 @@ socket_thread = None
 
 
 def server_json(obj):
-    if isinstance(obj, (Character, Item, Room)):
+    if isinstance(obj, WorldEntity):
         return obj.name
 
     return world_json(obj)

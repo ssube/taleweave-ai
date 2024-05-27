@@ -286,6 +286,7 @@ def generate_character(
     dest_room: Room,
     additional_prompt: str = "",
     detail_prompt: str = "",
+    add_to_world_order: bool = True,
 ) -> Character:
     existing_characters = [character.name for character in list_characters(world)] + [
         character.name for character in list_characters_in_room(dest_room)
@@ -349,6 +350,10 @@ def generate_character(
             character.items.append(item)
         except Exception:
             logger.exception("error generating item")
+
+    if add_to_world_order:
+        logger.info(f"adding character {name} to end of world turn order")
+        world.order.append(name)
 
     return character
 

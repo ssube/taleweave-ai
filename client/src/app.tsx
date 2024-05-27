@@ -54,9 +54,12 @@ export function App(props: AppProps) {
 
   function setPlayer(character: Maybe<Character>) {
     // do not call setCharacter until the server confirms the player change
+    // eslint-disable-next-line no-null/no-null
+    let become = null;
     if (doesExist(character)) {
-      sendMessage(JSON.stringify({ type: 'player', become: character.name }));
+      become = character.name;
     }
+    sendMessage(JSON.stringify({ type: 'player', become }));
   }
 
   function sendInput(input: string) {
@@ -96,10 +99,20 @@ export function App(props: AppProps) {
           setActiveTurn(event.client === clientId);
           break;
         case 'player':
-          if (event.status === 'join' && doesExist(world) && event.client === clientId) {
-            const { character: characterName } = event;
-            const character = world.rooms.flatMap((room) => room.characters).find((a) => a.name === characterName);
-            setCharacter(character);
+          if (doesExist(world) && event.client === clientId) {
+            switch (event.status) {
+              case 'join': {
+                const { character: characterName } = event;
+                const character = world.rooms.flatMap((room) => room.characters).find((a) => a.name === characterName);
+                setCharacter(character);
+                break;
+              }
+              case 'leave':
+                setCharacter(undefined);
+                break;
+              default:
+                // ignore other player events
+            }
           }
           break;
         case 'players':

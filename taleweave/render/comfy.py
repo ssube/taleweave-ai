@@ -9,7 +9,6 @@ from random import choice, randint
 from re import sub
 from threading import Thread
 from typing import List
-from uuid import uuid4
 
 import websocket  # NOTE: websocket-client (https://github.com/websocket-client/websocket-client)
 from fnvhash import fnv1a_32
@@ -17,6 +16,7 @@ from jinja2 import Environment, FileSystemLoader, select_autoescape
 from PIL import Image
 
 from taleweave.context import broadcast
+from taleweave.models.base import uuid
 from taleweave.models.config import DEFAULT_CONFIG, RenderConfig
 from taleweave.models.entity import WorldEntity
 from taleweave.models.event import (
@@ -35,7 +35,7 @@ from .prompt import prompt_from_entity, prompt_from_event
 logger = getLogger(__name__)
 
 server_address = environ["COMFY_API"]
-client_id = uuid4().hex
+client_id = uuid()
 render_config: RenderConfig = DEFAULT_CONFIG.render
 
 
@@ -265,12 +265,18 @@ def render_loop():
             logger.info(
                 "using existing images for event %s: %s", event, existing_images
             )
+
+            if isinstance(event, WorldEntity):
+                title = event.name  # TODO: generate a real title
+            else:
+                title = event.type
+
             broadcast(
                 RenderEvent(
                     paths=existing_images,
-                    prompt="",
+                    prompt="reusing existing images",
                     source=event,
-                    title="Existing Images",
+                    title=title,
                 )
             )
             continue
@@ -288,7 +294,7 @@ def render_loop():
         # render or not
         if prompt:
             logger.debug("rendering prompt for event %s: %s", event, prompt)
-            image_paths = generate_images(prompt, 2, prefix=prefix)
+            image_paths = generate_images(prompt, render_config.count, prefix=prefix)
             broadcast(
                 RenderEvent(paths=image_paths, prompt=prompt, source=event, title=title)
             )

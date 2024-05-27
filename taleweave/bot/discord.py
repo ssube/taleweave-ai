@@ -81,14 +81,18 @@ class AdventureClient(Client):
         channel = message.channel
         user_name = author.name  # include nick
 
-        if message.content.startswith("!adventure"):
+        if message.content.startswith(
+            bot_config.command_prefix + bot_config.name_command
+        ):
             world = get_current_world()
             if world:
                 active_world = f"Active world: {world.name} (theme: {world.theme})"
             else:
                 active_world = "No active world"
 
-            await message.channel.send(f"Hello! Welcome to Adventure! {active_world}")
+            await message.channel.send(
+                f"Hello! Welcome to {bot_config.name_title}! {active_world}"
+            )
             return
 
         if message.content.startswith("!help"):

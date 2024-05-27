@@ -38,6 +38,9 @@ rules:
 
 # weather initial state
   - group: weather
+    match:
+      type: room
+      outdoor: true
     rule: |
       "weather" not in attributes
     set:

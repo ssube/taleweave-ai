@@ -9,6 +9,6 @@ COPY requirements/base.txt /taleweave/requirements/base.txt
 RUN pip install --no-cache-dir -r requirements/base.txt
 RUN pip install --no-cache-dir --index-url https://test.pypi.org/simple/ packit_llm==0.1.0
 
-COPY adventure/ /taleweave/adventure/
+COPY taleweave/ /taleweave/taleweave/
 
-CMD ["python", "-m", "adventure.main"]
+CMD ["python", "-m", "taleweave.main"]

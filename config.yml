@@ -8,7 +8,7 @@ render:
   checkpoints: [
     "diffusion-sdxl-dynavision-0-5-5-7.safetensors",
   ]
-  path: /tmp/adventure-images
+  path: /tmp/taleweave-images
   sizes:
     landscape:
       width: 1280

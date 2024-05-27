@@ -42,6 +42,9 @@ def initialize_weather(world: World):
         room.attributes["time"] = time_of_day.name
 
 
+# TODO: generate indoor/outdoor attributes
+
+
 def simulate_weather(world: World, turn: int, data: None = None):
     time_of_day = get_time_of_day(turn)
     for room in world.rooms:

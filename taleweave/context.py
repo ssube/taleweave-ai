@@ -19,7 +19,7 @@ from pyee.base import EventEmitter
 
 from taleweave.game_system import GameSystem
 from taleweave.models.entity import Character, Room, World
-from taleweave.models.event import GameEvent
+from taleweave.models.event import GameEvent, StatusEvent
 from taleweave.utils.string import normalize_name
 
 logger = getLogger(__name__)
@@ -49,12 +49,17 @@ def get_event_name(event: GameEvent | Type[GameEvent]):
 
 def broadcast(message: str | GameEvent):
     if isinstance(message, GameEvent):
-        event_name = get_event_name(message)
-        logger.debug(f"broadcasting {event_name}")
-        event_emitter.emit(event_name, message)
+        event = message
     else:
-        logger.warning("broadcasting a string message is deprecated")
-        event_emitter.emit(STRING_EVENT_TYPE, message)
+        logger.warning(
+            "broadcasting a string message is deprecated, converting to status event: %s",
+            message,
+        )
+        event = StatusEvent(text=message)
+
+    event_name = get_event_name(event)
+    logger.debug(f"broadcasting {event_name}: {event}")
+    event_emitter.emit(event_name, event)
 
 
 def is_union(type_: Type | UnionType):

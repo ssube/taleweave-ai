@@ -12,6 +12,9 @@ class Size:
 @dataclass
 class DiscordBotConfig:
     channels: List[str]
+    command_prefix: str
+    name_command: str
+    name_title: str
     content_intent: bool = False
 
 
@@ -24,6 +27,7 @@ class BotConfig:
 class RenderConfig:
     cfg: int | IntRange
     checkpoints: List[str]
+    count: int
     path: str
     sizes: Dict[str, Size]
     steps: int | IntRange
@@ -80,19 +84,27 @@ class Config:
 
 
 DEFAULT_CONFIG = Config(
-    bot=BotConfig(discord=DiscordBotConfig(channels=["adventure"])),
+    bot=BotConfig(
+        discord=DiscordBotConfig(
+            channels=["taleweave"],
+            command_prefix="!",
+            name_command="taleweave",
+            name_title="Taleweave AI",
+        ),
+    ),
     render=RenderConfig(
         cfg=IntRange(min=5, max=8),
         checkpoints=[
             "diffusion-sdxl-dynavision-0-5-5-7.safetensors",
         ],
-        path="/tmp/adventure-images",
+        count=2,
+        path="/tmp/taleweave-images",
         sizes={
             "landscape": Size(width=1024, height=768),
             "portrait": Size(width=768, height=1024),
             "square": Size(width=768, height=768),
         },
-        steps=IntRange(min=30, max=30),
+        steps=30,
     ),
     server=ServerConfig(websocket=WebsocketServerConfig(host="localhost", port=8001)),
     world=WorldConfig(
