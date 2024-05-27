@@ -13,7 +13,7 @@ from adventure.models.config import DEFAULT_CONFIG
 from adventure.models.entity import Character, Room
 from adventure.models.event import ReplyEvent
 
-from .string import normalize_name
+from .string import and_list, normalize_name
 
 logger = getLogger(__name__)
 
@@ -57,32 +57,6 @@ def make_keyword_condition(end_message: str, keywords=["end", "stop"]):
         return multi_function_or_str_result(value, **kwargs)
 
     return set_end, condition_end, result_parser
-
-
-def and_list(items: List[str]) -> str:
-    """
-    Convert a list of items into a human-readable list.
-    """
-    if not items:
-        return "nothing"
-
-    if len(items) == 1:
-        return items[0]
-
-    return f"{', '.join(items[:-1])}, and {items[-1]}"
-
-
-def or_list(items: List[str]) -> str:
-    """
-    Convert a list of items into a human-readable list.
-    """
-    if not items:
-        return "nothing"
-
-    if len(items) == 1:
-        return items[0]
-
-    return f"{', '.join(items[:-1])}, or {items[-1]}"
 
 
 def summarize_room(room: Room, player: Character) -> str:

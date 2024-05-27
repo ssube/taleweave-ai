@@ -130,21 +130,33 @@ def schedule_event(name: str, turns: int):
         turns: The number of turns until the event happens.
     """
 
+    # TODO: check for existing events with the same name
+    # TODO: limit the number of events that can be scheduled
+
     with action_context() as (_, action_character):
-        # TODO: check for existing events with the same name
         event = CalendarEvent(name, turns)
         action_character.planner.calendar.events.append(event)
         return f"{name} is scheduled to happen in {turns} turns."
 
 
-def check_calendar(unused: bool, count: int = 10):
+def check_calendar(count: int):
     """
     Read your calendar to see upcoming events that you have scheduled.
+
+    Args:
+        count: The number of upcoming events to read. 5 is usually a good number.
     """
 
+    count = min(count, character_config.event_limit)
     current_turn = get_current_step()
 
     with action_context() as (_, action_character):
+        if len(action_character.planner.calendar.events) == 0:
+            return (
+                "You have no upcoming events scheduled. You can plan events with other characters or on your own. "
+                "Make sure to inform others about events that involve them."
+            )
+
         events = action_character.planner.calendar.events[:count]
         return "\n".join(
             [

@@ -35,6 +35,18 @@ def prepend_value(value: AttributeValue, prefix: str) -> str:
     return prefix + str(value)
 
 
+def value_contains(value: AttributeValue, substring: str) -> bool:
+    """
+    Check if a string contains a substring.
+    """
+    if not isinstance(value, str):
+        raise ValueError(
+            f"Cannot check for a substring in a non-string attribute: {value}"
+        )
+
+    return substring in value
+
+
 def add_attribute(attributes: Attributes, name: str, value: int | float) -> Attributes:
     """
     Add an attribute to a set of attributes.

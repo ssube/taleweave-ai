@@ -284,6 +284,8 @@ def generate_character(
     world: World,
     systems: List[GameSystem],
     dest_room: Room,
+    additional_prompt: str = "",
+    detail_prompt: str = "",
 ) -> Character:
     existing_characters = [character.name for character in list_characters(world)] + [
         character.name for character in list_characters_in_room(dest_room)
@@ -291,13 +293,14 @@ def generate_character(
 
     name = loop_retry(
         agent,
-        "Generate one person or creature that would make sense in the world of {world_theme}. "
-        "The character will be placed in the {dest_room} room. "
+        "Generate a new character that would make sense in the world of {world_theme}. Characters can be a person, creature, or some other intelligent entity."
+        "The character will be placed in the {dest_room} room. {additional_prompt}. "
         "Only respond with the character name in title case, do not include a description or any other text. "
         'Do not prefix the name with "the", do not wrap it in quotes. '
         "Do not include the name of the room. Do not give characters any duplicate names."
         "Do not create any duplicate characters. The existing characters are: {existing_characters}",
         context={
+            "additional_prompt": additional_prompt,
             "dest_room": dest_room.name,
             "existing_characters": existing_characters,
             "world_theme": world.theme,
@@ -308,14 +311,18 @@ def generate_character(
 
     broadcast_generated(message=f"Generating character: {name}")
     description = agent(
-        "Generate a detailed description of the {name} character. What do they look like? What are they wearing? "
+        "Generate a detailed description of the {name} character. {additional_prompt}. {detail_prompt}. What do they look like? What are they wearing? "
         "What are they doing? Describe their appearance from the perspective of an outside observer."
         "Do not include the room or any other characters in the description, because they will move around.",
+        additional_prompt=additional_prompt,
+        detail_prompt=detail_prompt,
         name=name,
     )
     backstory = agent(
-        "Generate a backstory for the {name} character. Where are they from? What are they doing here? What are their "
+        "Generate a backstory for the {name} character. {additional_prompt}. {detail_prompt}. Where are they from? What are they doing here? What are their "
         'goals? Make sure to phrase the backstory in the second person, starting with "you are" and speaking directly to {name}.',
+        additional_prompt=additional_prompt,
+        detail_prompt=detail_prompt,
         name=name,
     )
 
@@ -373,6 +380,31 @@ def generate_effect(agent: Agent, world: World, entity: Item) -> EffectPattern:
         "How does it affect the target? Describe the effect from the perspective of an outside observer.",
         name=name,
     )
+
+    cooldown = loop_retry(
+        agent,
+        f"How many turns should the {name} effect wait before it can be used again? Enter a positive number to set a cooldown, or 0 for no cooldown. "
+        "Do not include any other text. Do not use JSON.",
+        context={
+            "name": name,
+        },
+        result_parser=int_result,
+        toolbox=None,
+    )
+
+    uses = loop_retry(
+        agent,
+        f"How many times can the {name} effect be used before it is exhausted? Enter a positive number to set a limit, or -1 for unlimited uses. "
+        "Do not include any other text. Do not use JSON.",
+        context={
+            "name": name,
+        },
+        result_parser=int_result,
+        toolbox=None,
+    )
+
+    if uses == -1:
+        uses = None
 
     attribute_names = agent(
         "Generate a short list of attributes that the {name} effect modifies. Include 1 to 3 attributes. "
@@ -453,8 +485,10 @@ def generate_effect(agent: Agent, world: World, entity: Item) -> EffectPattern:
         name,
         description,
         application,
-        duration=duration,
         attributes=attributes,
+        cooldown=cooldown,
+        duration=duration,
+        uses=uses,
     )
 
 

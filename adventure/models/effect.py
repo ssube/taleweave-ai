@@ -50,8 +50,10 @@ class EffectPattern:
     name: str
     description: str
     application: Literal["permanent", "temporary"]
-    duration: int | IntRange | None = None
     attributes: List[AttributeEffectPattern] = Field(default_factory=list)
+    cooldown: int | None = None
+    duration: int | IntRange | None = None
+    uses: int | None = None
     id: str = Field(default_factory=uuid)
     type: Literal["effect_pattern"] = "effect_pattern"
 
@@ -96,7 +98,7 @@ AttributeEffectResult = (
 class EffectResult:
     name: str
     description: str
-    duration: int | None = None
     attributes: List[AttributeEffectResult] = Field(default_factory=list)
+    duration: int | None = None
     id: str = Field(default_factory=uuid)
     type: Literal["effect_result"] = "effect_result"

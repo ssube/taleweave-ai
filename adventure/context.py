@@ -207,7 +207,7 @@ def set_system_data(system: str, data: Any):
 
 
 # region search functions
-def get_character_for_agent(agent):
+def get_character_for_agent(agent: Agent) -> Character | None:
     return next(
         (
             inner_character
@@ -218,7 +218,7 @@ def get_character_for_agent(agent):
     )
 
 
-def get_agent_for_character(character):
+def get_agent_for_character(character: Character) -> Agent | None:
     return next(
         (
             inner_agent
@@ -229,7 +229,9 @@ def get_agent_for_character(character):
     )
 
 
-def get_character_agent_for_name(name):
+def get_character_agent_for_name(
+    name: str,
+) -> Tuple[Character, Agent] | Tuple[None, None]:
     return next(
         (
             (character, agent)

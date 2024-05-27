@@ -134,6 +134,7 @@ def action_use(item: str, target: str) -> str:
                 return f"The {target} character is not in the room."
 
         effect_names = [effect.name for effect in action_item.effects]
+        # TODO: should use a retry loop and enum result parser
         chosen_name = dungeon_master(
             f"{action_character.name} uses {item} on {target}. "
             f"{item} has the following effects: {effect_names}. "
@@ -151,8 +152,16 @@ def action_use(item: str, target: str) -> str:
             None,
         )
         if not chosen_effect:
-            # TODO: should retry the question if the effect is not found
             raise ValueError(f"The {chosen_name} effect is not available to apply.")
+
+        if chosen_effect.uses is None:
+            pass
+        elif chosen_effect.uses == 0:
+            raise ActionError(
+                f"The {chosen_name} effect of {item} has no uses remaining."
+            )
+        elif chosen_effect.uses > 0:
+            chosen_effect.uses -= 1
 
         try:
             apply_effects(target_character, [chosen_effect])

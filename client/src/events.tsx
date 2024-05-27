@@ -253,8 +253,10 @@ export function GenerateEventItem(props: EventItemProps) {
   const { event, renderEntity } = props;
   const { entity, name } = event;
 
+  let description = name;
   let renderButton;
   if (doesExist(entity)) {
+    description = `Finished generating ${entity.type} ${entity.name}: ${entity.description}`;
     renderButton = <IconButton edge="end" aria-label="render" onClick={() => renderEntity(entity.type, entity.name)}>
       <Camera />
     </IconButton>;
@@ -277,7 +279,7 @@ export function GenerateEventItem(props: EventItemProps) {
           variant="body2"
           color="text.primary"
         >
-          {name}
+          {description}
         </Typography>
       }
     />
