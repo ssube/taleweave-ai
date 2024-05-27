@@ -162,7 +162,7 @@ def generate_images(
     )
 
     env = Environment(
-        loader=FileSystemLoader(["adventure/templates"]),
+        loader=FileSystemLoader(["taleweave/templates"]),
         autoescape=select_autoescape(["json"]),
     )
     template = env.get_template("comfy.json.j2")

@@ -54,6 +54,11 @@ export function EntityDetails(props: EntityDetailsProps) {
     attributes = item.attributes;
   }
 
+  if (type === 'room') {
+    const room = entity as Room;
+    attributes = room.attributes;
+  }
+
   return <Fragment>
     <DialogTitle>{name}</DialogTitle>
     <DialogContent dividers>

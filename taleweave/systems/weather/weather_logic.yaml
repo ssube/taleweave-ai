@@ -36,6 +36,13 @@ rules:
     set:
       weather: clear
 
+# weather initial state
+  - group: weather
+    rule: |
+      "weather" not in attributes
+    set:
+      weather: clear
+
 labels:
   - match:
       type: room
