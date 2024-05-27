@@ -1,34 +1,36 @@
-from adventure.models.entity import Actor
+from adventure.models.entity import Character
 
 
-def expire_events(actor: Actor, current_turn: int):
+def expire_events(character: Character, current_turn: int):
     """
     Expire events that have already happened.
     """
 
-    events = actor.planner.calendar.events
+    events = character.planner.calendar.events
     expired_events = [event for event in events if event.turn < current_turn]
-    actor.planner.calendar.events[:] = [
+    character.planner.calendar.events[:] = [
         event for event in events if event not in expired_events
     ]
 
     return expired_events
 
 
-def get_recent_notes(actor: Actor, count: int = 3):
+def get_recent_notes(character: Character, count: int = 3):
     """
     Get the most recent facts from your notes.
     """
 
-    return actor.planner.notes[-count:]
+    return character.planner.notes[-count:]
 
 
-def get_upcoming_events(actor: Actor, current_turn: int, upcoming_turns: int = 3):
+def get_upcoming_events(
+    character: Character, current_turn: int, upcoming_turns: int = 3
+):
     """
     Get a list of upcoming events within a certain number of turns.
     """
 
-    calendar = actor.planner.calendar
+    calendar = character.planner.calendar
     # TODO: sort events by turn
     return [
         event

@@ -1,10 +1,10 @@
-from adventure.context import action_context, get_agent_for_actor, get_current_step
+from adventure.context import action_context, get_agent_for_character, get_current_step
 from adventure.errors import ActionError
 from adventure.models.config import DEFAULT_CONFIG
 from adventure.models.planning import CalendarEvent
 from adventure.utils.planning import get_recent_notes
 
-actor_config = DEFAULT_CONFIG.world.actor
+character_config = DEFAULT_CONFIG.world.character
 
 
 def take_note(fact: str):
@@ -16,16 +16,16 @@ def take_note(fact: str):
         fact: The fact to remember.
     """
 
-    with action_context() as (_, action_actor):
-        if fact in action_actor.planner.notes:
+    with action_context() as (_, action_character):
+        if fact in action_character.planner.notes:
             raise ActionError("You already have a note about that fact.")
 
-        if len(action_actor.planner.notes) >= actor_config.note_limit:
+        if len(action_character.planner.notes) >= character_config.note_limit:
             raise ActionError(
                 "You have reached the limit of notes you can take. Please erase, replace, or summarize some notes."
             )
 
-        action_actor.planner.notes.append(fact)
+        action_character.planner.notes.append(fact)
 
         return "You make a note of that fact."
 
@@ -38,8 +38,8 @@ def read_notes(unused: bool, count: int = 10):
         count: The number of recent notes to read. 10 is usually a good number.
     """
 
-    with action_context() as (_, action_actor):
-        facts = get_recent_notes(action_actor, count=count)
+    with action_context() as (_, action_character):
+        facts = get_recent_notes(action_character, count=count)
         return "\n".join(facts)
 
 
@@ -51,15 +51,15 @@ def erase_notes(prefix: str) -> str:
         prefix: The prefix to match notes against.
     """
 
-    with action_context() as (_, action_actor):
+    with action_context() as (_, action_character):
         matches = [
-            note for note in action_actor.planner.notes if note.startswith(prefix)
+            note for note in action_character.planner.notes if note.startswith(prefix)
         ]
         if not matches:
             return "No notes found with that prefix."
 
-        action_actor.planner.notes[:] = [
-            note for note in action_actor.planner.notes if note not in matches
+        action_character.planner.notes[:] = [
+            note for note in action_character.planner.notes if note not in matches
         ]
         return f"Erased {len(matches)} notes."
 
@@ -73,12 +73,12 @@ def replace_note(old: str, new: str) -> str:
         new: The new note to replace it with.
     """
 
-    with action_context() as (_, action_actor):
-        if old not in action_actor.planner.notes:
+    with action_context() as (_, action_character):
+        if old not in action_character.planner.notes:
             return "Note not found."
 
-        action_actor.planner.notes[:] = [
-            new if note == old else note for note in action_actor.planner.notes
+        action_character.planner.notes[:] = [
+            new if note == old else note for note in action_character.planner.notes
         ]
         return "Note replaced."
 
@@ -91,12 +91,12 @@ def summarize_notes(limit: int) -> str:
         limit: The maximum number of notes to keep.
     """
 
-    with action_context() as (_, action_actor):
-        notes = action_actor.planner.notes
-        action_agent = get_agent_for_actor(action_actor)
+    with action_context() as (_, action_character):
+        notes = action_character.planner.notes
+        action_agent = get_agent_for_character(action_character)
 
         if not action_agent:
-            raise ActionError("Agent missing for actor {action_actor.name}")
+            raise ActionError("Agent missing for character {action_character.name}")
 
         summary = action_agent(
             "Please summarize your notes. Remove any duplicates and combine similar notes. "
@@ -110,12 +110,12 @@ def summarize_notes(limit: int) -> str:
         )
 
         new_notes = [note.strip() for note in summary.split("\n") if note.strip()]
-        if len(new_notes) > actor_config.note_limit:
+        if len(new_notes) > character_config.note_limit:
             raise ActionError(
-                f"Too many notes. You can only have up to {actor_config.note_limit} notes."
+                f"Too many notes. You can only have up to {character_config.note_limit} notes."
             )
 
-        action_actor.planner.notes[:] = new_notes
+        action_character.planner.notes[:] = new_notes
         return "Notes were summarized successfully."
 
 
@@ -130,10 +130,10 @@ def schedule_event(name: str, turns: int):
         turns: The number of turns until the event happens.
     """
 
-    with action_context() as (_, action_actor):
+    with action_context() as (_, action_character):
         # TODO: check for existing events with the same name
         event = CalendarEvent(name, turns)
-        action_actor.planner.calendar.events.append(event)
+        action_character.planner.calendar.events.append(event)
         return f"{name} is scheduled to happen in {turns} turns."
 
 
@@ -144,8 +144,8 @@ def check_calendar(unused: bool, count: int = 10):
 
     current_turn = get_current_step()
 
-    with action_context() as (_, action_actor):
-        events = action_actor.planner.calendar.events[:count]
+    with action_context() as (_, action_character):
+        events = action_character.planner.calendar.events[:count]
         return "\n".join(
             [
                 f"{event.name} will happen in {event.turn - current_turn} turns"

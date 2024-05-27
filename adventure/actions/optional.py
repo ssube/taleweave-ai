@@ -6,7 +6,7 @@ from packit.agent import Agent, agent_easy_connect
 from adventure.context import (
     action_context,
     broadcast,
-    get_agent_for_actor,
+    get_agent_for_character,
     get_dungeon_master,
     get_game_systems,
     has_dungeon_master,
@@ -16,9 +16,9 @@ from adventure.context import (
 from adventure.errors import ActionError
 from adventure.generate import generate_item, generate_room, link_rooms
 from adventure.utils.effect import apply_effects
-from adventure.utils.search import find_actor_in_room
+from adventure.utils.search import find_character_in_room
 from adventure.utils.string import normalize_name
-from adventure.utils.world import describe_actor, describe_entity
+from adventure.utils.world import describe_character, describe_entity
 
 logger = getLogger(__name__)
 
@@ -43,7 +43,7 @@ def action_explore(direction: str) -> str:
         direction: The direction to explore. For example: inside, outside, upstairs, downstairs, trapdoor, portal, etc.
     """
 
-    with world_context() as (action_world, action_room, action_actor):
+    with world_context() as (action_world, action_room, action_character):
         dungeon_master = get_dungeon_master()
 
         if direction in action_room.portals:
@@ -62,7 +62,7 @@ def action_explore(direction: str) -> str:
             link_rooms(dungeon_master, action_world, systems, [new_room])
 
             broadcast(
-                f"{action_actor.name} explores {direction} of {action_room.name} and finds a new room: {new_room.name}"
+                f"{action_character.name} explores {direction} of {action_room.name} and finds a new room: {new_room.name}"
             )
             return f"You explore {direction} and find a new room: {new_room.name}"
         except Exception:
@@ -75,7 +75,7 @@ def action_search(unused: bool) -> str:
     Search the room for hidden items.
     """
 
-    with world_context() as (action_world, action_room, action_actor):
+    with world_context() as (action_world, action_room, action_character):
         dungeon_master = get_dungeon_master()
 
         if len(action_room.items) > 2:
@@ -94,7 +94,7 @@ def action_search(unused: bool) -> str:
             action_room.items.append(new_item)
 
             broadcast(
-                f"{action_actor.name} searches {action_room.name} and finds a new item: {new_item.name}"
+                f"{action_character.name} searches {action_room.name} and finds a new item: {new_item.name}"
             )
             return f"You search the room and find a new item: {new_item.name}"
         except Exception:
@@ -110,13 +110,13 @@ def action_use(item: str, target: str) -> str:
         item: The name of the item to use.
         target: The name of the character to use the item on, or "self" to use the item on yourself.
     """
-    with action_context() as (action_room, action_actor):
+    with action_context() as (action_room, action_character):
         dungeon_master = get_dungeon_master()
 
         action_item = next(
             (
                 search_item
-                for search_item in (action_actor.items + action_room.items)
+                for search_item in (action_character.items + action_room.items)
                 if search_item.name == item
             ),
             None,
@@ -125,17 +125,17 @@ def action_use(item: str, target: str) -> str:
             raise ActionError(f"The {item} item is not available to use.")
 
         if target == "self":
-            target_actor = action_actor
-            target = action_actor.name
+            target_character = action_character
+            target = action_character.name
         else:
             # TODO: allow targeting the room itself and items in the room
-            target_actor = find_actor_in_room(action_room, target)
-            if not target_actor:
+            target_character = find_character_in_room(action_room, target)
+            if not target_character:
                 return f"The {target} character is not in the room."
 
         effect_names = [effect.name for effect in action_item.effects]
         chosen_name = dungeon_master(
-            f"{action_actor.name} uses {item} on {target}. "
+            f"{action_character.name} uses {item} on {target}. "
             f"{item} has the following effects: {effect_names}. "
             "Which effect should be applied? Specify the name of the effect to apply."
             "Do not include the question or any JSON. Only include the name of the effect to apply."
@@ -155,7 +155,7 @@ def action_use(item: str, target: str) -> str:
             raise ValueError(f"The {chosen_name} effect is not available to apply.")
 
         try:
-            apply_effects(target_actor, [chosen_effect])
+            apply_effects(target_character, [chosen_effect])
         except Exception:
             logger.exception("error applying effect: %s", chosen_effect)
             raise ValueError(
@@ -163,11 +163,11 @@ def action_use(item: str, target: str) -> str:
             )
 
         broadcast(
-            f"{action_actor.name} uses the {chosen_name} effect of {item} on {target}"
+            f"{action_character.name} uses the {chosen_name} effect of {item} on {target}"
         )
         outcome = dungeon_master(
-            f"{action_actor.name} uses the {chosen_name} effect of {item} on {target}. "
-            f"{describe_actor(action_actor)}. {describe_actor(target_actor)}. {describe_entity(action_item)}. "
+            f"{action_character.name} uses the {chosen_name} effect of {item} on {target}. "
+            f"{describe_character(action_character)}. {describe_character(target_character)}. {describe_entity(action_item)}. "
             f"What happens? How does {target} react? Be creative with the results. The outcome can be good, bad, or neutral."
             "Decide based on the characters involved and the item being used."
             "Specify the outcome of the action. Do not include the question or any JSON. Only include the outcome of the action."
@@ -175,7 +175,7 @@ def action_use(item: str, target: str) -> str:
         broadcast(f"The action resulted in: {outcome}")
 
         # make sure both agents remember the outcome
-        target_agent = get_agent_for_actor(target_actor)
+        target_agent = get_agent_for_character(target_character)
         if target_agent and target_agent.memory:
             target_agent.memory.append(outcome)
 

@@ -10,7 +10,7 @@ from packit.utils import could_be_json
 
 from adventure.context import broadcast
 from adventure.models.config import DEFAULT_CONFIG
-from adventure.models.entity import Actor, Room
+from adventure.models.entity import Character, Room
 from adventure.models.event import ReplyEvent
 
 from .string import normalize_name
@@ -18,7 +18,7 @@ from .string import normalize_name
 logger = getLogger(__name__)
 
 
-actor_config = DEFAULT_CONFIG.world.actor
+character_config = DEFAULT_CONFIG.world.character
 
 
 def make_keyword_condition(end_message: str, keywords=["end", "stop"]):
@@ -85,19 +85,23 @@ def or_list(items: List[str]) -> str:
     return f"{', '.join(items[:-1])}, or {items[-1]}"
 
 
-def summarize_room(room: Room, player: Actor) -> str:
+def summarize_room(room: Room, player: Character) -> str:
     """
     Summarize a room for the player.
     """
 
-    actor_names = and_list(
-        [actor.name for actor in room.actors if actor.name != player.name]
+    character_names = and_list(
+        [
+            character.name
+            for character in room.characters
+            if character.name != player.name
+        ]
     )
     item_names = and_list([item.name for item in room.items])
     inventory_names = and_list([item.name for item in player.items])
 
     return (
-        f"You are in the {room.name} room with {actor_names}. "
+        f"You are in the {room.name} room with {character_names}. "
         f"You see the {item_names} around the room. "
         f"You are carrying the {inventory_names}."
     )
@@ -105,9 +109,9 @@ def summarize_room(room: Room, player: Actor) -> str:
 
 def loop_conversation(
     room: Room,
-    actors: List[Actor],
+    characters: List[Character],
     agents: List[Agent],
-    first_actor: Actor,
+    first_character: Character,
     first_prompt: str,
     reply_prompt: str,
     first_message: str,
@@ -117,14 +121,14 @@ def loop_conversation(
     max_length: int | None = None,
 ) -> str | None:
     """
-    Loop through a conversation between a series of agents, using metadata from their actors.
+    Loop through a conversation between a series of agents, using metadata from their characters.
     """
 
     if max_length is None:
-        max_length = actor_config.conversation_limit
+        max_length = character_config.conversation_limit
 
-    if len(actors) != len(agents):
-        raise ValueError("The number of actors and agents must match.")
+    if len(characters) != len(agents):
+        raise ValueError("The number of characters and agents must match.")
 
     # set up the keyword or length-limit compound condition
     _, condition_end, parse_end = make_keyword_condition(end_message)
@@ -145,34 +149,36 @@ def loop_conversation(
 
     # prepare the loop state
     i = 0
-    last_actor = first_actor
+    last_character = first_character
     response = first_message
 
     while not stop_condition(current=i):
         if i == 0:
-            logger.debug(f"starting conversation with {first_actor.name}")
+            logger.debug(f"starting conversation with {first_character.name}")
             prompt = first_prompt
         else:
-            logger.debug(f"continuing conversation with {last_actor.name} on step {i}")
+            logger.debug(
+                f"continuing conversation with {last_character.name} on step {i}"
+            )
             prompt = reply_prompt
 
-        # loop through the actors and agents
-        actor = actors[i % len(actors)]
+        # loop through the characters and agents
+        character = characters[i % len(characters)]
         agent = agents[i % len(agents)]
 
         # summarize the room and present the last response
-        summary = summarize_room(room, actor)
+        summary = summarize_room(room, character)
         response = agent(
-            prompt, response=response, summary=summary, last_actor=last_actor
+            prompt, response=response, summary=summary, last_character=last_character
         )
         response = result_parser(response)
 
-        logger.info(f"{actor.name} responds: {response}")
-        reply_event = ReplyEvent.from_text(response, room, actor)
+        logger.info(f"{character.name} responds: {response}")
+        reply_event = ReplyEvent.from_text(response, room, character)
         broadcast(reply_event)
 
         # increment the step counter
         i += 1
-        last_actor = actor
+        last_character = character
 
     return response

@@ -16,15 +16,15 @@ from adventure.models.effect import (
     IntEffectPattern,
     StringEffectPattern,
 )
-from adventure.models.entity import Actor, Item, Portal, Room, World, WorldEntity
+from adventure.models.entity import Character, Item, Portal, Room, World, WorldEntity
 from adventure.models.event import GenerateEvent
 from adventure.utils import try_parse_float, try_parse_int
 from adventure.utils.effect import resolve_int_range
 from adventure.utils.search import (
-    list_actors,
-    list_actors_in_room,
+    list_characters,
+    list_characters_in_room,
     list_items,
-    list_items_in_actor,
+    list_items_in_character,
     list_items_in_room,
     list_rooms,
 )
@@ -107,7 +107,7 @@ def generate_room(
     )
 
     actions = {}
-    room = Room(name=name, description=desc, items=[], actors=[], actions=actions)
+    room = Room(name=name, description=desc, items=[], characters=[], actions=actions)
 
     item_count = resolve_int_range(world_config.size.room_items) or 0
     broadcast_generated(f"Generating {item_count} items for room: {name}")
@@ -126,22 +126,24 @@ def generate_room(
         except Exception:
             logger.exception("error generating item")
 
-    actor_count = resolve_int_range(world_config.size.room_actors) or 0
-    broadcast_generated(message=f"Generating {actor_count} actors for room: {name}")
+    character_count = resolve_int_range(world_config.size.room_characters) or 0
+    broadcast_generated(
+        message=f"Generating {character_count} characters for room: {name}"
+    )
 
-    for _ in range(actor_count):
+    for _ in range(character_count):
         try:
-            actor = generate_actor(
+            character = generate_character(
                 agent,
                 world,
                 systems=systems,
                 dest_room=room,
             )
-            broadcast_generated(entity=actor)
+            broadcast_generated(entity=character)
 
-            room.actors.append(actor)
+            room.characters.append(character)
         except Exception:
-            logger.exception("error generating actor")
+            logger.exception("error generating character")
             continue
 
     return room
@@ -218,18 +220,20 @@ def generate_item(
     world: World,
     systems: List[GameSystem],
     dest_room: Room | None = None,
-    dest_actor: Actor | None = None,
+    dest_character: Character | None = None,
 ) -> Item:
     existing_items = [
         item.name
         for item in list_items(
-            world, include_actor_inventory=True, include_item_inventory=True
+            world, include_character_inventory=True, include_item_inventory=True
         )
     ]
 
-    if dest_actor:
-        dest_note = f"The item will be held by the {dest_actor.name} character"
-        existing_items += [item.name for item in list_items_in_actor(dest_actor)]
+    if dest_character:
+        dest_note = f"The item will be held by the {dest_character.name} character"
+        existing_items += [
+            item.name for item in list_items_in_character(dest_character)
+        ]
     elif dest_room:
         dest_note = f"The item will be placed in the {dest_room.name} room"
         existing_items += [item.name for item in list_items_in_room(dest_room)]
@@ -275,14 +279,14 @@ def generate_item(
     return item
 
 
-def generate_actor(
+def generate_character(
     agent: Agent,
     world: World,
     systems: List[GameSystem],
     dest_room: Room,
-) -> Actor:
-    existing_actors = [actor.name for actor in list_actors(world)] + [
-        actor.name for actor in list_actors_in_room(dest_room)
+) -> Character:
+    existing_characters = [character.name for character in list_characters(world)] + [
+        character.name for character in list_characters_in_room(dest_room)
     ]
 
     name = loop_retry(
@@ -292,17 +296,17 @@ def generate_actor(
         "Only respond with the character name in title case, do not include a description or any other text. "
         'Do not prefix the name with "the", do not wrap it in quotes. '
         "Do not include the name of the room. Do not give characters any duplicate names."
-        "Do not create any duplicate characters. The existing characters are: {existing_actors}",
+        "Do not create any duplicate characters. The existing characters are: {existing_characters}",
         context={
             "dest_room": dest_room.name,
-            "existing_actors": existing_actors,
+            "existing_characters": existing_characters,
             "world_theme": world.theme,
         },
-        result_parser=duplicate_name_parser(existing_actors),
+        result_parser=duplicate_name_parser(existing_characters),
         toolbox=None,
     )
 
-    broadcast_generated(message=f"Generating actor: {name}")
+    broadcast_generated(message=f"Generating character: {name}")
     description = agent(
         "Generate a detailed description of the {name} character. What do they look like? What are they wearing? "
         "What are they doing? Describe their appearance from the perspective of an outside observer."
@@ -310,19 +314,19 @@ def generate_actor(
         name=name,
     )
     backstory = agent(
-        "Generate a backstory for the {name} actor. Where are they from? What are they doing here? What are their "
+        "Generate a backstory for the {name} character. Where are they from? What are they doing here? What are their "
         'goals? Make sure to phrase the backstory in the second person, starting with "you are" and speaking directly to {name}.',
         name=name,
     )
 
-    actor = Actor(
+    character = Character(
         name=name, backstory=backstory, description=description, actions={}, items=[]
     )
-    generate_system_attributes(agent, world, actor, systems)
+    generate_system_attributes(agent, world, character, systems)
 
-    # generate the actor's inventory
-    item_count = resolve_int_range(world_config.size.actor_items) or 0
-    broadcast_generated(f"Generating {item_count} items for actor {name}")
+    # generate the character's inventory
+    item_count = resolve_int_range(world_config.size.character_items) or 0
+    broadcast_generated(f"Generating {item_count} items for character {name}")
 
     for k in range(item_count):
         try:
@@ -330,16 +334,16 @@ def generate_actor(
                 agent,
                 world,
                 systems,
-                dest_actor=actor,
+                dest_character=character,
             )
             generate_system_attributes(agent, world, item, systems)
             broadcast_generated(entity=item)
 
-            actor.items.append(item)
+            character.items.append(item)
         except Exception:
             logger.exception("error generating item")
 
-    return actor
+    return character
 
 
 def generate_effect(agent: Agent, world: World, entity: Item) -> EffectPattern:
@@ -534,6 +538,8 @@ def generate_world(
     # generate portals to link the rooms together
     link_rooms(agent, world, systems)
 
-    # ensure actors act in a stable order
-    world.order = [actor.name for room in world.rooms for actor in room.actors]
+    # ensure characters act in a stable order
+    world.order = [
+        character.name for room in world.rooms for character in room.characters
+    ]
     return world

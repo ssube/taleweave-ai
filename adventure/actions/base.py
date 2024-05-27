@@ -3,15 +3,15 @@ from logging import getLogger
 from adventure.context import (
     action_context,
     broadcast,
-    get_actor_agent_for_name,
-    get_agent_for_actor,
+    get_agent_for_character,
+    get_character_agent_for_name,
     world_context,
 )
 from adventure.errors import ActionError
 from adventure.utils.conversation import loop_conversation
 from adventure.utils.search import (
-    find_actor_in_room,
-    find_item_in_actor,
+    find_character_in_room,
+    find_item_in_character,
     find_item_in_room,
     find_room,
 )
@@ -31,31 +31,31 @@ def action_look(target: str) -> str:
         target: The name of the target to look at.
     """
 
-    with action_context() as (action_room, action_actor):
-        broadcast(f"{action_actor.name} looks at {target}")
+    with action_context() as (action_room, action_character):
+        broadcast(f"{action_character.name} looks at {target}")
 
         if normalize_name(target) == normalize_name(action_room.name):
-            broadcast(f"{action_actor.name} saw the {action_room.name} room")
+            broadcast(f"{action_character.name} saw the {action_room.name} room")
             return describe_entity(action_room)
 
-        target_actor = find_actor_in_room(action_room, target)
-        if target_actor:
+        target_character = find_character_in_room(action_room, target)
+        if target_character:
             broadcast(
-                f"{action_actor.name} saw the {target_actor.name} actor in the {action_room.name} room"
+                f"{action_character.name} saw the {target_character.name} character in the {action_room.name} room"
             )
-            return describe_entity(target_actor)
+            return describe_entity(target_character)
 
         target_item = find_item_in_room(action_room, target)
         if target_item:
             broadcast(
-                f"{action_actor.name} saw the {target_item.name} item in the {action_room.name} room"
+                f"{action_character.name} saw the {target_item.name} item in the {action_room.name} room"
             )
             return describe_entity(target_item)
 
-        target_item = find_item_in_actor(action_actor, target)
+        target_item = find_item_in_character(action_character, target)
         if target_item:
             broadcast(
-                f"{action_actor.name} saw the {target_item.name} item in their inventory"
+                f"{action_character.name} saw the {target_item.name} item in their inventory"
             )
             return describe_entity(target_item)
 
@@ -70,7 +70,7 @@ def action_move(direction: str) -> str:
         direction: The direction to move in.
     """
 
-    with world_context() as (action_world, action_room, action_actor):
+    with world_context() as (action_world, action_room, action_character):
         portal = next(
             (
                 p
@@ -87,10 +87,10 @@ def action_move(direction: str) -> str:
             raise ActionError(f"The {portal.destination} room does not exist.")
 
         broadcast(
-            f"{action_actor.name} moves through {direction} to {destination_room.name}"
+            f"{action_character.name} moves through {direction} to {destination_room.name}"
         )
-        action_room.actors.remove(action_actor)
-        destination_room.actors.append(action_actor)
+        action_room.characters.remove(action_character)
+        destination_room.characters.append(action_character)
 
         return (
             f"You move through the {direction} and arrive at {destination_room.name}."
@@ -104,14 +104,14 @@ def action_take(item: str) -> str:
     Args:
         item: The name of the item to take.
     """
-    with action_context() as (action_room, action_actor):
+    with action_context() as (action_room, action_character):
         action_item = find_item_in_room(action_room, item)
         if not action_item:
             raise ActionError(f"The {item} item is not in the room.")
 
-        broadcast(f"{action_actor.name} takes the {item} item")
+        broadcast(f"{action_character.name} takes the {item} item")
         action_room.items.remove(action_item)
-        action_actor.items.append(action_item)
+        action_character.items.append(action_item)
         return f"You take the {item} item and put it in your inventory."
 
 
@@ -123,39 +123,39 @@ def action_ask(character: str, question: str) -> str:
         character: The name of the character to ask. You cannot ask yourself questions.
         question: The question to ask them.
     """
-    # capture references to the current actor and room, because they will be overwritten
-    with action_context() as (action_room, action_actor):
+    # capture references to the current character and room, because they will be overwritten
+    with action_context() as (action_room, action_character):
         # sanity checks
-        question_actor, question_agent = get_actor_agent_for_name(character)
-        if question_actor == action_actor:
+        question_character, question_agent = get_character_agent_for_name(character)
+        if question_character == action_character:
             raise ActionError(
                 "You cannot ask yourself a question. Stop talking to yourself. Try another action."
             )
 
-        if not question_actor:
+        if not question_character:
             raise ActionError(f"The {character} character is not in the room.")
 
         if not question_agent:
             raise ActionError(f"The {character} character does not exist.")
 
-        broadcast(f"{action_actor.name} asks {character}: {question}")
+        broadcast(f"{action_character.name} asks {character}: {question}")
         first_prompt = (
-            "{last_actor.name} asks you: {response}\n"
+            "{last_character.name} asks you: {response}\n"
             "Reply with your response to them. Reply with 'END' to end the conversation. "
-            "Do not include the question or any JSON. Only include your answer for {last_actor.name}."
+            "Do not include the question or any JSON. Only include your answer for {last_character.name}."
         )
         reply_prompt = (
-            "{last_actor.name} continues the conversation with you. They reply: {response}\n"
+            "{last_character.name} continues the conversation with you. They reply: {response}\n"
             "Reply with your response to them. Reply with 'END' to end the conversation. "
-            "Do not include the question or any JSON. Only include your answer for {last_actor.name}."
+            "Do not include the question or any JSON. Only include your answer for {last_character.name}."
         )
 
-        action_agent = get_agent_for_actor(action_actor)
+        action_agent = get_agent_for_character(action_character)
         answer = loop_conversation(
             action_room,
-            [question_actor, action_actor],
+            [question_character, action_character],
             [question_agent, action_agent],
-            action_actor,
+            action_character,
             first_prompt,
             reply_prompt,
             question,
@@ -166,7 +166,7 @@ def action_ask(character: str, question: str) -> str:
         )
 
         if answer:
-            broadcast(f"{character} responds to {action_actor.name}: {answer}")
+            broadcast(f"{character} responds to {action_character.name}: {answer}")
             return f"{character} responds: {answer}"
 
         return f"{character} does not respond."
@@ -180,40 +180,40 @@ def action_tell(character: str, message: str) -> str:
         character: The name of the character to tell. You cannot talk to yourself.
         message: The message to tell them.
     """
-    # capture references to the current actor and room, because they will be overwritten
+    # capture references to the current character and room, because they will be overwritten
 
-    with action_context() as (action_room, action_actor):
+    with action_context() as (action_room, action_character):
         # sanity checks
-        question_actor, question_agent = get_actor_agent_for_name(character)
-        if question_actor == action_actor:
+        question_character, question_agent = get_character_agent_for_name(character)
+        if question_character == action_character:
             raise ActionError(
                 "You cannot tell yourself a message. Stop talking to yourself. Try another action."
             )
 
-        if not question_actor:
+        if not question_character:
             raise ActionError(f"The {character} character is not in the room.")
 
         if not question_agent:
             raise ActionError(f"The {character} character does not exist.")
 
-        broadcast(f"{action_actor.name} tells {character}: {message}")
+        broadcast(f"{action_character.name} tells {character}: {message}")
         first_prompt = (
-            "{last_actor.name} starts a conversation with you. They say: {response}\n"
+            "{last_character.name} starts a conversation with you. They say: {response}\n"
             "Reply with your response to them. "
-            "Do not include the message or any JSON. Only include your reply to {last_actor.name}."
+            "Do not include the message or any JSON. Only include your reply to {last_character.name}."
         )
         reply_prompt = (
-            "{last_actor.name} continues the conversation with you. They reply: {response}\n"
+            "{last_character.name} continues the conversation with you. They reply: {response}\n"
             "Reply with your response to them. "
-            "Do not include the message or any JSON. Only include your reply to {last_actor.name}."
+            "Do not include the message or any JSON. Only include your reply to {last_character.name}."
         )
 
-        action_agent = get_agent_for_actor(action_actor)
+        action_agent = get_agent_for_character(action_character)
         answer = loop_conversation(
             action_room,
-            [question_actor, action_actor],
+            [question_character, action_character],
             [question_agent, action_agent],
-            action_actor,
+            action_character,
             first_prompt,
             reply_prompt,
             message,
@@ -224,7 +224,7 @@ def action_tell(character: str, message: str) -> str:
         )
 
         if answer:
-            broadcast(f"{character} responds to {action_actor.name}: {answer}")
+            broadcast(f"{character} responds to {action_character.name}: {answer}")
             return f"{character} responds: {answer}"
 
         return f"{character} does not respond."
@@ -238,23 +238,23 @@ def action_give(character: str, item: str) -> str:
         character: The name of the character to give the item to.
         item: The name of the item to give.
     """
-    with action_context() as (action_room, action_actor):
-        destination_actor = find_actor_in_room(action_room, character)
-        if not destination_actor:
+    with action_context() as (action_room, action_character):
+        destination_character = find_character_in_room(action_room, character)
+        if not destination_character:
             raise ActionError(f"The {character} character is not in the room.")
 
-        if destination_actor == action_actor:
+        if destination_character == action_character:
             raise ActionError(
                 "You cannot give an item to yourself. Try another action."
             )
 
-        action_item = find_item_in_actor(action_actor, item)
+        action_item = find_item_in_character(action_character, item)
         if not action_item:
             raise ActionError(f"You do not have the {item} item in your inventory.")
 
-        broadcast(f"{action_actor.name} gives {character} the {item} item.")
-        action_actor.items.remove(action_item)
-        destination_actor.items.append(action_item)
+        broadcast(f"{action_character.name} gives {character} the {item} item.")
+        action_character.items.remove(action_item)
+        destination_character.items.append(action_item)
 
         return f"You give the {item} item to {character}."
 
@@ -267,13 +267,13 @@ def action_drop(item: str) -> str:
         item: The name of the item to drop.
     """
 
-    with action_context() as (action_room, action_actor):
-        action_item = find_item_in_actor(action_actor, item)
+    with action_context() as (action_room, action_character):
+        action_item = find_item_in_character(action_character, item)
         if not action_item:
             raise ActionError(f"You do not have the {item} item in your inventory.")
 
-        broadcast(f"{action_actor.name} drops the {item} item")
-        action_actor.items.remove(action_item)
+        broadcast(f"{action_character.name} drops the {item} item")
+        action_character.items.remove(action_item)
         action_room.items.append(action_item)
 
         return f"You drop the {item} item."

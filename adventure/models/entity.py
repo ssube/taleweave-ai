@@ -23,7 +23,7 @@ class Item(BaseModel):
 
 
 @dataclass
-class Actor(BaseModel):
+class Character(BaseModel):
     name: str
     backstory: str
     description: str
@@ -33,7 +33,7 @@ class Actor(BaseModel):
     attributes: Attributes = Field(default_factory=dict)
     items: List[Item] = Field(default_factory=list)
     id: str = Field(default_factory=uuid)
-    type: Literal["actor"] = "actor"
+    type: Literal["character"] = "character"
 
 
 @dataclass
@@ -51,7 +51,7 @@ class Portal(BaseModel):
 class Room(BaseModel):
     name: str
     description: str
-    actors: List[Actor] = Field(default_factory=list)
+    characters: List[Character] = Field(default_factory=list)
     actions: Actions = Field(default_factory=dict)
     active_effects: List[EffectResult] = Field(default_factory=list)
     attributes: Attributes = Field(default_factory=dict)
@@ -80,12 +80,12 @@ class WorldState(BaseModel):
     type: Literal["world_state"] = "world_state"
 
 
-WorldEntity = Room | Actor | Item | Portal
+WorldEntity = Room | Character | Item | Portal
 
 
 @dataclass
 class EntityReference:
-    actor: str | None = None
+    character: str | None = None
     item: str | None = None
     portal: str | None = None
     room: str | None = None

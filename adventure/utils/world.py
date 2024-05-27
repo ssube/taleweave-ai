@@ -2,25 +2,26 @@ from logging import getLogger
 
 from adventure.context import get_game_systems
 from adventure.game_system import FormatPerspective
-from adventure.models.entity import Actor, WorldEntity
+from adventure.models.entity import Character, WorldEntity
 
 logger = getLogger(__name__)
 
 
-def describe_actor(
-    actor: Actor, perspective: FormatPerspective = FormatPerspective.SECOND_PERSON
+def describe_character(
+    character: Character,
+    perspective: FormatPerspective = FormatPerspective.SECOND_PERSON,
 ) -> str:
-    attribute_descriptions = format_attributes(actor, perspective=perspective)
-    logger.info("describing actor: %s, %s", actor, attribute_descriptions)
+    attribute_descriptions = format_attributes(character, perspective=perspective)
+    logger.info("describing character: %s, %s", character, attribute_descriptions)
 
     if perspective == FormatPerspective.SECOND_PERSON:
-        actor_description = actor.backstory
+        character_description = character.backstory
     elif perspective == FormatPerspective.THIRD_PERSON:
-        actor_description = actor.description
+        character_description = character.description
     else:
         raise ValueError(f"Perspective {perspective} is not implemented")
 
-    return f"{actor_description} {attribute_descriptions}"
+    return f"{character_description} {attribute_descriptions}"
 
 
 def describe_static(entity: WorldEntity) -> str:
@@ -32,8 +33,8 @@ def describe_entity(
     entity: WorldEntity,
     perspective: FormatPerspective = FormatPerspective.SECOND_PERSON,
 ) -> str:
-    if isinstance(entity, Actor):
-        return describe_actor(entity, perspective)
+    if isinstance(entity, Character):
+        return describe_character(entity, perspective)
 
     return describe_static(entity)
 

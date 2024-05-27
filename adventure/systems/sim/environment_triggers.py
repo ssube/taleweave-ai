@@ -3,21 +3,21 @@ from adventure.models.entity import Attributes, Room
 
 def hot_room(room: Room, attributes: Attributes):
     """
-    If the room is hot, actors should get hotter.
+    If the room is hot, characters should get hotter.
     """
 
-    for actor in room.actors:
-        actor.attributes["hot"] = "hot"
+    for character in room.characters:
+        character.attributes["hot"] = "hot"
 
     return attributes
 
 
 def cold_room(room: Room, attributes: Attributes):
     """
-    If the room is cold, actors should get colder.
+    If the room is cold, characters should get colder.
     """
 
-    for actor in room.actors:
-        actor.attributes["cold"] = "cold"
+    for character in room.characters:
+        character.attributes["cold"] = "cold"
 
     return attributes

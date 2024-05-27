@@ -13,7 +13,7 @@ import useWebSocketModule from 'react-use-websocket';
 import { useStore } from 'zustand';
 
 import { HistoryPanel } from './history.js';
-import { Actor } from './models.js';
+import { Character } from './models.js';
 import { PlayerPanel } from './player.js';
 import { Statusbar } from './status.js';
 import { StoreState, store } from './store.js';
@@ -52,15 +52,15 @@ export function App(props: AppProps) {
     sendMessage(JSON.stringify({ type: 'render', event }));
   }
 
-  function setPlayer(actor: Maybe<Actor>) {
+  function setPlayer(character: Maybe<Character>) {
     // do not call setCharacter until the server confirms the player change
-    if (doesExist(actor)) {
-      sendMessage(JSON.stringify({ type: 'player', become: actor.name }));
+    if (doesExist(character)) {
+      sendMessage(JSON.stringify({ type: 'player', become: character.name }));
     }
   }
 
   function sendInput(input: string) {
-    const { character, setActiveTurn } = store.getState();
+    const { playerCharacter: character, setActiveTurn } = store.getState();
     if (doesExist(character)) {
       sendMessage(JSON.stringify({ type: 'input', input }));
       setActiveTurn(false);
@@ -80,7 +80,7 @@ export function App(props: AppProps) {
   });
 
   useEffect(() => {
-    const { setClientId, setActiveTurn, setPlayers, appendEvent, setWorld, world, clientId, setCharacter } = store.getState();
+    const { setClientId, setActiveTurn, setPlayers, appendEvent, setWorld, world, clientId, setPlayerCharacter: setCharacter } = store.getState();
     if (doesExist(lastMessage)) {
       const event = JSON.parse(lastMessage.data);
 
@@ -98,8 +98,8 @@ export function App(props: AppProps) {
         case 'player':
           if (event.status === 'join' && doesExist(world) && event.client === clientId) {
             const { character: characterName } = event;
-            const actor = world.rooms.flatMap((room) => room.actors).find((a) => a.name === characterName);
-            setCharacter(actor);
+            const character = world.rooms.flatMap((room) => room.characters).find((a) => a.name === characterName);
+            setCharacter(character);
           }
           break;
         case 'players':

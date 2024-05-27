@@ -9,9 +9,9 @@ from discord import Client, Embed, File, Intents
 
 from adventure.context import (
     broadcast,
-    get_actor_agent_for_name,
+    get_character_agent_for_name,
     get_current_world,
-    set_actor_agent,
+    set_character_agent,
     subscribe,
 )
 from adventure.models.config import DEFAULT_CONFIG, DiscordBotConfig
@@ -101,15 +101,15 @@ class AdventureClient(Client):
                 await channel.send(f"{character_name} has already been taken!")
                 return
 
-            actor, agent = get_actor_agent_for_name(character_name)
-            if not actor:
+            character, agent = get_character_agent_for_name(character_name)
+            if not character:
                 await channel.send(f"Character `{character_name}` not found!")
                 return
 
             def prompt_player(event: PromptEvent):
                 logger.info(
                     "append prompt for character %s (user %s) to queue: %s",
-                    event.actor.name,
+                    event.character.name,
                     user_name,
                     event.prompt,
                 )
@@ -118,12 +118,12 @@ class AdventureClient(Client):
                 return True
 
             player = RemotePlayer(
-                actor.name, actor.backstory, prompt_player, fallback_agent=agent
+                character.name, character.backstory, prompt_player, fallback_agent=agent
             )
-            set_actor_agent(character_name, actor, player)
+            set_character_agent(character_name, character, player)
             set_player(user_name, player)
 
-            logger.info(f"{user_name} has joined the game as {actor.name}!")
+            logger.info(f"{user_name} has joined the game as {character.name}!")
             join_event = PlayerEvent("join", character_name, user_name)
             return broadcast(join_event)
 
@@ -133,10 +133,12 @@ class AdventureClient(Client):
                 remove_player(user_name)
 
                 # revert to LLM agent
-                actor, _ = get_actor_agent_for_name(player.name)
-                if actor and player.fallback_agent:
+                character, _ = get_character_agent_for_name(player.name)
+                if character and player.fallback_agent:
                     logger.info("restoring LLM agent for %s", player.name)
-                    set_actor_agent(actor.name, actor, player.fallback_agent)
+                    set_character_agent(
+                        character.name, character, player.fallback_agent
+                    )
 
                 # broadcast leave event
                 logger.info("disconnecting player %s from %s", user_name, player.name)
@@ -324,7 +326,7 @@ def embed_from_event(event: GameEvent) -> Embed | None:
 
 
 def embed_from_action(event: ActionEvent | ReplyEvent):
-    action_embed = Embed(title=event.room.name, description=event.actor.name)
+    action_embed = Embed(title=event.room.name, description=event.character.name)
 
     if isinstance(event, ActionEvent):
         action_name = event.action.replace("action_", "").title()
@@ -350,7 +352,7 @@ def embed_from_result(event: ResultEvent):
     if len(text) > 1000:
         text = text[:1000] + "..."
 
-    result_embed = Embed(title=event.room.name, description=event.actor.name)
+    result_embed = Embed(title=event.room.name, description=event.character.name)
     result_embed.add_field(name="Result", value=text)
     return result_embed
 
@@ -369,7 +371,7 @@ def embed_from_player(event: PlayerEvent):
 
 def embed_from_prompt(event: PromptEvent):
     # TODO: ping the player
-    prompt_embed = Embed(title=event.room.name, description=event.actor.name)
+    prompt_embed = Embed(title=event.room.name, description=event.character.name)
     prompt_embed.add_field(name="Prompt", value=event.prompt)
     return prompt_embed
 
@@ -377,7 +379,7 @@ def embed_from_prompt(event: PromptEvent):
 def embed_from_status(event: StatusEvent):
     status_embed = Embed(
         title=event.room.name if event.room else "",
-        description=event.actor.name if event.actor else "",
+        description=event.character.name if event.character else "",
     )
     status_embed.add_field(name="Status", value=event.text)
     return status_embed

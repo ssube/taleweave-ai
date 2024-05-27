@@ -18,7 +18,7 @@ from packit.agent import Agent
 from pyee.base import EventEmitter
 
 from adventure.game_system import GameSystem
-from adventure.models.entity import Actor, Room, World
+from adventure.models.entity import Character, Room, World
 from adventure.models.event import GameEvent
 from adventure.utils.string import normalize_name
 
@@ -28,7 +28,7 @@ logger = getLogger(__name__)
 current_step = 0
 current_world: World | None = None
 current_room: Room | None = None
-current_actor: Actor | None = None
+current_character: Character | None = None
 dungeon_master: Agent | None = None
 
 # game context
@@ -38,7 +38,7 @@ system_data: Dict[str, Any] = {}
 
 
 # TODO: where should this one go?
-actor_agents: Dict[str, Tuple[Actor, Agent]] = {}
+character_agents: Dict[str, Tuple[Character, Agent]] = {}
 
 STRING_EVENT_TYPE = "message"
 
@@ -88,44 +88,44 @@ def has_dungeon_master():
 # region context manager
 @contextmanager
 def action_context():
-    room, actor = get_action_context()
-    yield room, actor
+    room, character = get_action_context()
+    yield room, character
 
 
 @contextmanager
 def world_context():
-    world, room, actor = get_world_context()
-    yield world, room, actor
+    world, room, character = get_world_context()
+    yield world, room, character
 
 
 # endregion
 
 
 # region context getters
-def get_action_context() -> Tuple[Room, Actor]:
+def get_action_context() -> Tuple[Room, Character]:
     if not current_room:
         raise ValueError("The current room must be set before calling action functions")
-    if not current_actor:
+    if not current_character:
         raise ValueError(
-            "The current actor must be set before calling action functions"
+            "The current character must be set before calling action functions"
         )
 
-    return (current_room, current_actor)
+    return (current_room, current_character)
 
 
-def get_world_context() -> Tuple[World, Room, Actor]:
+def get_world_context() -> Tuple[World, Room, Character]:
     if not current_world:
         raise ValueError(
             "The current world must be set before calling action functions"
         )
     if not current_room:
         raise ValueError("The current room must be set before calling action functions")
-    if not current_actor:
+    if not current_character:
         raise ValueError(
-            "The current actor must be set before calling action functions"
+            "The current character must be set before calling action functions"
         )
 
-    return (current_world, current_room, current_actor)
+    return (current_world, current_room, current_character)
 
 
 def get_current_world() -> World | None:
@@ -136,8 +136,8 @@ def get_current_room() -> Room | None:
     return current_room
 
 
-def get_current_actor() -> Actor | None:
-    return current_actor
+def get_current_character() -> Character | None:
+    return current_character
 
 
 def get_current_step() -> int:
@@ -175,9 +175,9 @@ def set_current_room(room: Room | None):
     current_room = room
 
 
-def set_current_actor(actor: Actor | None):
-    global current_actor
-    current_actor = actor
+def set_current_character(character: Character | None):
+    global current_character
+    current_character = character
 
 
 def set_current_step(step: int):
@@ -185,8 +185,8 @@ def set_current_step(step: int):
     current_step = step
 
 
-def set_actor_agent(name, actor, agent):
-    actor_agents[name] = (actor, agent)
+def set_character_agent(name, character, agent):
+    character_agents[name] = (character, agent)
 
 
 def set_dungeon_master(agent):
@@ -207,41 +207,41 @@ def set_system_data(system: str, data: Any):
 
 
 # region search functions
-def get_actor_for_agent(agent):
+def get_character_for_agent(agent):
     return next(
         (
-            inner_actor
-            for inner_actor, inner_agent in actor_agents.values()
+            inner_character
+            for inner_character, inner_agent in character_agents.values()
             if inner_agent == agent
         ),
         None,
     )
 
 
-def get_agent_for_actor(actor):
+def get_agent_for_character(character):
     return next(
         (
             inner_agent
-            for inner_actor, inner_agent in actor_agents.values()
-            if inner_actor == actor
+            for inner_character, inner_agent in character_agents.values()
+            if inner_character == character
         ),
         None,
     )
 
 
-def get_actor_agent_for_name(name):
+def get_character_agent_for_name(name):
     return next(
         (
-            (actor, agent)
-            for actor, agent in actor_agents.values()
-            if normalize_name(actor.name) == normalize_name(name)
+            (character, agent)
+            for character, agent in character_agents.values()
+            if normalize_name(character.name) == normalize_name(name)
         ),
         (None, None),
     )
 
 
-def get_all_actor_agents():
-    return list(actor_agents.values())
+def get_all_character_agents():
+    return list(character_agents.values())
 
 
 # endregion

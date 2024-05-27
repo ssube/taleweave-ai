@@ -21,7 +21,7 @@ rules:
   # hunger logic
   - group: hunger
     match:
-      type: actor
+      type: character
       hunger: full
     chance: 0.1
     set:
@@ -37,7 +37,7 @@ rules:
   # thirst logic
   - group: thirst
     match:
-      type: actor
+      type: character
       thirst: hydrated
     chance: 0.1
     set:
@@ -77,27 +77,27 @@ labels:
     backstory: You are rotten and inedible.
     description: This item is rotten and inedible.
   - match:
-      type: actor
+      type: character
       spoiled: false
     backstory: You are fresh and edible.
     description: This item is fresh and edible.
   - match:
-      type: actor
+      type: character
       hunger: full
     backstory: You are have eaten recently and are full.
     description: ~
   - match:
-      type: actor
+      type: character
       hunger: hungry
     backstory: You are hungry and need to eat.
     description: They look hungry.
   - match:
-      type: actor
+      type: character
       thirst: hydrated
     backstory: You are hydrated.
     description: ~
   - match:
-      type: actor
+      type: character
       thirst: thirsty
     backstory: You are thirsty and need to drink.
     description: They look thirsty.

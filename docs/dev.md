@@ -45,5 +45,5 @@ additional configuration from a YAML or JSON file.
 
 - figure out the human input syntax for actions
 - make an admin panel in web UI
-- store long-term memory for actors in a vector DB (RAG and all that)
+- store long-term memory for characters in a vector DB (RAG and all that)
 - generate and simulate should probably be async

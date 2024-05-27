@@ -10,7 +10,7 @@ export interface PlayerPanelProps {
 
 export function playerStateSelector(s: StoreState) {
   return {
-    character: s.character,
+    character: s.playerCharacter,
     activeTurn: s.activeTurn,
   };
 }

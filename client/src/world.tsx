@@ -6,10 +6,10 @@ import React from 'react';
 
 import { useStore } from 'zustand';
 import { StoreState, store } from './store';
-import { Actor, Item, Portal, Room } from './models';
+import { Character, Item, Portal, Room } from './models';
 
-export type SetDetails = (entity: Maybe<Item | Actor | Room>) => void;
-export type SetPlayer = (actor: Maybe<Actor>) => void;
+export type SetDetails = (entity: Maybe<Item | Character | Room>) => void;
+export type SetPlayer = (character: Maybe<Character>) => void;
 
 export interface BaseEntityItemProps {
   setPlayer: SetPlayer;
@@ -25,14 +25,14 @@ export function formatLabel(name: string, active = false): string {
 
 export function itemStateSelector(s: StoreState) {
   return {
-    character: s.character,
+    playerCharacter: s.playerCharacter,
     setDetailEntity: s.setDetailEntity,
   };
 }
 
-export function actorStateSelector(s: StoreState) {
+export function characterStateSelector(s: StoreState) {
   return {
-    character: s.character,
+    playerCharacter: s.playerCharacter,
     players: s.players,
     setDetailEntity: s.setDetailEntity,
   };
@@ -65,33 +65,33 @@ export function ItemItem(props: { item: Item } & BaseEntityItemProps) {
   </TreeItem>;
 }
 
-export function ActorItem(props: { actor: Actor } & BaseEntityItemProps) {
-  const { actor, setPlayer } = props;
-  const state = useStore(store, actorStateSelector);
-  const { character, players, setDetailEntity } = state;
+export function CharacterItem(props: { character: Character } & BaseEntityItemProps) {
+  const { character, setPlayer } = props;
+  const state = useStore(store, characterStateSelector);
+  const { playerCharacter, players, setDetailEntity } = state;
 
-  const activeSelf = doesExist(character) && actor.name === character.name;
-  const activeOther = Object.values(players).some((it) => it === actor.name); // TODO: are these the keys or the values?
-  const label = formatLabel(actor.name, activeSelf);
+  const activeSelf = doesExist(playerCharacter) && character.name === playerCharacter.name;
+  const activeOther = Object.values(players).some((it) => it === character.name); // TODO: are these the keys or the values?
+  const label = formatLabel(character.name, activeSelf);
 
   let playButton;
   if (activeSelf) {
-    playButton = <TreeItem itemId={`${actor.name}-stop`} label="Stop playing" onClick={() => setPlayer(undefined)} />;
+    playButton = <TreeItem itemId={`${character.name}-stop`} label="Stop playing" onClick={() => setPlayer(undefined)} />;
   } else {
     if (activeOther) {
       // eslint-disable-next-line no-restricted-syntax
-      const player = Object.entries(players).find((it) => it[1] === actor.name)?.[0];
-      playButton = <TreeItem itemId={`${actor.name}-taken`} label={`Played by ${player}`} />;
+      const player = Object.entries(players).find((it) => it[1] === character.name)?.[0];
+      playButton = <TreeItem itemId={`${character.name}-taken`} label={`Played by ${player}`} />;
     } else {
-      playButton = <TreeItem itemId={`${actor.name}-play`} label="Play!" onClick={() => setPlayer(actor)} />;
+      playButton = <TreeItem itemId={`${character.name}-play`} label="Play!" onClick={() => setPlayer(character)} />;
     }
   }
 
-  return <TreeItem itemId={actor.name} label={label}>
+  return <TreeItem itemId={character.name} label={label}>
     {playButton}
-    <TreeItem itemId={`${actor.name}-details`} label="Details" onClick={() => setDetailEntity(actor)} />
-    <TreeItem itemId={`${actor.name}-items`} label="Items">
-      {actor.items.map((item) => <ItemItem key={item.name} item={item} setPlayer={setPlayer} />)}
+    <TreeItem itemId={`${character.name}-details`} label="Details" onClick={() => setDetailEntity(character)} />
+    <TreeItem itemId={`${character.name}-items`} label="Items">
+      {character.items.map((item) => <ItemItem key={item.name} item={item} setPlayer={setPlayer} />)}
     </TreeItem>
   </TreeItem>;
 }
@@ -99,15 +99,15 @@ export function ActorItem(props: { actor: Actor } & BaseEntityItemProps) {
 export function RoomItem(props: { room: Room } & BaseEntityItemProps) {
   const { room, setPlayer } = props;
   const state = useStore(store, itemStateSelector);
-  const { character, setDetailEntity } = state;
+  const { playerCharacter, setDetailEntity } = state;
 
-  const active = doesExist(character) && room.actors.some((it) => it.name === character.name);
+  const active = doesExist(playerCharacter) && room.characters.some((it) => it.name === playerCharacter.name);
   const label = formatLabel(room.name, active);
 
   return <TreeItem itemId={room.name} label={label}>
     <TreeItem itemId={`${room.name}-details`} label="Details" onClick={() => setDetailEntity(room)} />
-    <TreeItem itemId={`${room.name}-actors`} label="Actors">
-      {room.actors.map((actor) => <ActorItem key={actor.name} actor={actor} setPlayer={setPlayer} />)}
+    <TreeItem itemId={`${room.name}-characters`} label="Characters">
+      {room.characters.map((character) => <CharacterItem key={character.name} character={character} setPlayer={setPlayer} />)}
     </TreeItem>
     <TreeItem itemId={`${room.name}-items`} label="Items">
       {room.items.map((item) => <ItemItem key={item.name} item={item} setPlayer={setPlayer} />)}

@@ -1,5 +1,5 @@
 from adventure.context import action_context
-from adventure.utils.search import find_item_in_actor
+from adventure.utils.search import find_item_in_character
 
 
 def action_cook(item: str) -> str:
@@ -9,8 +9,8 @@ def action_cook(item: str) -> str:
     Args:
       item: The name of the item to cook.
     """
-    with action_context() as (_, action_actor):
-        target_item = find_item_in_actor(action_actor, item)
+    with action_context() as (_, action_character):
+        target_item = find_item_in_character(action_character, item)
         if target_item is None:
             return "You don't have the item to cook."
 
@@ -36,8 +36,8 @@ def action_eat(item: str) -> str:
     Args:
       item: The name of the item to eat.
     """
-    with action_context() as (_, action_actor):
-        target_item = find_item_in_actor(action_actor, item)
+    with action_context() as (_, action_character):
+        target_item = find_item_in_character(action_character, item)
         if target_item is None:
             return "You don't have the item to eat."
 
@@ -56,12 +56,12 @@ def action_eat(item: str) -> str:
         if spoiled:
             return "You can't eat that item, it is rotten."
 
-        # Check if the actor is hungry
-        hunger = action_actor.attributes.get("hunger", None)
+        # Check if the character is hungry
+        hunger = action_character.attributes.get("hunger", None)
         if hunger != "hungry":
             return "You're not hungry."
 
         # Eat the item
-        action_actor.items.remove(target_item)
-        action_actor.attributes["hunger"] = "full"
+        action_character.items.remove(target_item)
+        action_character.attributes["hunger"] = "full"
         return f"You eat the {item}."

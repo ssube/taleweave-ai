@@ -31,19 +31,19 @@ def action_craft(item: str) -> str:
     Args:
         item: The name of the item to craft.
     """
-    with world_context() as (action_world, _, action_actor):
+    with world_context() as (action_world, _, action_character):
         if item not in recipes:
             return f"There is no recipe to craft a {item}."
 
         recipe = recipes[item]
 
-        # Check if the actor has the required skill level
+        # Check if the character has the required skill level
         skill = randint(1, 20)
         if skill < recipe.difficulty:
             return f"You need a crafting skill level of {recipe.difficulty} to craft {item}."
 
         # Collect inventory items names
-        inventory_items = {item.name for item in action_actor.items}
+        inventory_items = {item.name for item in action_character.items}
 
         # Check for sufficient ingredients
         missing_items = [
@@ -55,13 +55,14 @@ def action_craft(item: str) -> str:
         # Deduct the ingredients from inventory
         for ingredient in recipe.ingredients:
             item_to_remove = next(
-                item for item in action_actor.items if item.name == ingredient
+                item for item in action_character.items if item.name == ingredient
             )
-            action_actor.items.remove(item_to_remove)
+            action_character.items.remove(item_to_remove)
 
         # Create and add the crafted item to inventory
         result_item = next(
-            (item for item in action_actor.items if item.name == recipe.result), None
+            (item for item in action_character.items if item.name == recipe.result),
+            None,
         )
         if result_item:
             new_item = Item(**vars(result_item))  # Copying the item
@@ -72,7 +73,7 @@ def action_craft(item: str) -> str:
                 dungeon_master, action_world, systems
             )  # TODO: pass crafting recipe and generate from that
 
-        action_actor.items.append(new_item)
+        action_character.items.append(new_item)
 
-        broadcast(f"{action_actor.name} crafts a {item}.")
+        broadcast(f"{action_character.name} crafts a {item}.")
         return f"You successfully craft a {item}."

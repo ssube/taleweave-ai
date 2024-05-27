@@ -14,13 +14,13 @@ from pydantic import RootModel
 
 from adventure.context import (
     broadcast,
-    get_actor_agent_for_name,
+    get_character_agent_for_name,
     get_current_world,
-    set_actor_agent,
+    set_character_agent,
     subscribe,
 )
 from adventure.models.config import DEFAULT_CONFIG, WebsocketServerConfig
-from adventure.models.entity import Actor, Item, Room, World
+from adventure.models.entity import Character, Item, Room, World
 from adventure.models.event import (
     GameEvent,
     PlayerEvent,
@@ -38,7 +38,7 @@ from adventure.player import (
 )
 from adventure.render.comfy import render_entity, render_event
 from adventure.state import snapshot_world, world_json
-from adventure.utils.search import find_actor, find_item, find_portal, find_room
+from adventure.utils.search import find_character, find_item, find_portal, find_room
 
 logger = getLogger(__name__)
 
@@ -76,8 +76,8 @@ async def handler(websocket):
     def sync_turn(event: PromptEvent) -> bool:
         # TODO: nothing about this is good
         player = get_player(id)
-        if player and player.name == event.actor.name:
-            asyncio.run(next_turn(event.actor.name, event.prompt))
+        if player and player.name == event.character.name:
+            asyncio.run(next_turn(event.character.name, event.prompt))
             return True
 
         return False
@@ -137,9 +137,11 @@ async def handler(websocket):
                         # TODO: should this always remove?
                         remove_player(id)
 
-                        actor, llm_agent = get_actor_agent_for_name(character_name)
-                        if not actor:
-                            logger.error(f"Failed to find actor {character_name}")
+                        character, llm_agent = get_character_agent_for_name(
+                            character_name
+                        )
+                        if not character:
+                            logger.error(f"Failed to find character {character_name}")
                             continue
 
                         # prevent any recursive fallback bugs
@@ -150,8 +152,8 @@ async def handler(websocket):
                             llm_agent = llm_agent.fallback_agent
 
                         player = RemotePlayer(
-                            actor.name,
-                            actor.backstory,
+                            character.name,
+                            character.backstory,
                             sync_turn,
                             fallback_agent=llm_agent,
                         )
@@ -161,7 +163,7 @@ async def handler(websocket):
                         )
 
                         # swap out the LLM agent
-                        set_actor_agent(actor.name, actor, player)
+                        set_character_agent(character.name, character, player)
 
                         # notify all clients that this character is now active
                         broadcast_player_event(character_name, player_name, "join")
@@ -195,10 +197,10 @@ async def handler(websocket):
         broadcast_player_event(player.name, player_name, "leave")
         broadcast_player_list()
 
-        actor, _ = get_actor_agent_for_name(player.name)
-        if actor and player.fallback_agent:
+        character, _ = get_character_agent_for_name(player.name)
+        if character and player.fallback_agent:
             logger.info("restoring LLM agent for %s", player.name)
-            set_actor_agent(player.name, actor, player.fallback_agent)
+            set_character_agent(player.name, character, player.fallback_agent)
 
     logger.info("client disconnected: %s", id)
 
@@ -220,17 +222,20 @@ def render_input(data):
             render_event(event)
         else:
             logger.error(f"failed to find event {event_id}")
-    elif "actor" in data:
-        actor_name = data["actor"]
-        actor = find_actor(world, actor_name)
-        if actor:
-            render_entity(actor)
+    elif "character" in data:
+        character_name = data["character"]
+        character = find_character(world, character_name)
+        if character:
+            render_entity(character)
         else:
-            logger.error(f"failed to find actor {actor_name}")
+            logger.error(f"failed to find character {character_name}")
     elif "item" in data:
         item_name = data["item"]
         item = find_item(
-            world, item_name, include_actor_inventory=True, include_item_inventory=True
+            world,
+            item_name,
+            include_character_inventory=True,
+            include_item_inventory=True,
         )
         if item:
             render_entity(item)
@@ -258,7 +263,7 @@ socket_thread = None
 
 
 def server_json(obj):
-    if isinstance(obj, (Actor, Item, Room)):
+    if isinstance(obj, (Character, Item, Room)):
         return obj.name
 
     return world_json(obj)

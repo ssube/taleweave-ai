@@ -28,7 +28,7 @@ server:
     port: 8001
 world:
   size:
-    actor_items:
+    character_items:
       min: 0
       max: 3
     item_effects:
@@ -40,7 +40,7 @@ world:
     rooms:
       min: 3
       max: 6
-    room_actors:
+    room_characters:
       min: 1
       max: 3
     room_items:

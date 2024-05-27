@@ -1,7 +1,7 @@
 rules:
   # sleeping logic
   - match:
-      type: actor
+      type: character
       sleep: rested
     chance: 0.1
     set:
@@ -15,12 +15,12 @@ rules:
 
 labels:
   - match:
-      type: actor
+      type: character
       sleep: rested
     backstory: You are well-rested.
     description: They look well-rested.
   - match:
-      type: actor
+      type: character
       sleep: tired
     backstory: You are tired.
     description: They look tired.

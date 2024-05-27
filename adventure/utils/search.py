@@ -1,7 +1,7 @@
 from typing import Any, Generator
 
 from adventure.models.entity import (
-    Actor,
+    Character,
     EntityReference,
     Item,
     Portal,
@@ -30,19 +30,19 @@ def find_portal(world: World, portal_name: str) -> Portal | None:
     return None
 
 
-def find_actor(world: World, actor_name: str) -> Actor | None:
+def find_character(world: World, character_name: str) -> Character | None:
     for room in world.rooms:
-        actor = find_actor_in_room(room, actor_name)
-        if actor:
-            return actor
+        character = find_character_in_room(room, character_name)
+        if character:
+            return character
 
     return None
 
 
-def find_actor_in_room(room: Room, actor_name: str) -> Actor | None:
-    for actor in room.actors:
-        if normalize_name(actor.name) == normalize_name(actor_name):
-            return actor
+def find_character_in_room(room: Room, character_name: str) -> Character | None:
+    for character in room.characters:
+        if normalize_name(character.name) == normalize_name(character_name):
+            return character
 
     return None
 
@@ -51,12 +51,12 @@ def find_actor_in_room(room: Room, actor_name: str) -> Actor | None:
 def find_item(
     world: World,
     item_name: str,
-    include_actor_inventory=False,
+    include_character_inventory=False,
     include_item_inventory=False,
 ) -> Item | None:
     for room in world.rooms:
         item = find_item_in_room(
-            room, item_name, include_actor_inventory, include_item_inventory
+            room, item_name, include_character_inventory, include_item_inventory
         )
         if item:
             return item
@@ -64,14 +64,14 @@ def find_item(
     return None
 
 
-def find_item_in_actor(
-    actor: Actor, item_name: str, include_item_inventory=False
+def find_item_in_character(
+    character: Character, item_name: str, include_item_inventory=False
 ) -> Item | None:
-    return find_item_in_container(actor, item_name, include_item_inventory)
+    return find_item_in_container(character, item_name, include_item_inventory)
 
 
 def find_item_in_container(
-    container: Actor | Item, item_name: str, include_item_inventory=False
+    container: Character | Item, item_name: str, include_item_inventory=False
 ) -> Item | None:
     for item in container.items:
         if normalize_name(item.name) == normalize_name(item_name):
@@ -88,7 +88,7 @@ def find_item_in_container(
 def find_item_in_room(
     room: Room,
     item_name: str,
-    include_actor_inventory=False,
+    include_character_inventory=False,
     include_item_inventory=False,
 ) -> Item | None:
     for item in room.items:
@@ -100,30 +100,30 @@ def find_item_in_room(
             if item:
                 return item
 
-    if include_actor_inventory:
-        for actor in room.actors:
-            item = find_item_in_actor(actor, item_name, include_item_inventory)
+    if include_character_inventory:
+        for character in room.characters:
+            item = find_item_in_character(character, item_name, include_item_inventory)
             if item:
                 return item
 
     return None
 
 
-def find_room_with_actor(world: World, actor: Actor) -> Room | None:
+def find_room_with_character(world: World, character: Character) -> Room | None:
     for room in world.rooms:
-        for room_actor in room.actors:
-            if normalize_name(actor.name) == normalize_name(room_actor.name):
+        for room_character in room.characters:
+            if normalize_name(character.name) == normalize_name(room_character.name):
                 return room
 
     return None
 
 
-def find_containing_room(world: World, entity: Room | Actor | Item) -> Room | None:
+def find_containing_room(world: World, entity: Room | Character | Item) -> Room | None:
     if isinstance(entity, Room):
         return entity
 
     for room in world.rooms:
-        if entity in room.actors or entity in room.items:
+        if entity in room.characters or entity in room.items:
             return room
 
     return None
@@ -139,8 +139,8 @@ def find_entity_reference(
     if reference.room:
         return find_room(world, reference.room)
 
-    if reference.actor:
-        return find_actor(world, reference.actor)
+    if reference.character:
+        return find_character(world, reference.character)
 
     if reference.item:
         return find_item(world, reference.item)
@@ -162,14 +162,14 @@ def list_portals(world: World) -> Generator[Portal, Any, None]:
             yield portal
 
 
-def list_actors(world: World) -> Generator[Actor, Any, None]:
+def list_characters(world: World) -> Generator[Character, Any, None]:
     for room in world.rooms:
-        for actor in room.actors:
-            yield actor
+        for character in room.characters:
+            yield character
 
 
 def list_items(
-    world: World, include_actor_inventory=True, include_item_inventory=True
+    world: World, include_character_inventory=True, include_item_inventory=True
 ) -> Generator[Item, Any, None]:
 
     for room in world.rooms:
@@ -179,21 +179,21 @@ def list_items(
             if include_item_inventory:
                 yield from list_items_in_container(item)
 
-        if include_actor_inventory:
-            for actor in room.actors:
-                for item in actor.items:
+        if include_character_inventory:
+            for character in room.characters:
+                for item in character.items:
                     yield item
 
 
-def list_actors_in_room(room: Room) -> Generator[Actor, Any, None]:
-    for actor in room.actors:
-        yield actor
+def list_characters_in_room(room: Room) -> Generator[Character, Any, None]:
+    for character in room.characters:
+        yield character
 
 
-def list_items_in_actor(
-    actor: Actor, include_item_inventory=True
+def list_items_in_character(
+    character: Character, include_item_inventory=True
 ) -> Generator[Item, Any, None]:
-    for item in actor.items:
+    for item in character.items:
         yield item
 
         if include_item_inventory:
@@ -212,7 +212,7 @@ def list_items_in_container(
 
 def list_items_in_room(
     room: Room,
-    include_actor_inventory=True,
+    include_character_inventory=True,
     include_item_inventory=True,
 ) -> Generator[Item, Any, None]:
     for item in room.items:
@@ -221,7 +221,7 @@ def list_items_in_room(
         if include_item_inventory:
             yield from list_items_in_container(item)
 
-    if include_actor_inventory:
-        for actor in room.actors:
-            for item in actor.items:
+    if include_character_inventory:
+        for character in room.characters:
+            for item in character.items:
                 yield item

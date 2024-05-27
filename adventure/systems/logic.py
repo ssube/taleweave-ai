@@ -138,9 +138,9 @@ def update_logic(
 ) -> None:
     for room in world.rooms:
         update_attributes(room, rules=rules, triggers=triggers)
-        for actor in room.actors:
-            update_attributes(actor, rules=rules, triggers=triggers)
-            for item in actor.items:
+        for character in room.characters:
+            update_attributes(character, rules=rules, triggers=triggers)
+            for item in character.items:
                 update_attributes(item, rules=rules, triggers=triggers)
         for item in room.items:
             update_attributes(item, rules=rules, triggers=triggers)

@@ -4,7 +4,7 @@ import { createStore, StateCreator } from 'zustand';
 import { doesExist, Maybe } from '@apextoaster/js-utils';
 import { PaletteMode } from '@mui/material';
 import { ReadyState } from 'react-use-websocket';
-import { Actor, GameEvent, Item, Portal, Room, World } from './models';
+import { Character, GameEvent, Item, Portal, Room, World } from './models';
 
 export type LayoutMode = 'horizontal' | 'vertical';
 
@@ -12,7 +12,7 @@ export interface ClientState {
   autoScroll: boolean;
   clientId: string;
   clientName: string;
-  detailEntity: Maybe<Item | Actor | Portal | Room | World>;
+  detailEntity: Maybe<Item | Character | Portal | Room | World>;
   eventHistory: Array<GameEvent>;
   layoutMode: LayoutMode;
   readyState: ReadyState;
@@ -22,7 +22,7 @@ export interface ClientState {
   setAutoScroll: (autoScroll: boolean) => void;
   setClientId: (clientId: string) => void;
   setClientName: (name: string) => void;
-  setDetailEntity: (entity: Maybe<Item | Actor | Portal | Room | World>) => void;
+  setDetailEntity: (entity: Maybe<Item | Character | Portal | Room | World>) => void;
   setLayoutMode: (mode: LayoutMode) => void;
   setReadyState: (state: ReadyState) => void;
   setThemeMode: (mode: PaletteMode) => void;
@@ -44,11 +44,11 @@ export interface WorldState {
 
 export interface PlayerState {
   activeTurn: boolean;
-  character: Maybe<Actor>;
+  playerCharacter: Maybe<Character>;
 
   // setters
   setActiveTurn: (activeTurn: boolean) => void;
-  setCharacter: (character: Maybe<Actor>) => void;
+  setPlayerCharacter: (character: Maybe<Character>) => void;
 
   // misc helpers
   isPlaying: () => boolean;
@@ -114,11 +114,11 @@ export function createWorldStore(): StateCreator<WorldState> {
 export function createPlayerStore(): StateCreator<PlayerState> {
   return (set) => ({
     activeTurn: false,
-    character: undefined,
+    playerCharacter: undefined,
     setActiveTurn: (activeTurn: boolean) => set({ activeTurn }),
-    setCharacter: (character: Maybe<Actor>) => set({ character }),
+    setPlayerCharacter: (character: Maybe<Character>) => set({ playerCharacter: character }),
     isPlaying() {
-      return doesExist(this.character);
+      return doesExist(this.playerCharacter);
     },
   });
 }

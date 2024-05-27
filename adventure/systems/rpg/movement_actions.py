@@ -11,7 +11,7 @@ def action_climb(target: str) -> str:
     Args:
         target: The object or feature to climb.
     """
-    with action_context() as (action_room, action_actor):
+    with action_context() as (action_room, action_character):
         dungeon_master = get_dungeon_master()
         # Assume 'climbable' is an attribute that marks climbable targets
         climbable_feature = find_item_in_room(action_room, target)
@@ -22,16 +22,16 @@ def action_climb(target: str) -> str:
 
             # Get flavor text for the climb attempt
             flavor_text = dungeon_master(
-                f"Describe {action_actor.name}'s attempt to climb {target}."
+                f"Describe {action_character.name}'s attempt to climb {target}."
             )
             if climb_roll > climb_difficulty:
                 broadcast(
-                    f"{action_actor.name} successfully climbs the {target}. {flavor_text}"
+                    f"{action_character.name} successfully climbs the {target}. {flavor_text}"
                 )
                 return f"You successfully climb the {target}."
             else:
                 broadcast(
-                    f"{action_actor.name} fails to climb the {target}. {flavor_text}"
+                    f"{action_character.name} fails to climb the {target}. {flavor_text}"
                 )
                 return f"You fail to climb the {target}."
         else:

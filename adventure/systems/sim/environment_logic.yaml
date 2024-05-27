@@ -2,7 +2,7 @@ rules:
   # wet/dry logic
   - group: environment-moisture
     match:
-      type: actor
+      type: character
       wet: true
     chance: 0.1
     set:
@@ -10,7 +10,7 @@ rules:
 
   - group: environment-moisture
     match:
-      type: actor
+      type: character
       wet: true
       temperature: hot
     chance: 0.2
@@ -33,7 +33,7 @@ rules:
 
 labels:
   - match:
-      type: actor
+      type: character
       wet: true
     backstory: You are soaking wet.
     description: They are soaking wet and dripping water.

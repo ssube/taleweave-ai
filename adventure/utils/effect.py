@@ -13,7 +13,7 @@ from adventure.models.effect import (
     StringEffectPattern,
     StringEffectResult,
 )
-from adventure.models.entity import Actor, Attributes
+from adventure.models.entity import Attributes, Character
 from adventure.utils.attribute import (
     add_value,
     append_value,
@@ -252,9 +252,9 @@ def apply_permanent_effects(
     return apply_permanent_results(attributes, results)
 
 
-def apply_effects(target: Actor, effects: List[EffectPattern]) -> None:
+def apply_effects(target: Character, effects: List[EffectPattern]) -> None:
     """
-    Apply a set of effects to an actor and their attributes.
+    Apply a set of effects to a character and their attributes.
     """
 
     permanent_effects = [
@@ -270,9 +270,9 @@ def apply_effects(target: Actor, effects: List[EffectPattern]) -> None:
     target.active_effects.extend(temporary_effects)
 
 
-def expire_effects(target: Actor) -> None:
+def expire_effects(target: Character) -> None:
     """
-    Decrement the duration of effects on an actor and remove any that have expired.
+    Decrement the duration of effects on a character and remove any that have expired.
     """
 
     for effect in target.active_effects:

@@ -12,7 +12,7 @@ from adventure.models.event import (
     ResultEvent,
     StatusEvent,
 )
-from adventure.utils.search import find_actor_in_room, find_item_in_room, find_room
+from adventure.utils.search import find_character_in_room, find_item_in_room, find_room
 from adventure.utils.world import describe_entity
 
 logger = getLogger(__name__)
@@ -28,11 +28,11 @@ def prompt_from_parameters(
         # look up the character
         character_name = str(parameters["character"])
         logger.debug("searching for parameter character: %s", character_name)
-        target_actor = find_actor_in_room(action_room, character_name)
-        if target_actor:
-            logger.debug("adding actor to prompt: %s", target_actor.name)
-            pre.append(f"with {target_actor.name}")
-            post.append(describe_entity(target_actor))
+        target_character = find_character_in_room(action_room, character_name)
+        if target_character:
+            logger.debug("adding character to prompt: %s", target_character.name)
+            pre.append(f"with {target_character.name}")
+            post.append(describe_entity(target_character))
 
     if "item" in parameters:
         # look up the item
@@ -41,7 +41,7 @@ def prompt_from_parameters(
         target_item = find_item_in_room(
             action_room,
             item_name,
-            include_actor_inventory=True,
+            include_character_inventory=True,
             include_item_inventory=True,
         )
         if target_item:
@@ -50,7 +50,7 @@ def prompt_from_parameters(
             post.append(describe_entity(target_item))
 
     if "target" in parameters:
-        # could be a room, actor, or item
+        # could be a room, character, or item
         target_name = str(parameters["target"])
         logger.debug("searching for parameter target: %s", target_name)
 
@@ -62,16 +62,16 @@ def prompt_from_parameters(
                 pre.append(f"in the {target_room.name}")
                 post.append(describe_entity(target_room))
 
-            target_actor = find_actor_in_room(action_room, target_name)
-            if target_actor:
-                logger.debug("adding actor to prompt: %s", target_actor.name)
-                pre.append(f"with {target_actor.name}")
-                post.append(describe_entity(target_actor))
+            target_character = find_character_in_room(action_room, target_name)
+            if target_character:
+                logger.debug("adding character to prompt: %s", target_character.name)
+                pre.append(f"with {target_character.name}")
+                post.append(describe_entity(target_character))
 
             target_item = find_item_in_room(
                 action_room,
                 target_name,
-                include_actor_inventory=True,
+                include_character_inventory=True,
                 include_item_inventory=True,
             )
             if target_item:
@@ -92,20 +92,20 @@ def scene_from_event(event: GameEvent) -> str | None:
         )
 
         return (
-            f"{event.actor.name} uses the {action_name} action {parameter_pre}. "
-            "{describe_entity(event.actor)}. {describe_entity(event.room)}. {parameter_post}."
+            f"{event.character.name} uses the {action_name} action {parameter_pre}. "
+            "{describe_entity(event.character)}. {describe_entity(event.room)}. {parameter_post}."
         )
 
     if isinstance(event, ReplyEvent):
-        return f"{event.actor.name} replies: {event.text}. {describe_entity(event.actor)}. {describe_entity(event.room)}."
+        return f"{event.character.name} replies: {event.text}. {describe_entity(event.character)}. {describe_entity(event.room)}."
 
     if isinstance(event, ResultEvent):
-        return f"{event.result}. {describe_entity(event.actor)}. {describe_entity(event.room)}."
+        return f"{event.result}. {describe_entity(event.character)}. {describe_entity(event.room)}."
 
     if isinstance(event, StatusEvent):
         if event.room:
-            if event.actor:
-                return f"{event.text}. {describe_entity(event.actor)}. {describe_entity(event.room)}."
+            if event.character:
+                return f"{event.text}. {describe_entity(event.character)}. {describe_entity(event.room)}."
 
             return f"{event.text}. {describe_entity(event.room)}."
 

@@ -178,9 +178,9 @@ class RemotePlayer(BasePlayer):
         formatted_prompt = prompt.format(**kwargs)
         self.memory.append(HumanMessage(content=formatted_prompt))
 
-        with action_context() as (current_room, current_actor):
+        with action_context() as (current_room, current_character):
             prompt_event = PromptEvent(
-                prompt=formatted_prompt, room=current_room, actor=current_actor
+                prompt=formatted_prompt, room=current_room, character=current_character
             )
 
             try:

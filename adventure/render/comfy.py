@@ -226,14 +226,16 @@ def fast_hash(text: str) -> str:
 
 def get_image_prefix(event: GameEvent | WorldEntity) -> str:
     if isinstance(event, ActionEvent):
-        return sanitize_name(f"event-action-{event.actor.name}-{event.action}")
+        return sanitize_name(f"event-action-{event.character.name}-{event.action}")
 
     if isinstance(event, ReplyEvent):
-        return sanitize_name(f"event-reply-{event.actor.name}-{fast_hash(event.text)}")
+        return sanitize_name(
+            f"event-reply-{event.character.name}-{fast_hash(event.text)}"
+        )
 
     if isinstance(event, ResultEvent):
         return sanitize_name(
-            f"event-result-{event.actor.name}-{fast_hash(event.result)}"
+            f"event-result-{event.character.name}-{fast_hash(event.result)}"
         )
 
     if isinstance(event, StatusEvent):

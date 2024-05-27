@@ -24,6 +24,8 @@
       - [Player leaves the game during their turn](#player-leaves-the-game-during-their-turn)
       - [Spectator renders a recent event](#spectator-renders-a-recent-event)
     - [User Stories for Developers](#user-stories-for-developers)
+      - [ML Engineer collects prompts and actions to fine-tune a character model](#ml-engineer-collects-prompts-and-actions-to-fine-tune-a-character-model)
+      - [ML Engineer collects character movement and conversations to chart emergent behavior](#ml-engineer-collects-character-movement-and-conversations-to-chart-emergent-behavior)
       - [Mod Developer creates a new system for the game](#mod-developer-creates-a-new-system-for-the-game)
       - [Project Contributor fixes a bug in the engine](#project-contributor-fixes-a-bug-in-the-engine)
 
@@ -174,9 +176,20 @@ Skills:
 
 ### User Stories for Developers
 
+#### ML Engineer collects prompts and actions to fine-tune a character model
+
+> As an ML engineer, I want to collect data from the game history, especially prompts, actions, and their results, so
+> that I can fine-tune an LLM to be a better model for characters.
+
+#### ML Engineer collects character movement and conversations to chart emergent behavior
+
+> As an ML engineer, I want to collect data from the game history, especially character movement, interactions, and
+> conversations, so that I can graph their movements and discover any emergent behavior in the game world.
+
 #### Mod Developer creates a new system for the game
 
-> As a Mod Developer, I want to write a Python module with a new game system and load it into a test world, so that I can develop custom features.
+> As a Mod Developer, I want to write a Python module with a new game system and load it into a test world, so that I
+> can develop custom features.
 
 #### Project Contributor fixes a bug in the engine
 

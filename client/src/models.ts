@@ -17,8 +17,8 @@ export interface Item {
   attributes: Attributes;
 }
 
-export interface Actor {
-  type: 'actor';
+export interface Character {
+  type: 'character';
   name: string;
   backstory: string;
   description: string;
@@ -38,7 +38,7 @@ export interface Room {
   type: 'room';
   name: string;
   description: string;
-  actors: Array<Actor>;
+  characters: Array<Character>;
   items: Array<Item>;
   portals: Array<Portal>;
   attributes: Attributes;

@@ -8,7 +8,7 @@ from adventure.context import get_system_data
 from adventure.game_system import GameSystem, SystemData
 from adventure.models.base import Attributes, dataclass, uuid
 from adventure.models.entity import (
-    Actor,
+    Character,
     EntityReference,
     Item,
     Room,
@@ -35,8 +35,8 @@ class QuestGoalContains:
     Quest goal for any kind of fetch quest, including delivery and escort quests.
 
     Valid combinations are:
-    - container: Room and items: List[Actor | Item]
-    - container: Actor and items: List[Item]
+    - container: Room and items: List[Character | Item]
+    - container: Character and items: List[Item]
     """
 
     container: EntityReference
@@ -98,7 +98,7 @@ def is_quest_complete(world: World, quest: Quest) -> bool:
                 if content.item:
                     if not find_item_in_room(container, content.item):
                         return False
-            elif isinstance(container, (Actor, Item)):
+            elif isinstance(container, (Character, Item)):
                 if content.item:
                     if not find_item_in_container(container, content.item):
                         return False
@@ -122,41 +122,41 @@ def is_quest_complete(world: World, quest: Quest) -> bool:
 
 
 # region state management
-def get_quests_for_actor(quests: QuestData, actor: Actor) -> List[Quest]:
+def get_quests_for_character(quests: QuestData, character: Character) -> List[Quest]:
     """
-    Get all quests for the given actor.
+    Get all quests for the given character.
     """
-    return quests.available.get(actor.name, [])
+    return quests.available.get(character.name, [])
 
 
-def set_active_quest(quests: QuestData, actor: Actor, quest: Quest) -> None:
+def set_active_quest(quests: QuestData, character: Character, quest: Quest) -> None:
     """
-    Set the active quest for the given actor.
+    Set the active quest for the given character.
     """
-    quests.active[actor.name] = quest
+    quests.active[character.name] = quest
 
 
-def get_active_quest(quests: QuestData, actor: Actor) -> Quest | None:
+def get_active_quest(quests: QuestData, character: Character) -> Quest | None:
     """
-    Get the active quest for the given actor.
+    Get the active quest for the given character.
     """
-    return quests.active.get(actor.name)
+    return quests.active.get(character.name)
 
 
-def complete_quest(quests: QuestData, actor: Actor, quest: Quest) -> None:
+def complete_quest(quests: QuestData, character: Character, quest: Quest) -> None:
     """
-    Complete the given quest for the given actor.
+    Complete the given quest for the given character.
     """
-    if quest in quests.available.get(actor.name, []):
-        quests.available[actor.name].remove(quest)
+    if quest in quests.available.get(character.name, []):
+        quests.available[character.name].remove(quest)
 
-    if quest == quests.active.get(actor.name, None):
-        del quests.active[actor.name]
+    if quest == quests.active.get(character.name, None):
+        del quests.active[character.name]
 
-    if actor.name not in quests.completed:
-        quests.completed[actor.name] = []
+    if character.name not in quests.completed:
+        quests.completed[character.name] = []
 
-    quests.completed[actor.name].append(quest)
+    quests.completed[character.name].append(quest)
 
 
 # endregion
@@ -180,8 +180,8 @@ def generate_quests(agent: Agent, theme: str, entity: WorldEntity) -> None:
     if not quests:
         raise ValueError("Quest data is required for quest generation")
 
-    if isinstance(entity, Actor):
-        available_quests = get_quests_for_actor(quests, entity)
+    if isinstance(entity, Character):
+        available_quests = get_quests_for_character(quests, entity)
         if len(available_quests) == 0:
             logger.info(f"generating new quest for {entity.name}")
             # TODO: generate one new quest
@@ -201,13 +201,17 @@ def simulate_quests(world: World, step: int, data: QuestData | None = None) -> N
         raise ValueError("Quest data is required for simulation")
 
     for room in world.rooms:
-        for actor in room.actors:
-            active_quest = get_active_quest(quests, actor)
+        for character in room.characters:
+            active_quest = get_active_quest(quests, character)
             if active_quest:
-                logger.info(f"simulating quest for {actor.name}: {active_quest.name}")
+                logger.info(
+                    f"simulating quest for {character.name}: {active_quest.name}"
+                )
                 if is_quest_complete(world, active_quest):
-                    logger.info(f"quest complete for {actor.name}: {active_quest.name}")
-                    complete_quest(quests, actor, active_quest)
+                    logger.info(
+                        f"quest complete for {character.name}: {active_quest.name}"
+                    )
+                    complete_quest(quests, character, active_quest)
 
 
 def load_quest_data(file: str) -> QuestData:

@@ -4,7 +4,7 @@ from typing import Any, Callable, Dict, List, Literal, Union
 from pydantic import Field
 
 from .base import BaseModel, dataclass, uuid
-from .entity import Actor, Item, Room, WorldEntity
+from .entity import Character, Item, Room, WorldEntity
 
 
 @dataclass
@@ -30,26 +30,26 @@ class GenerateEvent(BaseModel):
 @dataclass
 class ActionEvent(BaseModel):
     """
-    An actor has taken an action.
+    A character has taken an action.
     """
 
     action: str
     parameters: Dict[str, bool | float | int | str]
 
     room: Room
-    actor: Actor
+    character: Character
     item: Item | None = None
     id: str = Field(default_factory=uuid)
     type: Literal["action"] = "action"
 
     @staticmethod
-    def from_json(json: str, room: Room, actor: Actor) -> "ActionEvent":
+    def from_json(json: str, room: Room, character: Character) -> "ActionEvent":
         openai_json = loads(json)
         return ActionEvent(
             action=openai_json["function"],
             parameters=openai_json["parameters"],
             room=room,
-            actor=actor,
+            character=character,
             item=None,
         )
 
@@ -57,12 +57,12 @@ class ActionEvent(BaseModel):
 @dataclass
 class PromptEvent(BaseModel):
     """
-    A prompt for an actor to take an action.
+    A prompt for a character to take an action.
     """
 
     prompt: str
     room: Room
-    actor: Actor
+    character: Character
     id: str = Field(default_factory=uuid)
     type: Literal["prompt"] = "prompt"
 
@@ -70,22 +70,22 @@ class PromptEvent(BaseModel):
 @dataclass
 class ReplyEvent(BaseModel):
     """
-    An actor has replied with text.
+    A character has replied with text.
 
     This is the non-JSON version of an ActionEvent.
 
-    TODO: add the actor being replied to.
+    TODO: add the character being replied to.
     """
 
     text: str
     room: Room
-    actor: Actor
+    character: Character
     id: str = Field(default_factory=uuid)
     type: Literal["reply"] = "reply"
 
     @staticmethod
-    def from_text(text: str, room: Room, actor: Actor) -> "ReplyEvent":
-        return ReplyEvent(text=text, room=room, actor=actor)
+    def from_text(text: str, room: Room, character: Character) -> "ReplyEvent":
+        return ReplyEvent(text=text, room=room, character=character)
 
 
 @dataclass
@@ -96,7 +96,7 @@ class ResultEvent(BaseModel):
 
     result: str
     room: Room
-    actor: Actor
+    character: Character
     id: str = Field(default_factory=uuid)
     type: Literal["result"] = "result"
 
@@ -109,7 +109,7 @@ class StatusEvent(BaseModel):
 
     text: str
     room: Room | None = None
-    actor: Actor | None = None
+    character: Character | None = None
     id: str = Field(default_factory=uuid)
     type: Literal["status"] = "status"
 
@@ -120,7 +120,7 @@ class SnapshotEvent(BaseModel):
     A snapshot of the world state.
 
     This one is slightly unusual, because the world has already been dumped to a JSON-compatible dictionary.
-    That is especially important for the memory, which is a dictionary of actor names to lists of messages.
+    That is especially important for the memory, which is a dictionary of character names to lists of messages.
     """
 
     world: Dict[str, Any]

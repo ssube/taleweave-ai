@@ -30,10 +30,10 @@ mechanics to suit different types of adventures and narrative styles.
 
 ### What kinds of entities exist in the world?
 
-In the immersive world of TaleWeave AI, entities are categorized into Rooms, Actors, and Items, each playing a vital
+In the immersive world of TaleWeave AI, entities are categorized into Rooms, Characters, and Items, each playing a vital
 role in crafting the narrative and gameplay experience. Rooms serve as the fundamental spatial units where the story
-unfolds, each containing various Actors and potentially multiple Items. Actors, representing characters in the game,
-possess inventories that hold Items, which are objects that can be interacted with or utilized by the Actors. Currently,
+unfolds, each containing various Characters and potentially multiple Items. Characters, representing characters in the game,
+possess inventories that hold Items, which are objects that can be interacted with or utilized by the Characters. Currently,
 TaleWeave AI does not support Containers—Items that can hold other Items—but the structure is designed to support
 complex interactions within and between these entity types, laying the groundwork for a deeply interactive environment.
 
@@ -41,15 +41,15 @@ complex interactions within and between these entity types, laying the groundwor
 
 Actions in TaleWeave AI are defined as Python functions that enable both human players and AI-driven characters to
 interact with the game world. These actions, which include behaviors like taking an item or moving between rooms, are
-integral to advancing the gameplay and affecting the state of the world. Each actor is permitted one action per round,
-which can significantly alter the attributes of entities, reposition entities between rooms or actors, or modify the
+integral to advancing the gameplay and affecting the state of the world. Each character is permitted one action per round,
+which can significantly alter the attributes of entities, reposition entities between rooms or characters, or modify the
 game world by adding or removing entities. This framework ensures that every turn is meaningful and that players'
 decisions have direct consequences on the game's progression and outcome.
 
 ### What are attributes?
 
 Attributes in TaleWeave AI are key-value pairs that define the properties of an entity. These attributes can be of
-various types—boolean, number, or string—such as an actor’s mood being "happy," their health being quantified as 10, or
+various types—boolean, number, or string—such as a character's mood being "happy," their health being quantified as 10, or
 an item's quality described as "broken" or quantified with a remaining usage of 3. Attributes play a crucial role in the
 game's logic system by influencing how entities react under different conditions. They are actively used to trigger
 specific rules within the game, and their labels are included in prompts to guide language model players in making

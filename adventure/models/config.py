@@ -41,7 +41,7 @@ class ServerConfig:
 
 
 @dataclass
-class WorldActorConfig:
+class WorldCharacterConfig:
     conversation_limit: int
     event_limit: int
     note_limit: int
@@ -49,18 +49,26 @@ class WorldActorConfig:
 
 @dataclass
 class WorldSizeConfig:
-    actor_items: int | IntRange
+    character_items: int | IntRange
     item_effects: int | IntRange
     portals: int | IntRange
-    room_actors: int | IntRange
+    room_characters: int | IntRange
     room_items: int | IntRange
     rooms: int | IntRange
 
 
 @dataclass
+class WorldStepConfig:
+    action_retries: int
+    planning_steps: int
+    planning_retries: int
+
+
+@dataclass
 class WorldConfig:
-    actor: WorldActorConfig
+    character: WorldCharacterConfig
     size: WorldSizeConfig
+    step: WorldStepConfig
 
 
 @dataclass
@@ -88,18 +96,23 @@ DEFAULT_CONFIG = Config(
     ),
     server=ServerConfig(websocket=WebsocketServerConfig(host="localhost", port=8001)),
     world=WorldConfig(
-        actor=WorldActorConfig(
+        character=WorldCharacterConfig(
             conversation_limit=2,
             event_limit=5,
             note_limit=10,
         ),
         size=WorldSizeConfig(
-            actor_items=IntRange(min=0, max=2),
+            character_items=IntRange(min=0, max=2),
             item_effects=IntRange(min=1, max=1),
             portals=IntRange(min=1, max=3),
             rooms=IntRange(min=3, max=6),
-            room_actors=IntRange(min=1, max=3),
+            room_characters=IntRange(min=1, max=3),
             room_items=IntRange(min=1, max=3),
+        ),
+        step=WorldStepConfig(
+            action_retries=5,
+            planning_steps=3,
+            planning_retries=3,
         ),
     ),
 )

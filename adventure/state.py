@@ -7,7 +7,7 @@ from langchain_core.messages import AIMessage, BaseMessage, HumanMessage, System
 from packit.agent import Agent, agent_easy_connect
 from pydantic import RootModel
 
-from adventure.context import get_all_actor_agents, set_actor_agent
+from adventure.context import get_all_character_agents, set_character_agent
 from adventure.models.entity import World
 from adventure.player import LocalPlayer
 
@@ -17,19 +17,19 @@ def create_agents(
     memory: Dict[str, List[str | Dict[str, str]]] = {},
     players: List[str] = [],
 ):
-    # set up agents for each actor
+    # set up agents for each character
     llm = agent_easy_connect()
 
     for room in world.rooms:
-        for actor in room.actors:
-            if actor.name in players:
-                agent = LocalPlayer(actor.name, actor.backstory)
-                agent_memory = restore_memory(memory.get(actor.name, []))
+        for character in room.characters:
+            if character.name in players:
+                agent = LocalPlayer(character.name, character.backstory)
+                agent_memory = restore_memory(memory.get(character.name, []))
                 agent.load_history(agent_memory)
             else:
-                agent = Agent(actor.name, actor.backstory, {}, llm)
-                agent.memory = restore_memory(memory.get(actor.name, []))
-            set_actor_agent(actor.name, actor, agent)
+                agent = Agent(character.name, character.backstory, {}, llm)
+                agent.memory = restore_memory(memory.get(character.name, []))
+            set_character_agent(character.name, character, agent)
 
 
 def graph_world(world: World, step: int):
@@ -38,8 +38,8 @@ def graph_world(world: World, step: int):
     graph_name = f"{path.basename(world.name)}-{step}"
     graph = graphviz.Digraph(graph_name, format="png")
     for room in world.rooms:
-        actors = [actor.name for actor in room.actors]
-        room_label = "\n".join([room.name, *actors])
+        characters = [character.name for character in room.characters]
+        room_label = "\n".join([room.name, *characters])
         graph.node(room.name, room_label)
         for portal in room.portals:
             graph.edge(room.name, portal.destination, label=portal.name)
@@ -54,8 +54,8 @@ def snapshot_world(world: World, step: int):
 
     json_memory = {}
 
-    for actor, agent in get_all_actor_agents():
-        json_memory[actor.name] = list(agent.memory or [])
+    for character, agent in get_all_character_agents():
+        json_memory[character.name] = list(agent.memory or [])
 
     return {
         "world": json_world,

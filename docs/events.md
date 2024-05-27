@@ -77,7 +77,7 @@ added to the world.
 ```yaml
 type: "generate"
 name: string
-entity: Room | Actor | Item | None
+entity: Room | Character | Item | None
 ```
 
 Two `generate` events will be fired for each entity. The first event will *not* have an `entity` set, only the `name`.
@@ -88,14 +88,14 @@ more frequent progress updates when generating with slow models.
 
 ### Action Events
 
-The action event is fired after player or actor input has been processed and any JSON function calls have been parsed.
+The action event is fired after player or character input has been processed and any JSON function calls have been parsed.
 
 ```yaml
 type: "action"
 action: string
 parameters: dict
 room: Room
-actor: Actor
+character: Character
 item: Item | None
 ```
 
@@ -107,7 +107,7 @@ The prompt event is fired when a character's turn starts and their input is need
 type: "prompt"
 prompt: string
 room: Room
-actor: Actor
+character: Character
 ```
 
 ### Reply Events
@@ -118,7 +118,7 @@ The reply event is fired when a character has been asked a question or told a me
 type: "reply"
 text: string
 room: Room
-actor: Actor
+character: Character
 ```
 
 ### Result Events
@@ -129,10 +129,10 @@ The result event is fired after a character has taken an action and contains the
 type: "result"
 result: string
 room: Room
-actor: Actor
+character: Character
 ```
 
-The result is related to the most recent action for the same actor, although not every action will have a result - they
+The result is related to the most recent action for the same character, although not every action will have a result - they
 may have a reply or error instead.
 
 ### Status Events
@@ -143,7 +143,7 @@ The status event is fired for general events in the world and messages about oth
 type: "status"
 text: string
 room: Room | None
-actor: Actor | None
+character: Character | None
 ```
 
 ### Snapshot Events

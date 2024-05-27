@@ -5,7 +5,7 @@ import { Maybe, doesExist } from '@apextoaster/js-utils';
 import { Camera, Settings } from '@mui/icons-material';
 import { useStore } from 'zustand';
 import { formatters } from './format.js';
-import { Actor } from './models.js';
+import { Character } from './models.js';
 import { StoreState, store } from './store.js';
 
 export function openImage(image: string) {
@@ -32,11 +32,11 @@ export interface EventItemProps {
 
 export function characterSelector(state: StoreState) {
   return {
-    character: state.character,
+    playerCharacter: state.playerCharacter,
   };
 }
 
-export function sameCharacter(a: Maybe<Actor>, b: Maybe<Actor>): boolean {
+export function sameCharacter(a: Maybe<Character>, b: Maybe<Character>): boolean {
   if (doesExist(a) && doesExist(b)) {
     return a.name === b.name;
   }
@@ -46,13 +46,13 @@ export function sameCharacter(a: Maybe<Actor>, b: Maybe<Actor>): boolean {
 
 export function ActionEventItem(props: EventItemProps) {
   const { event, renderEvent } = props;
-  const { id, actor, room, type } = event;
+  const { id, character, room, type } = event;
   const content = formatters[type](event);
 
   const state = useStore(store, characterSelector);
-  const { character } = state;
+  const { playerCharacter } = state;
 
-  const playerAction = sameCharacter(actor, character);
+  const playerAction = sameCharacter(character, playerCharacter);
   const typographyProps = {
     color: playerAction ? 'success.text' : 'primary.text',
   };
@@ -81,7 +81,7 @@ export function ActionEventItem(props: EventItemProps) {
             variant="body2"
             color="text.primary"
           >
-            {actor.name}
+            {character.name}
           </Typography>
           {content}
         </React.Fragment>
@@ -220,7 +220,7 @@ export function PromptEventItem(props: EventItemProps) {
   const { character, prompt } = event;
 
   const state = useStore(store, characterSelector);
-  const { character: playerCharacter } = state;
+  const { playerCharacter: playerCharacter } = state;
 
   const playerPrompt = sameCharacter(playerCharacter, character);
   const typographyProps = {

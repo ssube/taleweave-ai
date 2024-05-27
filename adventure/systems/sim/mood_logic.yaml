@@ -2,7 +2,7 @@ rules:
   # mood logic
   - group: mood
     match:
-      type: actor
+      type: character
       mood: happy
     chance: 0.1
     set:
@@ -10,7 +10,7 @@ rules:
 
   - group: mood
     match:
-      type: actor
+      type: character
       mood: happy
     chance: 0.1
     set:
@@ -18,7 +18,7 @@ rules:
 
   - group: mood
     match:
-      type: actor
+      type: character
       mood: angry
     chance: 0.1
     set:
@@ -26,7 +26,7 @@ rules:
 
   - group: mood
     match:
-      type: actor
+      type: character
       mood: neutral
     chance: 0.1
     set:
@@ -34,7 +34,7 @@ rules:
 
   - group: mood
     match:
-      type: actor
+      type: character
       mood: neutral
     chance: 0.1
     set:
@@ -42,7 +42,7 @@ rules:
 
   - group: mood
     match:
-      type: actor
+      type: character
       mood: sad
     chance: 0.1
     set:
@@ -50,7 +50,7 @@ rules:
 
   - group: mood
     match:
-      type: actor
+      type: character
       mood: sad
     chance: 0.1
     set:
@@ -59,7 +59,7 @@ rules:
   # mood interactions with other systems
   - group: mood
     match:
-      type: actor
+      type: character
       mood: sad
       sleep: rested
     chance: 0.2
@@ -68,7 +68,7 @@ rules:
 
   - group: mood
     match:
-      type: actor
+      type: character
       hunger: hungry
     chance: 0.2
     set:
@@ -76,7 +76,7 @@ rules:
 
   - group: mood
     match:
-      type: actor
+      type: character
       mood: angry
       hunger: full
     chance: 0.2
@@ -85,7 +85,7 @@ rules:
 
   - group: mood
     match:
-      type: actor
+      type: character
       mood: neutral
       hunger: full
     chance: 0.2
@@ -94,7 +94,7 @@ rules:
 
   - group: mood
     match:
-      type: actor
+      type: character
       mood: happy
       hunger: hungry
     chance: 0.2
@@ -103,7 +103,7 @@ rules:
 
   - group: mood
     match:
-      type: actor
+      type: character
       mood: neutral
       sleep: tired
     chance: 0.2
@@ -119,17 +119,17 @@ rules:
 
 labels:
   - match:
-      type: actor
+      type: character
       mood: happy
     backstory: You are feeling happy.
     description: They look happy.
   - match:
-      type: actor
+      type: character
       mood: sad
     backstory: You are feeling sad.
     description: They look sad.
   - match:
-      type: actor
+      type: character
       mood: angry
     backstory: You are feeling angry.
     description: They look angry.

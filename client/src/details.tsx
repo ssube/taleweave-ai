@@ -21,11 +21,11 @@ import {
 import { instance as graphviz } from '@viz-js/viz';
 import React, { Fragment, useEffect } from 'react';
 import { useStore } from 'zustand';
-import { Actor, Attributes, Item, Portal, Room, World } from './models';
+import { Character, Attributes, Item, Portal, Room, World } from './models';
 import { StoreState, store } from './store';
 
 export interface EntityDetailsProps {
-  entity: Maybe<Item | Actor | Portal | Room>;
+  entity: Maybe<Item | Character | Portal | Room>;
   onClose: () => void;
   onRender: (type: string, entity: string) => void;
 }
@@ -43,10 +43,10 @@ export function EntityDetails(props: EntityDetailsProps) {
   let attributes: Attributes = {};
   let planner;
 
-  if (type === 'actor') {
-    const actor = entity as Actor;
-    attributes = actor.attributes;
-    planner = actor.planner;
+  if (type === 'character') {
+    const character = entity as Character;
+    attributes = character.attributes;
+    planner = character.planner;
   }
 
   if (type === 'item') {
@@ -155,7 +155,7 @@ export function DetailDialog(props: DetailDialogProps) {
   >{details}</Dialog>;
 }
 
-export function isWorld(entity: Maybe<Item | Actor | Portal | Room | World>): entity is World {
+export function isWorld(entity: Maybe<Item | Character | Portal | Room | World>): entity is World {
   return doesExist(entity) && doesExist(Object.getOwnPropertyDescriptor(entity, 'theme'));
 }
 
