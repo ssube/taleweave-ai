@@ -7,7 +7,6 @@ from dotenv import load_dotenv
 from packit.agent import Agent, agent_easy_connect
 from packit.utils import logger_with_colors
 
-from adventure.context import get_system_data, set_system_data
 from adventure.utils.file import load_yaml
 
 # configure logging
@@ -29,9 +28,15 @@ logger = logger_with_colors(__name__)  # , level="DEBUG")
 load_dotenv(environ.get("ADVENTURE_ENV", ".env"), override=True)
 
 if True:
-    from adventure.context import set_current_step, set_dungeon_master, subscribe
+    from adventure.context import (
+        get_system_data,
+        set_current_step,
+        set_dungeon_master,
+        set_system_data,
+        subscribe,
+    )
     from adventure.game_system import GameSystem
-    from adventure.generate import generate_world
+    from adventure.generate import generate_room, generate_world, link_rooms
     from adventure.models.config import DEFAULT_CONFIG, Config
     from adventure.models.entity import World, WorldState
     from adventure.models.event import GenerateEvent
@@ -69,6 +74,12 @@ def parse_args():
         type=str,
         nargs="*",
         help="Extra actions to include in the simulation",
+    )
+    parser.add_argument(
+        "--add-rooms",
+        default=0,
+        type=int,
+        help="The number of new rooms to generate before starting the simulation",
     )
     parser.add_argument(
         "--config",
@@ -200,9 +211,20 @@ def load_or_generate_world(
 ):
     world_file = args.world + ".json"
     world_state_file = args.state or (args.world + ".state.json")
+    add_rooms = args.add_rooms
 
     memory = {}
     step = 0
+
+    # prepare an agent for the world builder
+    llm = agent_easy_connect()
+    world_builder = Agent(
+        "World Builder",
+        f"You are an experienced game master creating a visually detailed world for a new adventure. "
+        f"{world_prompt.flavor}. The theme is: {world_prompt.theme}.",
+        {},
+        llm,
+    )
 
     if path.exists(world_state_file):
         logger.info(f"loading world state from {world_state_file}")
@@ -223,15 +245,6 @@ def load_or_generate_world(
         load_or_initialize_system_data(args, systems, world)
     else:
         logger.info(f"generating a new world using theme: {world_prompt.theme}")
-        llm = agent_easy_connect()
-        world_builder = Agent(
-            "World Builder",
-            f"You are an experienced game master creating a visually detailed world for a new adventure. "
-            f"{world_prompt.flavor}. The theme is: {world_prompt.theme}.",
-            {},
-            llm,
-        )
-
         world = generate_world(
             world_builder,
             args.world,
@@ -241,6 +254,16 @@ def load_or_generate_world(
         )
         save_world(world, world_file)
         save_system_data(args, systems)
+
+    new_rooms = []
+    for i in range(add_rooms):
+        logger.info(f"generating room {i + 1} of {add_rooms}")
+        room = generate_room(world_builder, world, systems)
+        new_rooms.append(room)
+        world.rooms.append(room)
+
+    if new_rooms:
+        link_rooms(world_builder, world, systems, new_rooms)
 
     create_agents(world, memory=memory, players=players)
     return (world, world_state_file, step)

@@ -21,11 +21,6 @@ class BotConfig:
 
 
 @dataclass
-class PromptConfig:
-    prompts: Dict[str, str]
-
-
-@dataclass
 class RenderConfig:
     cfg: int | IntRange
     checkpoints: List[str]
@@ -79,7 +74,6 @@ class WorldConfig:
 @dataclass
 class Config:
     bot: BotConfig
-    prompt: PromptConfig
     render: RenderConfig
     server: ServerConfig
     world: WorldConfig
@@ -87,9 +81,6 @@ class Config:
 
 DEFAULT_CONFIG = Config(
     bot=BotConfig(discord=DiscordBotConfig(channels=["adventure"])),
-    prompt=PromptConfig(
-        prompts={},
-    ),
     render=RenderConfig(
         cfg=IntRange(min=5, max=8),
         checkpoints=[
