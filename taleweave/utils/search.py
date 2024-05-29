@@ -23,9 +23,9 @@ def find_room(world: World, room_name: str) -> Room | None:
 
 def find_portal(world: World, portal_name: str) -> Portal | None:
     for room in world.rooms:
-        for portal in room.portals:
-            if normalize_name(portal.name) == normalize_name(portal_name):
-                return portal
+        portal = find_portal_in_room(room, portal_name)
+        if portal:
+            return portal
 
     return None
 
@@ -43,6 +43,14 @@ def find_character_in_room(room: Room, character_name: str) -> Character | None:
     for character in room.characters:
         if normalize_name(character.name) == normalize_name(character_name):
             return character
+
+    return None
+
+
+def find_portal_in_room(room: Room, portal_name: str) -> Portal | None:
+    for portal in room.portals:
+        if normalize_name(portal.name) == normalize_name(portal_name):
+            return portal
 
     return None
 
@@ -105,15 +113,6 @@ def find_item_in_room(
             item = find_item_in_character(character, item_name, include_item_inventory)
             if item:
                 return item
-
-    return None
-
-
-def find_room_with_character(world: World, character: Character) -> Room | None:
-    for room in world.rooms:
-        for room_character in room.characters:
-            if normalize_name(character.name) == normalize_name(room_character.name):
-                return room
 
     return None
 

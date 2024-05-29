@@ -193,6 +193,7 @@ class RemotePlayer(BasePlayer):
                 logger.exception("error getting reply from remote player")
 
             if self.fallback_agent:
+                logger.info("prompting fallback agent: {self.fallback_agent.name}")
                 return self.fallback_agent(prompt, **kwargs)
 
             return ""

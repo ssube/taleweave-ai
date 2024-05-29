@@ -71,21 +71,14 @@ class PromptEvent(BaseModel):
 class ReplyEvent(BaseModel):
     """
     A character has replied with text.
-
-    This is the non-JSON version of an ActionEvent.
-
-    TODO: add the character being replied to.
     """
 
-    text: str
     room: Room
-    character: Character
+    speaker: Character
+    audience: Character | Room
+    text: str
     id: str = Field(default_factory=uuid)
     type: Literal["reply"] = "reply"
-
-    @staticmethod
-    def from_text(text: str, room: Room, character: Character) -> "ReplyEvent":
-        return ReplyEvent(text=text, room=room, character=character)
 
 
 @dataclass

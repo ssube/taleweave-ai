@@ -200,11 +200,14 @@ def load_or_initialize_system_data(args, systems: List[GameSystem], world: World
                 logger.info(f"loading system data from {system_data_file}")
                 data = system.data.load(system_data_file)
                 set_system_data(system.name, data)
+                continue
             else:
                 logger.info(f"no system data found at {system_data_file}")
-                if system.initialize:
-                    data = system.initialize(world)
-                    set_system_data(system.name, data)
+
+        if system.initialize:
+            logger.info(f"initializing system data for {system.name}")
+            data = system.initialize(world)
+            set_system_data(system.name, data)
 
 
 def save_system_data(args, systems: List[GameSystem]):

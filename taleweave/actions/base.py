@@ -13,6 +13,7 @@ from taleweave.utils.search import (
     find_character_in_room,
     find_item_in_character,
     find_item_in_room,
+    find_portal_in_room,
     find_room,
 )
 from taleweave.utils.string import normalize_name
@@ -20,12 +21,12 @@ from taleweave.utils.world import describe_entity
 
 logger = getLogger(__name__)
 
-MAX_CONVERSATION_STEPS = 3
+MAX_CONVERSATION_STEPS = 2
 
 
-def action_look(target: str) -> str:
+def action_examine(target: str) -> str:
     """
-    Look at a target in the room or your inventory.
+    Examine the room, a character, or an item (in the room or in your inventory).
 
     Args:
         target: The name of the target to look at.
@@ -71,14 +72,7 @@ def action_move(direction: str) -> str:
     """
 
     with world_context() as (action_world, action_room, action_character):
-        portal = next(
-            (
-                p
-                for p in action_room.portals
-                if normalize_name(p.name) == normalize_name(direction)
-            ),
-            None,
-        )
+        portal = find_portal_in_room(action_room, direction)
         if not portal:
             raise ActionError(f"You cannot move {direction} from here.")
 
@@ -151,7 +145,7 @@ def action_ask(character: str, question: str) -> str:
         )
 
         action_agent = get_agent_for_character(action_character)
-        answer = loop_conversation(
+        result = loop_conversation(
             action_room,
             [question_character, action_character],
             [question_agent, action_agent],
@@ -165,9 +159,8 @@ def action_ask(character: str, question: str) -> str:
             max_length=MAX_CONVERSATION_STEPS,
         )
 
-        if answer:
-            broadcast(f"{character} responds to {action_character.name}: {answer}")
-            return f"{character} responds: {answer}"
+        if result:
+            return result
 
         return f"{character} does not respond."
 
@@ -209,7 +202,7 @@ def action_tell(character: str, message: str) -> str:
         )
 
         action_agent = get_agent_for_character(action_character)
-        answer = loop_conversation(
+        result = loop_conversation(
             action_room,
             [question_character, action_character],
             [question_agent, action_agent],
@@ -223,9 +216,8 @@ def action_tell(character: str, message: str) -> str:
             max_length=MAX_CONVERSATION_STEPS,
         )
 
-        if answer:
-            broadcast(f"{character} responds to {action_character.name}: {answer}")
-            return f"{character} responds: {answer}"
+        if result:
+            return result
 
         return f"{character} does not respond."
 

@@ -148,11 +148,11 @@ def loop_conversation(
         response = result_parser(response)
 
         logger.info(f"{character.name} responds: {response}")
-        reply_event = ReplyEvent.from_text(response, room, character)
+        reply_event = ReplyEvent(room, character, last_character, response)
         broadcast(reply_event)
 
         # increment the step counter
         i += 1
         last_character = character
 
-    return response
+    return f"{last_character.name} ends the conversation for now"

@@ -8,14 +8,14 @@ from typing import Callable, Sequence
 from packit.agent import Agent
 from packit.conditions import condition_or, condition_threshold
 from packit.loops import loop_retry
-from packit.results import multi_function_or_str_result
+from packit.results import function_result
 from packit.toolbox import Toolbox
 from packit.utils import could_be_json
 
 from taleweave.actions.base import (
     action_ask,
+    action_examine,
     action_give,
-    action_look,
     action_move,
     action_take,
     action_tell,
@@ -45,11 +45,11 @@ from taleweave.context import (
 from taleweave.game_system import GameSystem
 from taleweave.models.config import DEFAULT_CONFIG
 from taleweave.models.entity import Character, Room, World
-from taleweave.models.event import ActionEvent, ReplyEvent, ResultEvent
+from taleweave.models.event import ActionEvent, ResultEvent
 from taleweave.utils.conversation import make_keyword_condition, summarize_room
 from taleweave.utils.effect import expire_effects
 from taleweave.utils.planning import expire_events, get_upcoming_events
-from taleweave.utils.search import find_room_with_character
+from taleweave.utils.search import find_containing_room
 from taleweave.utils.world import describe_entity, format_attributes
 
 logger = getLogger(__name__)
@@ -76,7 +76,7 @@ def world_result_parser(value, agent, **kwargs):
     set_current_room(current_room)
     set_current_character(current_character)
 
-    return multi_function_or_str_result(value, agent=agent, **kwargs)
+    return function_result(value, agent=agent, **kwargs)
 
 
 def prompt_character_action(
@@ -94,7 +94,7 @@ def prompt_character_action(
     character_items = [item.name for item in character.items]
 
     # set up a result parser for the agent
-    def result_parser(value, agent, **kwargs):
+    def result_parser(value, **kwargs):
         if not room or not character:
             raise ValueError("Room and character must be set before parsing results")
 
@@ -117,11 +117,12 @@ def prompt_character_action(
         if could_be_json(value):
             event = ActionEvent.from_json(value, room, character)
         else:
-            event = ReplyEvent.from_text(value, room, character)
+            # TODO: this should be removed and throw
+            event = ResultEvent(value, room, character)
 
         broadcast(event)
 
-        return world_result_parser(value, agent, **kwargs)
+        return world_result_parser(value, **kwargs)
 
     # prompt and act
     logger.info("starting turn for character: %s", character.name)
@@ -255,7 +256,7 @@ def simulate_world(
         [
             action_ask,
             action_give,
-            action_look,
+            action_examine,
             action_move,
             action_take,
             action_tell,
@@ -288,7 +289,7 @@ def simulate_world(
                 logger.error(f"agent or character not found for name {character_name}")
                 continue
 
-            room = find_room_with_character(world, character)
+            room = find_containing_room(world, character)
             if not room:
                 logger.error(f"character {character_name} is not in a room")
                 continue

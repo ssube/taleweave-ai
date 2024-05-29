@@ -18,7 +18,10 @@ def take_note(fact: str):
 
     with action_context() as (_, action_character):
         if fact in action_character.planner.notes:
-            raise ActionError("You already have a note about that fact.")
+            raise ActionError(
+                "You already have a note about that fact. You do not need to take duplicate notes. "
+                "If you have too many notes, consider erasing, replacing, or summarizing them."
+            )
 
         if len(action_character.planner.notes) >= character_config.note_limit:
             raise ActionError(
@@ -103,7 +106,8 @@ def summarize_notes(limit: int) -> str:
             "If a newer note contradicts an older note, keep the newer note. "
             "Clean up your notes so you can focus on the most important facts. "
             "Respond with one note per line. You can have up to {limit} notes, "
-            "so make sure you reply with less than {limit} lines. "
+            "so make sure you reply with less than {limit} lines. Do not number the lines "
+            "in your response. Do not include any JSON or other information. "
             "Your notes are:\n{notes}",
             limit=limit,
             notes=notes,

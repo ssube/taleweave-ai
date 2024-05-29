@@ -3,7 +3,7 @@ rules:
   - group: weather
     match:
       type: room
-      outdoor: true
+      environment: outdoor
       weather: clear
     chance: 0.1
     set:
@@ -12,7 +12,7 @@ rules:
   - group: weather
     match:
       type: room
-      outdoor: true
+      environment: outdoor
       weather: clouds
     chance: 0.1
     set:
@@ -21,7 +21,7 @@ rules:
   - group: weather
     match:
       type: room
-      outdoor: true
+      environment: outdoor
       weather: rain
     chance: 0.1
     set:
@@ -30,7 +30,7 @@ rules:
   - group: weather
     match:
       type: room
-      outdoor: true
+      environment: outdoor
       weather: clouds
     chance: 0.1
     set:
@@ -40,7 +40,7 @@ rules:
   - group: weather
     match:
       type: room
-      outdoor: true
+      environment: outdoor
     rule: |
       "weather" not in attributes
     set:

@@ -230,7 +230,7 @@ def get_image_prefix(event: GameEvent | WorldEntity) -> str:
 
     if isinstance(event, ReplyEvent):
         return sanitize_name(
-            f"event-reply-{event.character.name}-{fast_hash(event.text)}"
+            f"event-reply-{event.speaker.name}-{fast_hash(event.text)}"
         )
 
     if isinstance(event, ResultEvent):

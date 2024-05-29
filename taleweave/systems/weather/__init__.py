@@ -1,8 +1,19 @@
+from functools import partial
 from typing import List
+from taleweave.context import get_dungeon_master
 from taleweave.models.base import dataclass
 from taleweave.models.entity import World
 from taleweave.systems.logic import load_logic
 from taleweave.game_system import GameSystem
+from packit.agent import Agent
+from taleweave.models.entity import Room, WorldEntity
+from taleweave.utils.string import or_list
+from packit.results import enum_result
+from packit.loops import loop_retry
+from logging import getLogger
+
+logger = getLogger(__name__)
+
 
 LOGIC_FILES = [
     "./taleweave/systems/weather/weather_logic.yaml",
@@ -39,10 +50,36 @@ def get_time_of_day(turn: int) -> TimeOfDay:
 def initialize_weather(world: World):
     time_of_day = get_time_of_day(0)
     for room in world.rooms:
+        logger.info(f"initializing weather for {room.name}")
         room.attributes["time"] = time_of_day.name
 
+        if "environment" not in room.attributes:
+            dungeon_master = get_dungeon_master()
+            generate_room_weather(dungeon_master, world.theme, room)
 
-# TODO: generate indoor/outdoor attributes
+
+def generate_room_weather(agent: Agent, theme: str, entity: Room) -> None:
+    environment_options = ["indoor", "outdoor"]
+    environment_result = partial(enum_result, enum=environment_options)
+    environment = loop_retry(
+        agent,
+        "Is this room indoors or outdoors?"
+        "Reply with a single word: {environment_list}.\n\n"
+        "{description}",
+        context={
+            "environment_list": or_list(environment_options),
+            "description": entity.description,
+        },
+        result_parser=environment_result,
+    )
+    entity.attributes["environment"] = environment
+    logger.info(f"generated environment for {entity.name}: {environment}")
+
+
+def generate_weather(agent: Agent, theme: str, entity: WorldEntity) -> None:
+    if isinstance(entity, Room):
+        if "environment" not in entity.attributes:
+            generate_room_weather(agent, theme, entity)
 
 
 def simulate_weather(world: World, turn: int, data: None = None):
@@ -55,5 +92,10 @@ def init():
     logic_systems = [load_logic(filename) for filename in LOGIC_FILES]
     return [
         *logic_systems,
-        GameSystem("weather", initialize=initialize_weather, simulate=simulate_weather),
+        GameSystem(
+            "weather",
+            generate=generate_weather,
+            initialize=initialize_weather,
+            simulate=simulate_weather,
+        ),
     ]

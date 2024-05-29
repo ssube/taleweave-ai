@@ -330,7 +330,7 @@ def embed_from_event(event: GameEvent) -> Embed | None:
 
 
 def embed_from_action(event: ActionEvent | ReplyEvent):
-    action_embed = Embed(title=event.room.name, description=event.character.name)
+    action_embed = Embed(title=event.room.name, description=event.speaker.name)
 
     if isinstance(event, ActionEvent):
         action_name = event.action.replace("action_", "").title()

@@ -97,7 +97,7 @@ def scene_from_event(event: GameEvent) -> str | None:
         )
 
     if isinstance(event, ReplyEvent):
-        return f"{event.character.name} replies: {event.text}. {describe_entity(event.character)}. {describe_entity(event.room)}."
+        return f"{event.speaker.name} replies: {event.text}. {describe_entity(event.speaker)}. {describe_entity(event.room)}."
 
     if isinstance(event, ResultEvent):
         return f"{event.result}. {describe_entity(event.character)}. {describe_entity(event.room)}."

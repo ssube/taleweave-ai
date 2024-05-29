@@ -120,6 +120,32 @@ export function SnapshotEventItem(props: EventItemProps) {
 
 export function ReplyEventItem(props: EventItemProps) {
   const { event } = props;
+  const { audience, speaker, text } = event;
+
+  return <ListItem alignItems="flex-start" ref={props.focusRef}>
+    <ListItemAvatar>
+      <Avatar alt="System">
+        <Settings />
+      </Avatar>
+    </ListItemAvatar>
+    <ListItemText
+      primary="System"
+      secondary={
+        <Typography
+          sx={{ display: 'block' }}
+          component="span"
+          variant="body2"
+          color="text.primary"
+        >
+          {speaker.name} replies to {audience.name}: {text}
+        </Typography>
+      }
+    />
+  </ListItem>;
+}
+
+export function StatusEventItem(props: EventItemProps) {
+  const { event } = props;
   const { text } = event;
 
   return <ListItem alignItems="flex-start" ref={props.focusRef}>
@@ -295,8 +321,9 @@ export function EventItem(props: EventItemProps) {
     case 'result':
       return <ActionEventItem {...props} />;
     case 'reply':
-    case 'status': // TODO: should have a different component
       return <ReplyEventItem {...props} />;
+    case 'status':
+      return <StatusEventItem {...props} />;
     case 'player':
       return <PlayerEventItem {...props} />;
     case 'render':
