@@ -115,9 +115,10 @@ def prompt_character_action(
                     pass
 
         if could_be_json(value):
+            # TODO: only emit valid actions that parse and run correctly
             event = ActionEvent.from_json(value, room, character)
         else:
-            # TODO: this should be removed and throw
+            # TODO: this path should be removed and throw
             event = ResultEvent(value, room, character)
 
         broadcast(event)

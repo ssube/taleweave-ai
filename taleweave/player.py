@@ -6,6 +6,7 @@ from typing import Any, Callable, Dict, List, Optional, Sequence
 
 from langchain_core.messages import AIMessage, BaseMessage, HumanMessage
 from packit.agent import Agent
+from packit.toolbox import Toolbox
 
 from taleweave.context import action_context
 from taleweave.models.event import PromptEvent
@@ -89,7 +90,28 @@ class BasePlayer:
         Ask the player for input.
         """
 
-        return self(prompt, **context)
+        return self(prompt, **context, **kwargs)
+
+    def format_psuedo_functions(self, toolbox: Toolbox) -> str:
+        """
+        Format pseudo functions for the player prompt.
+        """
+        functions = []
+        for tool in toolbox.list_definitions():
+            function_data = tool["function"]
+            function_name = f"~{function_data['name']}"
+            function_args = []
+            for name, info in (
+                function_data.get("parameters", {}).get("properties", {}).items()
+            ):
+                function_args.append(f"{name}={info['type']}")
+
+            if function_args:
+                functions.append(function_name + ":" + ",".join(function_args))
+            else:
+                functions.append(function_name)
+
+        return "\n".join(functions)
 
     def parse_pseudo_function(self, reply: str):
         # turn other replies into a JSON function call
@@ -170,12 +192,15 @@ class RemotePlayer(BasePlayer):
         self.input_queue = Queue()
         self.send_prompt = send_prompt
 
-    def __call__(self, prompt: str, **kwargs) -> str:
+    def __call__(self, prompt: str, toolbox: Toolbox | None = None, **kwargs) -> str:
         """
         Ask the player for input.
         """
 
         formatted_prompt = prompt.format(**kwargs)
+        if toolbox:
+            formatted_prompt += self.format_psuedo_functions(toolbox)
+
         self.memory.append(HumanMessage(content=formatted_prompt))
 
         with action_context() as (current_room, current_character):
@@ -193,7 +218,7 @@ class RemotePlayer(BasePlayer):
                 logger.exception("error getting reply from remote player")
 
             if self.fallback_agent:
-                logger.info("prompting fallback agent: {self.fallback_agent.name}")
+                logger.info(f"prompting fallback agent: {self.fallback_agent.name}")
                 return self.fallback_agent(prompt, **kwargs)
 
             return ""

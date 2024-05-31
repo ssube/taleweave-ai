@@ -31,7 +31,7 @@ def describe_static(entity: WorldEntity) -> str:
 
 def describe_entity(
     entity: WorldEntity,
-    perspective: FormatPerspective = FormatPerspective.SECOND_PERSON,
+    perspective: FormatPerspective = FormatPerspective.THIRD_PERSON,
 ) -> str:
     if isinstance(entity, Character):
         return describe_character(entity, perspective)

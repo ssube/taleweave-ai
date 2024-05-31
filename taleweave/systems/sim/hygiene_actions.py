@@ -12,7 +12,8 @@ def action_wash(unused: bool) -> str:
 
         dungeon_master = get_dungeon_master()
         outcome = dungeon_master(
-            f"{action_character.name} washes themselves in the {action_room.name}. {describe_entity(action_room)}. {describe_entity(action_character)}"
+            f"{action_character.name} washes themselves in the {action_room.name}. "
+            f"{describe_entity(action_room)}. {describe_entity(action_character)}"
             f"{action_character.name} was {hygiene} to start with. How clean are they after washing? Respond with 'clean' or 'dirty'."
             "If the room has a shower or running water, they should be cleaner. If the room is dirty, they should end up dirtier."
         )

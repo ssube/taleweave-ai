@@ -4,6 +4,7 @@ from random import shuffle
 from typing import List
 
 from taleweave.context import get_current_world, get_dungeon_master
+from taleweave.game_system import FormatPerspective
 from taleweave.models.entity import Room, WorldEntity
 from taleweave.models.event import (
     ActionEvent,
@@ -32,7 +33,11 @@ def prompt_from_parameters(
         if target_character:
             logger.debug("adding character to prompt: %s", target_character.name)
             pre.append(f"with {target_character.name}")
-            post.append(describe_entity(target_character))
+            post.append(
+                describe_entity(
+                    target_character, perspective=FormatPerspective.THIRD_PERSON
+                )
+            )
 
     if "item" in parameters:
         # look up the item
@@ -47,7 +52,9 @@ def prompt_from_parameters(
         if target_item:
             logger.debug("adding item to prompt: %s", target_item.name)
             pre.append(f"using the {target_item.name}")
-            post.append(describe_entity(target_item))
+            post.append(
+                describe_entity(target_item, perspective=FormatPerspective.THIRD_PERSON)
+            )
 
     if "target" in parameters:
         # could be a room, character, or item
@@ -60,13 +67,21 @@ def prompt_from_parameters(
             if target_room:
                 logger.debug("adding room to prompt: %s", target_room.name)
                 pre.append(f"in the {target_room.name}")
-                post.append(describe_entity(target_room))
+                post.append(
+                    describe_entity(
+                        target_room, perspective=FormatPerspective.THIRD_PERSON
+                    )
+                )
 
             target_character = find_character_in_room(action_room, target_name)
             if target_character:
                 logger.debug("adding character to prompt: %s", target_character.name)
                 pre.append(f"with {target_character.name}")
-                post.append(describe_entity(target_character))
+                post.append(
+                    describe_entity(
+                        target_character, perspective=FormatPerspective.THIRD_PERSON
+                    )
+                )
 
             target_item = find_item_in_room(
                 action_room,
@@ -77,7 +92,11 @@ def prompt_from_parameters(
             if target_item:
                 logger.debug("adding item to prompt: %s", target_item.name)
                 pre.append(f"using the {target_item.name}")
-                post.append(describe_entity(target_item))
+                post.append(
+                    describe_entity(
+                        target_item, perspective=FormatPerspective.THIRD_PERSON
+                    )
+                )
 
     return (" and ".join(pre) if pre else "", " and ".join(post) if post else "")
 

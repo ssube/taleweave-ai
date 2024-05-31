@@ -184,7 +184,9 @@ def action_use(item: str, target: str) -> str:
         )
         outcome = dungeon_master(
             f"{action_character.name} uses the {chosen_name} effect of {item} on {target}. "
-            f"{describe_character(action_character)}. {describe_character(target_character)}. {describe_entity(action_item)}. "
+            f"{describe_character(action_character)}. "
+            f"{describe_character(target_character)}. "
+            f"{describe_entity(action_item)}. "
             f"What happens? How does {target} react? Be creative with the results. The outcome can be good, bad, or neutral."
             "Decide based on the characters involved and the item being used."
             "Specify the outcome of the action. Do not include the question or any JSON. Only include the outcome of the action."
