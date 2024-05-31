@@ -15,11 +15,17 @@ from taleweave.context import (
     world_context,
 )
 from taleweave.errors import ActionError
-from taleweave.generate import generate_item, generate_room, link_rooms
+from taleweave.generate import (
+    generate_item,
+    generate_portals,
+    generate_room,
+    link_rooms,
+)
 from taleweave.utils.effect import apply_effects, is_effect_ready
+from taleweave.utils.prompt import format_prompt
 from taleweave.utils.search import find_character_in_room
 from taleweave.utils.string import normalize_name
-from taleweave.utils.world import describe_character, describe_entity
+from taleweave.utils.world import describe_entity
 
 logger = getLogger(__name__)
 
@@ -29,7 +35,7 @@ if not has_dungeon_master():
     set_dungeon_master(
         Agent(
             "dungeon master",
-            "You are the dungeon master in charge of a fantasy world.",
+            format_prompt("world_default_dungeon_master"),
             {},
             llm,
         )
@@ -50,8 +56,11 @@ def action_explore(direction: str) -> str:
         if direction in action_room.portals:
             dest_room = action_room.portals[direction]
             raise ActionError(
-                f"You cannot explore {direction} from here, that direction already leads to {dest_room}. "
-                "Please use the move action to go there."
+                format_prompt(
+                    "action_explore_error_direction",
+                    direction=direction,
+                    dest_room=dest_room,
+                )
             )
 
         try:
@@ -59,16 +68,34 @@ def action_explore(direction: str) -> str:
             new_room = generate_room(dungeon_master, action_world, systems)
             action_world.rooms.append(new_room)
 
-            # link the rooms together
+            # link the rooms together, starting with the current room
+            outgoing_portal, incoming_portal = generate_portals(
+                dungeon_master,
+                action_world,
+                action_room,
+                new_room,
+                systems,
+                outgoing_name=direction,
+            )
+            action_room.portals.append(outgoing_portal)
+            new_room.portals.append(incoming_portal)
             link_rooms(dungeon_master, action_world, systems, [new_room])
 
             broadcast(
-                f"{action_character.name} explores {direction} of {action_room.name} and finds a new room: {new_room.name}"
+                format_prompt(
+                    "action_explore_broadcast",
+                    action_character=action_character,
+                    action_room=action_room,
+                    direction=direction,
+                    new_room=new_room,
+                )
             )
-            return f"You explore {direction} and find a new room: {new_room.name}"
+            return format_prompt(
+                "action_explore_result", direction=direction, new_room=new_room
+            )
         except Exception:
             logger.exception("error generating room")
-            return f"You cannot explore {direction} from here, there is no room in that direction."
+            return format_prompt("action_explore_error_generating", direction=direction)
 
 
 def action_search(unused: bool) -> str:
@@ -80,9 +107,7 @@ def action_search(unused: bool) -> str:
         dungeon_master = get_dungeon_master()
 
         if len(action_room.items) > 2:
-            return (
-                "You find nothing hidden in the room. There is no room for more items."
-            )
+            return format_prompt("action_search_error_full")
 
         try:
             systems = get_game_systems()
@@ -95,12 +120,17 @@ def action_search(unused: bool) -> str:
             action_room.items.append(new_item)
 
             broadcast(
-                f"{action_character.name} searches {action_room.name} and finds a new item: {new_item.name}"
+                format_prompt(
+                    "action_search_broadcast",
+                    action_character=action_character,
+                    action_room=action_room,
+                    new_item=new_item,
+                )
             )
-            return f"You search the room and find a new item: {new_item.name}"
+            return format_prompt("action_search_result", new_item=new_item)
         except Exception:
             logger.exception("error generating item")
-            return "You find nothing hidden in the room."
+            return format_prompt("action_search_error_generating")
 
 
 def action_use(item: str, target: str) -> str:
@@ -118,12 +148,12 @@ def action_use(item: str, target: str) -> str:
             (
                 search_item
                 for search_item in (action_character.items + action_room.items)
-                if search_item.name == item
+                if normalize_name(search_item.name) == normalize_name(item)
             ),
             None,
         )
         if not action_item:
-            raise ActionError(f"The {item} item is not available to use.")
+            raise ActionError(format_prompt("action_use_error_item", item=item))
 
         if target == "self":
             target_character = action_character
@@ -132,19 +162,22 @@ def action_use(item: str, target: str) -> str:
             # TODO: allow targeting the room itself and items in the room
             target_character = find_character_in_room(action_room, target)
             if not target_character:
-                return f"The {target} character is not in the room."
+                return format_prompt("action_use_error_target", target=target)
 
         effect_names = [effect.name for effect in action_item.effects]
         # TODO: should use a retry loop and enum result parser
         chosen_name = dungeon_master(
-            f"{action_character.name} uses {item} on {target}. "
-            f"{item} has the following effects: {effect_names}. "
-            "Which effect should be applied? Specify the name of the effect to apply."
-            "Do not include the question or any JSON. Only include the name of the effect to apply."
+            format_prompt(
+                "action_use_dm_effect",
+                action_character=action_character,
+                item=item,
+                target=target,
+                effect_names=effect_names,
+            )
         )
         chosen_name = normalize_name(chosen_name)
 
-        chosen_effect = next(
+        effect = next(
             (
                 search_effect
                 for search_effect in action_item.effects
@@ -152,46 +185,56 @@ def action_use(item: str, target: str) -> str:
             ),
             None,
         )
-        if not chosen_effect:
+        if not effect:
             raise ValueError(f"The {chosen_name} effect is not available to apply.")
 
         current_turn = get_current_turn()
-        effect_ready = is_effect_ready(chosen_effect, current_turn)
+        effect_ready = is_effect_ready(effect, current_turn)
 
         if effect_ready == "cooldown":
             raise ActionError(
-                f"The {chosen_name} effect of {item} is still cooling down and is not ready to use yet."
+                format_prompt("action_use_error_cooldown", effect=effect, item=item)
             )
         elif effect_ready == "exhausted":
             raise ActionError(
-                f"The {chosen_name} effect of {item} has no uses remaining."
+                format_prompt("action_use_error_exhausted", effect=effect, item=item)
             )
-        elif chosen_effect.uses is not None:
-            chosen_effect.uses -= 1
+        elif effect.uses is not None:
+            effect.uses -= 1
 
-        chosen_effect.last_used = current_turn
+        effect.last_used = current_turn
 
         try:
-            apply_effects(target_character, [chosen_effect])
+            apply_effects(target_character, [effect])
         except Exception:
-            logger.exception("error applying effect: %s", chosen_effect)
+            logger.exception("error applying effect: %s", effect)
             raise ValueError(
                 f"There was a problem applying the {chosen_name} effect while using the {item} item."
             )
 
         broadcast(
-            f"{action_character.name} uses the {chosen_name} effect of {item} on {target}"
+            format_prompt(
+                "action_use_broadcast",
+                action_character=action_character,
+                effect=effect,
+                item=item,
+                target=target,
+            )
         )
         outcome = dungeon_master(
-            f"{action_character.name} uses the {chosen_name} effect of {item} on {target}. "
-            f"{describe_character(action_character)}. "
-            f"{describe_character(target_character)}. "
-            f"{describe_entity(action_item)}. "
-            f"What happens? How does {target} react? Be creative with the results. The outcome can be good, bad, or neutral."
-            "Decide based on the characters involved and the item being used."
-            "Specify the outcome of the action. Do not include the question or any JSON. Only include the outcome of the action."
+            format_prompt(
+                "action_use_dm_outcome",
+                action_character=action_character,
+                action_item=action_item,
+                describe_entity=describe_entity,
+                effect=effect,
+                item=item,
+                target_character=target_character,
+            )
         )
-        broadcast(f"The action resulted in: {outcome}")
+        broadcast(
+            f"The action resulted in: {outcome}"
+        )  # TODO: should this be removed or moved to the prompt library?
 
         # make sure both agents remember the outcome
         target_agent = get_agent_for_character(target_character)

@@ -12,6 +12,7 @@ from taleweave.context import broadcast
 from taleweave.models.config import DEFAULT_CONFIG
 from taleweave.models.entity import Character, Room
 from taleweave.models.event import ReplyEvent
+from taleweave.utils.prompt import format_str
 
 from .string import and_list, normalize_name
 
@@ -143,7 +144,12 @@ def loop_conversation(
         # summarize the room and present the last response
         summary = summarize_room(room, character)
         response = agent(
-            prompt, response=response, summary=summary, last_character=last_character
+            format_str(
+                prompt,
+                response=response,
+                summary=summary,
+                last_character=last_character,
+            )
         )
         response = result_parser(response)
 
@@ -155,4 +161,4 @@ def loop_conversation(
         i += 1
         last_character = character
 
-    return f"{last_character.name} ends the conversation for now"
+    return format_str(end_message, response=response, last_character=last_character)

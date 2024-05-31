@@ -51,3 +51,12 @@ def format_attributes(
     ]
 
     return f"{'. '.join(attribute_descriptions)}"
+
+
+def name_entity(
+    entity: str | WorldEntity,
+) -> str:
+    if isinstance(entity, str):
+        return entity
+
+    return entity.name

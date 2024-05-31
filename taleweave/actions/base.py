@@ -5,10 +5,12 @@ from taleweave.context import (
     broadcast,
     get_agent_for_character,
     get_character_agent_for_name,
+    get_prompt,
     world_context,
 )
 from taleweave.errors import ActionError
 from taleweave.utils.conversation import loop_conversation
+from taleweave.utils.prompt import format_prompt
 from taleweave.utils.search import (
     find_character_in_room,
     find_item_in_character,
@@ -17,7 +19,6 @@ from taleweave.utils.search import (
     find_room,
 )
 from taleweave.utils.string import normalize_name
-from taleweave.utils.world import describe_entity
 
 logger = getLogger(__name__)
 
@@ -33,34 +34,65 @@ def action_examine(target: str) -> str:
     """
 
     with action_context() as (action_room, action_character):
-        broadcast(f"{action_character.name} looks at {target}")
+        broadcast(
+            format_prompt(
+                "action_examine_broadcast_action",
+                action_character=action_character,
+                target=target,
+            )
+        )
 
         if normalize_name(target) == normalize_name(action_room.name):
-            broadcast(f"{action_character.name} saw the {action_room.name} room")
-            return describe_entity(action_room)
+            broadcast(
+                format_prompt(
+                    "action_examine_broadcast_room",
+                    action_character=action_character,
+                    action_room=action_room,
+                )
+            )
+            return format_prompt("action_examine_result_room", action_room=action_room)
 
         target_character = find_character_in_room(action_room, target)
         if target_character:
             broadcast(
-                f"{action_character.name} saw the {target_character.name} character in the {action_room.name} room"
+                format_prompt(
+                    "action_examine_broadcast_character",
+                    action_character=action_character,
+                    action_room=action_room,
+                    target_character=target_character,
+                )
             )
-            return describe_entity(target_character)
+            return format_prompt(
+                "action_examine_result_character", target_character=target_character
+            )
 
         target_item = find_item_in_room(action_room, target)
         if target_item:
             broadcast(
-                f"{action_character.name} saw the {target_item.name} item in the {action_room.name} room"
+                format_prompt(
+                    "action_examine_broadcast_item",
+                    action_character=action_character,
+                    action_room=action_room,
+                    target_item=target_item,
+                )
             )
-            return describe_entity(target_item)
+            return format_prompt("action_examine_result_item", target_item=target_item)
 
         target_item = find_item_in_character(action_character, target)
         if target_item:
             broadcast(
-                f"{action_character.name} saw the {target_item.name} item in their inventory"
+                format_prompt(
+                    "action_examine_broadcast_inventory",
+                    action_character=action_character,
+                    action_room=action_room,
+                    target_item=target_item,
+                )
             )
-            return describe_entity(target_item)
+            return format_prompt(
+                "action_examine_result_inventory", target_item=target_item
+            )
 
-        return "You do not see that item or character in the room."
+        return format_prompt("action_examine_error_target", target=target)
 
 
 def action_move(direction: str) -> str:
@@ -74,20 +106,36 @@ def action_move(direction: str) -> str:
     with world_context() as (action_world, action_room, action_character):
         portal = find_portal_in_room(action_room, direction)
         if not portal:
-            raise ActionError(f"You cannot move {direction} from here.")
+            portals = [p.name for p in action_room.portals]
+            raise ActionError(
+                format_prompt(
+                    "action_move_error_direction", direction=direction, portals=portals
+                )
+            )
 
-        destination_room = find_room(action_world, portal.destination)
-        if not destination_room:
-            raise ActionError(f"The {portal.destination} room does not exist.")
+        dest_room = find_room(action_world, portal.destination)
+        if not dest_room:
+            raise ActionError(
+                format_prompt(
+                    "action_move_error_room",
+                    direction=direction,
+                    destination=portal.destination,
+                )
+            )
 
         broadcast(
-            f"{action_character.name} moves through {direction} to {destination_room.name}"
+            format_prompt(
+                "action_move_broadcast",
+                action_character=action_character,
+                dest_room=dest_room,
+                direction=direction,
+            )
         )
         action_room.characters.remove(action_character)
-        destination_room.characters.append(action_character)
+        dest_room.characters.append(action_character)
 
-        return (
-            f"You move through the {direction} and arrive at {destination_room.name}."
+        return format_prompt(
+            "action_move_result", direction=direction, dest_room=dest_room
         )
 
 
@@ -101,12 +149,20 @@ def action_take(item: str) -> str:
     with action_context() as (action_room, action_character):
         action_item = find_item_in_room(action_room, item)
         if not action_item:
-            raise ActionError(f"The {item} item is not in the room.")
+            raise ActionError(format_prompt("action_take_error_item", item=item))
 
-        broadcast(f"{action_character.name} takes the {item} item")
+        broadcast(
+            format_prompt(
+                "action_take_broadcast",
+                action_character=action_character,
+                action_room=action_room,
+                item=item,
+            )
+        )
         action_room.items.remove(action_item)
         action_character.items.append(action_item)
-        return f"You take the {item} item and put it in your inventory."
+
+        return format_prompt("action_take_result", item=item)
 
 
 def action_ask(character: str, question: str) -> str:
@@ -122,27 +178,31 @@ def action_ask(character: str, question: str) -> str:
         # sanity checks
         question_character, question_agent = get_character_agent_for_name(character)
         if question_character == action_character:
-            raise ActionError(
-                "You cannot ask yourself a question. Stop talking to yourself. Try another action."
-            )
+            raise ActionError(format_prompt("action_ask_error_self"))
 
         if not question_character:
-            raise ActionError(f"The {character} character is not in the room.")
+            raise ActionError(
+                format_prompt("action_ask_error_target", character=character)
+            )
 
         if not question_agent:
-            raise ActionError(f"The {character} character does not exist.")
+            raise ActionError(
+                format_prompt("action_ask_error_agent", character=character)
+            )
 
-        broadcast(f"{action_character.name} asks {character}: {question}")
-        first_prompt = (
-            "{last_character.name} asks you: {response}\n"
-            "Reply with your response to them. Reply with 'END' to end the conversation. "
-            "Do not include the question or any JSON. Only include your answer for {last_character.name}."
+        # TODO: make sure they are in the same room
+
+        broadcast(
+            format_prompt(
+                "action_ask_broadcast",
+                action_character=action_character,
+                character=character,
+                question=question,
+            )
         )
-        reply_prompt = (
-            "{last_character.name} continues the conversation with you. They reply: {response}\n"
-            "Reply with your response to them. Reply with 'END' to end the conversation. "
-            "Do not include the question or any JSON. Only include your answer for {last_character.name}."
-        )
+        first_prompt = get_prompt("action_ask_conversation_first")
+        reply_prompt = get_prompt("action_ask_conversation_reply")
+        end_prompt = get_prompt("action_ask_conversation_end")
 
         action_agent = get_agent_for_character(action_character)
         result = loop_conversation(
@@ -153,7 +213,7 @@ def action_ask(character: str, question: str) -> str:
             first_prompt,
             reply_prompt,
             question,
-            "Goodbye",
+            end_prompt,
             echo_function=action_tell.__name__,
             echo_parameter="message",
             max_length=MAX_CONVERSATION_STEPS,
@@ -162,7 +222,7 @@ def action_ask(character: str, question: str) -> str:
         if result:
             return result
 
-        return f"{character} does not respond."
+        return format_prompt("action_ask_ignore", character=character)
 
 
 def action_tell(character: str, message: str) -> str:
@@ -179,27 +239,22 @@ def action_tell(character: str, message: str) -> str:
         # sanity checks
         question_character, question_agent = get_character_agent_for_name(character)
         if question_character == action_character:
-            raise ActionError(
-                "You cannot tell yourself a message. Stop talking to yourself. Try another action."
-            )
+            raise ActionError(format_prompt("action_tell_error_self"))
 
         if not question_character:
-            raise ActionError(f"The {character} character is not in the room.")
+            raise ActionError(
+                format_prompt("action_tell_error_target", character=character)
+            )
 
         if not question_agent:
-            raise ActionError(f"The {character} character does not exist.")
+            raise ActionError(
+                format_prompt("action_tell_error_agent", character=character)
+            )
 
         broadcast(f"{action_character.name} tells {character}: {message}")
-        first_prompt = (
-            "{last_character.name} starts a conversation with you. They say: {response}\n"
-            "Reply with your response to them. "
-            "Do not include the message or any JSON. Only include your reply to {last_character.name}."
-        )
-        reply_prompt = (
-            "{last_character.name} continues the conversation with you. They reply: {response}\n"
-            "Reply with your response to them. "
-            "Do not include the message or any JSON. Only include your reply to {last_character.name}."
-        )
+        first_prompt = get_prompt("action_tell_conversation_first")
+        reply_prompt = get_prompt("action_tell_conversation_reply")
+        end_prompt = get_prompt("action_tell_conversation_end")
 
         action_agent = get_agent_for_character(action_character)
         result = loop_conversation(
@@ -210,7 +265,7 @@ def action_tell(character: str, message: str) -> str:
             first_prompt,
             reply_prompt,
             message,
-            "Goodbye",
+            end_prompt,
             echo_function=action_tell.__name__,
             echo_parameter="message",
             max_length=MAX_CONVERSATION_STEPS,
@@ -219,7 +274,7 @@ def action_tell(character: str, message: str) -> str:
         if result:
             return result
 
-        return f"{character} does not respond."
+        return format_prompt("action_tell_ignore", character=character)
 
 
 def action_give(character: str, item: str) -> str:
@@ -233,22 +288,29 @@ def action_give(character: str, item: str) -> str:
     with action_context() as (action_room, action_character):
         destination_character = find_character_in_room(action_room, character)
         if not destination_character:
-            raise ActionError(f"The {character} character is not in the room.")
+            raise ActionError(
+                format_prompt("action_give_error_target", character=character)
+            )
 
         if destination_character == action_character:
-            raise ActionError(
-                "You cannot give an item to yourself. Try another action."
-            )
+            raise ActionError(format_prompt("action_give_error_self"))
 
         action_item = find_item_in_character(action_character, item)
         if not action_item:
-            raise ActionError(f"You do not have the {item} item in your inventory.")
+            raise ActionError(format_prompt("action_give_error_item", item=item))
 
-        broadcast(f"{action_character.name} gives {character} the {item} item.")
+        broadcast(
+            format_prompt(
+                "action_give_broadcast",
+                action_character=action_character,
+                character=character,
+                item=item,
+            )
+        )
         action_character.items.remove(action_item)
         destination_character.items.append(action_item)
 
-        return f"You give the {item} item to {character}."
+        return format_prompt("action_give_result", character=character, item=item)
 
 
 def action_drop(item: str) -> str:
@@ -262,10 +324,14 @@ def action_drop(item: str) -> str:
     with action_context() as (action_room, action_character):
         action_item = find_item_in_character(action_character, item)
         if not action_item:
-            raise ActionError(f"You do not have the {item} item in your inventory.")
+            raise ActionError(format_prompt("action_drop_error_item", item=item))
 
-        broadcast(f"{action_character.name} drops the {item} item")
+        broadcast(
+            format_prompt(
+                "action_drop_broadcast", action_character=action_character, item=item
+            )
+        )
         action_character.items.remove(action_item)
         action_room.items.append(action_item)
 
-        return f"You drop the {item} item."
+        return format_prompt("action_drop_result", item=item)

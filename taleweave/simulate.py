@@ -22,10 +22,10 @@ from taleweave.actions.base import (
 )
 from taleweave.actions.planning import (
     check_calendar,
+    edit_note,
     erase_notes,
     get_recent_notes,
     read_notes,
-    replace_note,
     schedule_event,
     summarize_notes,
     take_note,
@@ -36,6 +36,7 @@ from taleweave.context import (
     get_character_for_agent,
     get_current_turn,
     get_current_world,
+    get_prompt,
     set_current_character,
     set_current_room,
     set_current_turn,
@@ -49,6 +50,7 @@ from taleweave.models.event import ActionEvent, ResultEvent
 from taleweave.utils.conversation import make_keyword_condition, summarize_room
 from taleweave.utils.effect import expire_effects
 from taleweave.utils.planning import expire_events, get_upcoming_events
+from taleweave.utils.prompt import format_prompt
 from taleweave.utils.search import find_containing_room
 from taleweave.utils.world import describe_entity, format_attributes
 
@@ -115,10 +117,13 @@ def prompt_character_action(
                     pass
 
         if could_be_json(value):
-            # TODO: only emit valid actions that parse and run correctly
+            # TODO: only emit valid actions that parse and run correctly, and try to avoid parsing the JSON twice
             event = ActionEvent.from_json(value, room, character)
         else:
             # TODO: this path should be removed and throw
+            logger.warning(
+                "invalid action, emitting as result event - this is a bug somewhere"
+            )
             event = ResultEvent(value, room, character)
 
         broadcast(event)
@@ -129,17 +134,7 @@ def prompt_character_action(
     logger.info("starting turn for character: %s", character.name)
     result = loop_retry(
         agent,
-        (
-            "You are currently in the {room_name} room. {room_description}. {attributes}. "
-            "The room contains the following characters: {visible_characters}. "
-            "The room contains the following items: {visible_items}. "
-            "Your inventory contains the following items: {character_items}."
-            "You can take the following actions: {actions}. "
-            "You can move in the following directions: {directions}. "
-            "{notes_prompt} {events_prompt}"
-            "What will you do next? Reply with a JSON function call, calling one of the actions."
-            "You can only perform one action per turn. What is your next action?"
-        ),
+        get_prompt("world_simulate_character_action"),
         context={
             "actions": action_names,
             "character_items": character_items,
@@ -158,7 +153,6 @@ def prompt_character_action(
 
     logger.debug(f"{character.name} action result: {result}")
     if agent.memory:
-        # TODO: make sure this is not duplicating memories and wasting space
         agent.memory.append(result)
 
     return result
@@ -170,25 +164,33 @@ def get_notes_events(character: Character, current_turn: int):
 
     if len(recent_notes) > 0:
         notes = "\n".join(recent_notes)
-        notes_prompt = f"Your recent notes are: {notes}\n"
+        notes_prompt = format_prompt(
+            "world_simulate_character_planning_notes_some", notes=notes
+        )
     else:
-        notes_prompt = "You have no recent notes.\n"
+        notes_prompt = format_prompt("world_simulate_character_planning_notes_none")
 
     if len(upcoming_events) > 0:
         current_turn = get_current_turn()
         events = [
-            f"{event.name} in {event.turn - current_turn} turns"
+            format_prompt(
+                "world_simulate_character_planning_events_item",
+                event=event,
+                turns=event.turn - current_turn,
+            )
             for event in upcoming_events
         ]
         events = "\n".join(events)
-        events_prompt = f"Upcoming events are: {events}\n"
+        events_prompt = format_prompt(
+            "world_simulate_character_planning_events_some", events=events
+        )
     else:
-        events_prompt = "You have no upcoming events.\n"
+        events_prompt = format_prompt("world_simulate_character_planning_events_none")
 
     return notes_prompt, events_prompt
 
 
-def prompt_character_think(
+def prompt_character_planning(
     room: Room,
     character: Character,
     agent: Agent,
@@ -204,7 +206,9 @@ def prompt_character_think(
     note_count = len(character.planner.notes)
 
     logger.info("starting planning for character: %s", character.name)
-    _, condition_end, result_parser = make_keyword_condition("You are done planning.")
+    _, condition_end, result_parser = make_keyword_condition(
+        get_prompt("world_simulate_character_planning_done")
+    )
     stop_condition = condition_or(
         condition_end, partial(condition_threshold, max=max_steps)
     )
@@ -213,15 +217,7 @@ def prompt_character_think(
     while not stop_condition(current=i):
         result = loop_retry(
             agent,
-            "You are about to start your turn. Plan your next action carefully. Take notes and schedule events to help keep track of your goals. "
-            "You can check your notes for important facts or check your calendar for upcoming events. You have {note_count} notes. "
-            "If you have plans with other characters, schedule them on your calendar. You have {event_count} events on your calendar. "
-            "{room_summary}"
-            "Think about your goals and any quests that you are working on, and plan your next action accordingly. "
-            "Try to keep your notes accurate and up-to-date. Replace or erase old notes when they are no longer accurate or useful. "
-            "Do not keeps notes about upcoming events, use your calendar for that. "
-            "You can perform up to 3 planning actions in a single turn. When you are done planning, reply with 'END'."
-            "{notes_prompt} {events_prompt}",
+            get_prompt("world_simulate_character_planning"),
             context={
                 "event_count": event_count,
                 "events_prompt": events_prompt,
@@ -272,7 +268,7 @@ def simulate_world(
             check_calendar,
             erase_notes,
             read_notes,
-            replace_note,
+            edit_note,
             schedule_event,
             summarize_notes,
             take_note,
@@ -306,7 +302,7 @@ def simulate_world(
             # give the character a chance to think and check their planner
             if agent.memory and len(agent.memory) > 0:
                 try:
-                    thoughts = prompt_character_think(
+                    thoughts = prompt_character_planning(
                         room, character, agent, planner_toolbox, current_turn
                     )
                     logger.debug(f"{character.name} thinks: {thoughts}")

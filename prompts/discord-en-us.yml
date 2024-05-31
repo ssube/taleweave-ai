@@ -1,0 +1,24 @@
+prompts:
+  discord_help: |
+    **Commands:**
+    - `!help` - Show this help message
+    - `!{{ bot_name }}` - Show the active world
+    - `!join <character>` - Join the game as the specified character
+    - `!leave` - Leave the game
+  discord_join_error_none: You must specify a character!
+  discord_join_error_not_found: Character {{ character }} was not found!
+  discord_join_error_taken: Someone is already playing as {{ character }}!
+  discord_join_result: |
+    {{ event.client }} is now playing as {{ event.character }}!
+  discord_join_title: |
+    Player Joined
+  discord_leave_error_none: You are not playing the game yet!
+  discord_leave_result: |
+    {{ event.client }} has left the game! {{ event.character }} is now being played by an LLM.
+  discord_leave_title: |
+    Player Left
+  discord_user_new: |
+    You are not playing the game yet! Use `!join <character>` to start playing.
+  discord_world_active: |
+    Hello! Welcome to {{ bot_name }}. The active world is `{{ world.name }}` (theme: {{ world.theme }})
+  discord_world_none: Hello! Welcome to {{ bot_name }}. There is no active world yet.

@@ -7,7 +7,7 @@ from packit.loops import loop_retry
 from packit.results import enum_result, int_result
 from packit.utils import could_be_json
 
-from taleweave.context import broadcast, set_current_world, set_system_data
+from taleweave.context import broadcast, get_prompt, set_current_world, set_system_data
 from taleweave.game_system import GameSystem
 from taleweave.models.config import DEFAULT_CONFIG, WorldConfig
 from taleweave.models.effect import (
@@ -20,6 +20,7 @@ from taleweave.models.entity import Character, Item, Portal, Room, World, WorldE
 from taleweave.models.event import GenerateEvent
 from taleweave.utils import try_parse_float, try_parse_int
 from taleweave.utils.effect import resolve_int_range
+from taleweave.utils.prompt import format_prompt
 from taleweave.utils.search import (
     list_characters,
     list_characters_in_room,
@@ -40,16 +41,24 @@ def duplicate_name_parser(existing_names: List[str]):
         logger.debug(f"validating generated name: {value}")
 
         if value in existing_names:
-            raise ValueError(f'"{value}" has already been used.')
+            raise ValueError(
+                format_prompt("world_generate_error_name_exists", name=value)
+            )
 
         if could_be_json(value):
-            raise ValueError("The name cannot contain JSON or other commands.")
+            raise ValueError(
+                format_prompt("world_generate_error_name_json", name=value)
+            )
 
         if '"' in value or ":" in value:
-            raise ValueError("The name cannot contain quotes or colons.")
+            raise ValueError(
+                format_prompt("world_generate_error_name_punctuation", name=value)
+            )
 
         if len(value) > 50:
-            raise ValueError("The name cannot be longer than 50 characters.")
+            raise ValueError(
+                format_prompt("world_generate_error_name_length", name=value)
+            )
 
         return value
 
@@ -88,9 +97,7 @@ def generate_room(
 
     name = loop_retry(
         agent,
-        "Generate one room, area, or location that would make sense in the world of {world_theme}. "
-        "Only respond with the room name in title case, do not include the description or any other text. "
-        'Do not prefix the name with "the", do not wrap it in quotes. The existing rooms are: {existing_rooms}',
+        get_prompt("world_generate_room_name"),
         context={
             "world_theme": world.theme,
             "existing_rooms": existing_rooms,
@@ -99,18 +106,18 @@ def generate_room(
         toolbox=None,
     )
 
-    broadcast_generated(message=f"Generating room: {name}")
-    desc = agent(
-        "Generate a detailed description of the {name} area. What does it look like? "
-        "What does it smell like? What can be seen or heard?",
-        name=name,
-    )
+    broadcast_generated(format_prompt("world_generate_room_broadcast_room", name=name))
+    desc = agent(get_prompt("world_generate_room_description"), name=name)
 
     actions = {}
     room = Room(name=name, description=desc, items=[], characters=[], actions=actions)
 
     item_count = resolve_int_range(world_config.size.room_items) or 0
-    broadcast_generated(f"Generating {item_count} items for room: {name}")
+    broadcast_generated(
+        format_prompt(
+            "world_generate_room_broadcast_items", item_count=item_count, name=name
+        )
+    )
 
     for _ in range(item_count):
         try:
@@ -128,7 +135,11 @@ def generate_room(
 
     character_count = resolve_int_range(world_config.size.room_characters) or 0
     broadcast_generated(
-        message=f"Generating {character_count} characters for room: {name}"
+        format_prompt(
+            "world_generate_room_broadcast_characters",
+            character_count=character_count,
+            name=name,
+        )
     )
 
     for _ in range(character_count):
@@ -155,17 +166,14 @@ def generate_portals(
     source_room: Room,
     dest_room: Room,
     systems: List[GameSystem],
+    outgoing_name: str | None = None,
 ) -> Tuple[Portal, Portal]:
     existing_source_portals = [portal.name for portal in source_room.portals]
     existing_dest_portals = [portal.name for portal in dest_room.portals]
 
-    outgoing_name = loop_retry(
+    outgoing_name = outgoing_name or loop_retry(
         agent,
-        "Generate the name of a portal that leads from the {source_room} room to the {dest_room} room and fits the world theme of {world_theme}. "
-        "Some example portal names are: 'door', 'gate', 'archway', 'staircase', 'trapdoor', 'mirror', and 'magic circle'. "
-        "Only respond with the portal name in title case, do not include a description or any other text. "
-        'Do not prefix the name with "the", do not wrap it in quotes. Use a unique name. '
-        "Do not create any duplicate portals in the same room. The existing portals are: {existing_portals}",
+        get_prompt("world_generate_portal_name_outgoing"),
         context={
             "source_room": source_room.name,
             "dest_room": dest_room.name,
@@ -175,16 +183,15 @@ def generate_portals(
         result_parser=duplicate_name_parser(existing_source_portals),
         toolbox=None,
     )
-    broadcast_generated(message=f"Generating portal: {outgoing_name}")
+    broadcast_generated(
+        message=format_prompt(
+            "world_generate_portal_broadcast_outgoing", outgoing_name=outgoing_name
+        )
+    )
 
     incoming_name = loop_retry(
         agent,
-        "Generate the opposite name of the portal that leads from the {dest_room} room to the {source_room} room. "
-        "The name should be the opposite of the {outgoing_name} portal and should fit the world theme of {world_theme}. "
-        "Some example portal names are: 'door', 'gate', 'archway', 'staircase', 'trapdoor', 'mirror', and 'magic circle'. "
-        "Only respond with the portal name in title case, do not include a description or any other text. "
-        'Do not prefix the name with "the", do not wrap it in quotes. Use a unique name. '
-        "Do not create any duplicate portals in the same room. The existing portals are: {existing_portals}",
+        get_prompt("world_generate_portal_name_incoming"),
         context={
             "source_room": source_room.name,
             "dest_room": dest_room.name,
@@ -196,7 +203,15 @@ def generate_portals(
         toolbox=None,
     )
 
-    broadcast_generated(message=f"Linking {outgoing_name} to {incoming_name}")
+    broadcast_generated(
+        message=format_prompt(
+            "world_generate_portal_broadcast_incoming",
+            incoming_name=incoming_name,
+            outgoing_name=outgoing_name,
+        )
+    )
+
+    # TODO: generate descriptions for the portals
 
     outgoing_portal = Portal(
         name=outgoing_name,
@@ -242,11 +257,7 @@ def generate_item(
 
     name = loop_retry(
         agent,
-        "Generate one item or object that would make sense in the world of {world_theme}. {dest_note}. "
-        "Only respond with the item name in title case, do not include a description or any other text. Do not prefix the "
-        'name with "the", do not wrap it in quotes. Do not include the name of the room. Use a unique name. '
-        "Do not create any duplicate items in the same room. Do not give characters any duplicate items. "
-        "The existing items are: {existing_items}",
+        get_prompt("world_generate_item_name"),
         context={
             "dest_note": dest_note,
             "existing_items": existing_items,
@@ -256,18 +267,23 @@ def generate_item(
         toolbox=None,
     )
 
-    broadcast_generated(message=f"Generating item: {name}")
-    desc = agent(
-        "Generate a detailed description of the {name} item. What does it look like? What is it made of? What does it do?",
-        name=name,
+    broadcast_generated(
+        message=format_prompt("world_generate_item_broadcast_item", name=name)
     )
+    desc = agent(get_prompt("world_generate_item_description"), name=name)
 
     actions = {}
     item = Item(name=name, description=desc, actions=actions)
     generate_system_attributes(agent, world, item, systems)
 
     effect_count = resolve_int_range(world_config.size.item_effects) or 0
-    broadcast_generated(message=f"Generating {effect_count} effects for item: {name}")
+    broadcast_generated(
+        message=format_prompt(
+            "world_generate_item_broadcast_effects",
+            effect_count=effect_count,
+            name=name,
+        )
+    )
 
     for _ in range(effect_count):
         try:
@@ -294,12 +310,7 @@ def generate_character(
 
     name = loop_retry(
         agent,
-        "Generate a new character that would make sense in the world of {world_theme}. Characters can be a person, creature, or some other intelligent entity."
-        "The character will be placed in the {dest_room} room. {additional_prompt}. "
-        "Only respond with the character name in title case, do not include a description or any other text. "
-        'Do not prefix the name with "the", do not wrap it in quotes. '
-        "Do not include the name of the room. Do not give characters any duplicate names."
-        "Do not create any duplicate characters. The existing characters are: {existing_characters}",
+        get_prompt("world_generate_character_name"),
         context={
             "additional_prompt": additional_prompt,
             "dest_room": dest_room.name,
@@ -310,18 +321,17 @@ def generate_character(
         toolbox=None,
     )
 
-    broadcast_generated(message=f"Generating character: {name}")
+    broadcast_generated(
+        message=format_prompt("world_generate_character_broadcast_name", name=name)
+    )
     description = agent(
-        "Generate a detailed description of the {name} character. {additional_prompt}. {detail_prompt}. What do they look like? What are they wearing? "
-        "What are they doing? Describe their appearance from the perspective of an outside observer."
-        "Do not include the room or any other characters in the description, because they will move around.",
+        get_prompt("world_generate_character_description"),
         additional_prompt=additional_prompt,
         detail_prompt=detail_prompt,
         name=name,
     )
     backstory = agent(
-        "Generate a backstory for the {name} character. {additional_prompt}. {detail_prompt}. Where are they from? What are they doing here? What are their "
-        'goals? Make sure to phrase the backstory in the second person, starting with "you are" and speaking directly to {name}.',
+        get_prompt("world_generate_character_backstory"),
         additional_prompt=additional_prompt,
         detail_prompt=detail_prompt,
         name=name,
@@ -334,7 +344,11 @@ def generate_character(
 
     # generate the character's inventory
     item_count = resolve_int_range(world_config.size.character_items) or 0
-    broadcast_generated(f"Generating {item_count} items for character {name}")
+    broadcast_generated(
+        message=format_prompt(
+            "world_generate_character_broadcast_items", item_count=item_count, name=name
+        )
+    )
 
     for k in range(item_count):
         try:
@@ -352,6 +366,7 @@ def generate_character(
             logger.exception("error generating item")
 
     if add_to_world_order:
+        # TODO: make sure characters have an agent
         logger.info(f"adding character {name} to end of world turn order")
         world.order.append(name)
 
@@ -364,11 +379,7 @@ def generate_effect(agent: Agent, world: World, entity: Item) -> EffectPattern:
 
     name = loop_retry(
         agent,
-        "Generate one effect for an {entity_type} named {entity_name} that would make sense in the world of {theme}. "
-        "Only respond with the effect name in title case, do not include a description or any other text. "
-        'Do not prefix the name with "the", do not wrap it in quotes. Use a unique name. '
-        "Do not create any duplicate effects on the same item. The existing effects are: {existing_effects}. "
-        "Some example effects are: 'fire', 'poison', 'frost', 'haste', 'slow', and 'heal'.",
+        get_prompt("world_generate_effect_name"),
         context={
             "entity_name": entity.name,
             "entity_type": entity_type,
@@ -378,18 +389,18 @@ def generate_effect(agent: Agent, world: World, entity: Item) -> EffectPattern:
         result_parser=duplicate_name_parser(existing_effects),
         toolbox=None,
     )
-    broadcast_generated(message=f"Generating effect: {name}")
+    broadcast_generated(
+        message=format_prompt("world_generate_effect_broadcast_effect", name=name)
+    )
 
     description = agent(
-        "Generate a detailed description of the {name} effect. What does it look like? What does it do? "
-        "How does it affect the target? Describe the effect from the perspective of an outside observer.",
+        get_prompt("world_generate_effect_description"),
         name=name,
     )
 
     cooldown = loop_retry(
         agent,
-        f"How many turns should the {name} effect wait before it can be used again? Enter a positive number to set a cooldown, or 0 for no cooldown. "
-        "Do not include any other text. Do not use JSON.",
+        get_prompt("world_generate_effect_cooldown"),
         context={
             "name": name,
         },
@@ -399,8 +410,7 @@ def generate_effect(agent: Agent, world: World, entity: Item) -> EffectPattern:
 
     uses = loop_retry(
         agent,
-        f"How many times can the {name} effect be used before it is exhausted? Enter a positive number to set a limit, or -1 for unlimited uses. "
-        "Do not include any other text. Do not use JSON.",
+        get_prompt("world_generate_effect_uses"),
         context={
             "name": name,
         },
@@ -412,10 +422,7 @@ def generate_effect(agent: Agent, world: World, entity: Item) -> EffectPattern:
         uses = None
 
     attribute_names = agent(
-        "Generate a short list of attributes that the {name} effect modifies. Include 1 to 3 attributes. "
-        "For example, 'heal' increases the target's 'health' attribute, while 'poison' decreases it. "
-        "Use a comma-separated list of attribute names, such as 'health, strength, speed'. "
-        "Only include the attribute names, do not include the question or any JSON.",
+        get_prompt("world_generate_effect_attribute_names"),
         name=name,
     )
 
@@ -424,10 +431,7 @@ def generate_effect(agent: Agent, world: World, entity: Item) -> EffectPattern:
         attribute_name = normalize_name(attribute_name)
         if attribute_name:
             value = agent(
-                f"How much does the {name} effect modify the {attribute_name} attribute? "
-                "For example, heal might add 10 to the health attribute, while poison might remove -5 from it."
-                "Enter a positive number to increase the attribute or a negative number to decrease it. "
-                "Do not include any other text. Do not use JSON.",
+                get_prompt("world_generate_effect_attribute_value"),
                 name=name,
                 attribute_name=attribute_name,
             )
@@ -452,8 +456,7 @@ def generate_effect(agent: Agent, world: World, entity: Item) -> EffectPattern:
 
     duration = loop_retry(
         agent,
-        f"How many turns does the {name} effect last? Enter a positive number to set a duration, or 0 for an instant effect. "
-        "Do not include any other text. Do not use JSON.",
+        get_prompt("world_generate_effect_duration"),
         context={
             "name": name,
         },
@@ -466,19 +469,11 @@ def generate_effect(agent: Agent, world: World, entity: Item) -> EffectPattern:
         if value:
             return value
 
-        raise ValueError("The application must be 'temporary' or 'permanent'.")
+        raise ValueError(get_prompt("world_generate_effect_error_application"))
 
     application = loop_retry(
         agent,
-        (
-            f"How should the {name} effect be applied? Respond with 'temporary' for a temporary effect that lasts for a duration, "
-            "or 'permanent' for a permanent effect that immediately modifies the target. "
-            "For example, a healing potion would be a permanent effect that increases health every turn, "
-            "while bleeding would be a temporary effect that decreases health every turn. "
-            "A haste potion would be a temporary effect that increases speed for a duration, "
-            "while a slow spell would be a temporary effect that decreases speed for a duration. "
-            "Do not include any other text. Do not use JSON."
-        ),
+        get_prompt("world_generate_effect_application"),
         context={
             "name": name,
         },
@@ -513,7 +508,11 @@ def link_rooms(
             continue
 
         broadcast_generated(
-            message=f"Generating {num_portals} portals for room: {room.name}"
+            format_prompt(
+                "world_generate_room_broadcast_portals",
+                num_portals=num_portals,
+                name=room.name,
+            )
         )
 
         for _ in range(num_portals):
@@ -553,7 +552,7 @@ def generate_world(
 ) -> World:
     room_count = room_count or resolve_int_range(world_config.size.rooms) or 0
 
-    broadcast_generated(message=f"Generating a {theme} with {room_count} rooms")
+    broadcast_generated(message=format_prompt("world_generate_world_broadcast_theme"))
     world = World(name=name, rooms=[], theme=theme, order=[])
     set_current_world(world)
 

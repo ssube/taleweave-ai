@@ -1,8 +1,14 @@
-from taleweave.context import action_context, get_agent_for_character, get_current_turn
+from taleweave.context import (
+    action_context,
+    get_agent_for_character,
+    get_current_turn,
+    get_prompt,
+)
 from taleweave.errors import ActionError
 from taleweave.models.config import DEFAULT_CONFIG
 from taleweave.models.planning import CalendarEvent
 from taleweave.utils.planning import get_recent_notes
+from taleweave.utils.prompt import format_prompt
 
 character_config = DEFAULT_CONFIG.world.character
 
@@ -18,19 +24,14 @@ def take_note(fact: str):
 
     with action_context() as (_, action_character):
         if fact in action_character.planner.notes:
-            raise ActionError(
-                "You already have a note about that fact. You do not need to take duplicate notes. "
-                "If you have too many notes, consider erasing, replacing, or summarizing them."
-            )
+            raise ActionError(get_prompt("action_take_note_error_duplicate"))
 
         if len(action_character.planner.notes) >= character_config.note_limit:
-            raise ActionError(
-                "You have reached the limit of notes you can take. Please erase, replace, or summarize some notes."
-            )
+            raise ActionError(get_prompt("action_take_note_error_limit"))
 
         action_character.planner.notes.append(fact)
 
-        return "You make a note of that fact."
+        return get_prompt("action_take_note_result")
 
 
 def read_notes(unused: bool, count: int = 10):
@@ -55,21 +56,25 @@ def erase_notes(prefix: str) -> str:
     """
 
     with action_context() as (_, action_character):
+        if len(action_character.planner.notes) == 0:
+            raise ActionError(get_prompt("action_erase_notes_error_empty"))
+
         matches = [
             note for note in action_character.planner.notes if note.startswith(prefix)
         ]
         if not matches:
-            return "No notes found with that prefix."
+            raise ActionError(get_prompt("action_erase_notes_error_match"))
 
         action_character.planner.notes[:] = [
             note for note in action_character.planner.notes if note not in matches
         ]
-        return f"Erased {len(matches)} notes."
+
+        return format_prompt("action_erase_notes_result", count=len(matches))
 
 
-def replace_note(old: str, new: str) -> str:
+def edit_note(old: str, new: str) -> str:
     """
-    Replace a note with a new note.
+    Modify a note with new details.
 
     Args:
         old: The old note to replace.
@@ -77,13 +82,17 @@ def replace_note(old: str, new: str) -> str:
     """
 
     with action_context() as (_, action_character):
+        if len(action_character.planner.notes) == 0:
+            raise ActionError(get_prompt("action_edit_note_error_empty"))
+
         if old not in action_character.planner.notes:
-            return "Note not found."
+            raise ActionError(get_prompt("action_edit_note_error_match"))
 
         action_character.planner.notes[:] = [
             new if note == old else note for note in action_character.planner.notes
         ]
-        return "Note replaced."
+
+        return get_prompt("action_edit_note_result")
 
 
 def summarize_notes(limit: int) -> str:
@@ -96,19 +105,16 @@ def summarize_notes(limit: int) -> str:
 
     with action_context() as (_, action_character):
         notes = action_character.planner.notes
+        if len(notes) == 0:
+            raise ActionError(get_prompt("action_summarize_notes_error_empty"))
+
         action_agent = get_agent_for_character(action_character)
 
         if not action_agent:
             raise ActionError("Agent missing for character {action_character.name}")
 
         summary = action_agent(
-            "Please summarize your notes. Remove any duplicates and combine similar notes. "
-            "If a newer note contradicts an older note, keep the newer note. "
-            "Clean up your notes so you can focus on the most important facts. "
-            "Respond with one note per line. You can have up to {limit} notes, "
-            "so make sure you reply with less than {limit} lines. Do not number the lines "
-            "in your response. Do not include any JSON or other information. "
-            "Your notes are:\n{notes}",
+            get_prompt("action_summarize_notes_prompt"),
             limit=limit,
             notes=notes,
         )
@@ -116,11 +122,14 @@ def summarize_notes(limit: int) -> str:
         new_notes = [note.strip() for note in summary.split("\n") if note.strip()]
         if len(new_notes) > character_config.note_limit:
             raise ActionError(
-                f"Too many notes. You can only have up to {character_config.note_limit} notes."
+                format_prompt(
+                    "action_summarize_notes_error_limit",
+                    limit=character_config.note_limit,
+                )
             )
 
         action_character.planner.notes[:] = new_notes
-        return "Notes were summarized successfully."
+        return get_prompt("action_summarize_notes_result")
 
 
 def schedule_event(name: str, turns: int):
@@ -138,9 +147,12 @@ def schedule_event(name: str, turns: int):
     # TODO: limit the number of events that can be scheduled
 
     with action_context() as (_, action_character):
+        if not name:
+            raise ActionError(get_prompt("action_schedule_event_error_name"))
+
         event = CalendarEvent(name, turns)
         action_character.planner.calendar.events.append(event)
-        return f"{name} is scheduled to happen in {turns} turns."
+        return format_prompt("action_schedule_event_result", name=name, turns=turns)
 
 
 def check_calendar(count: int):
@@ -156,15 +168,16 @@ def check_calendar(count: int):
 
     with action_context() as (_, action_character):
         if len(action_character.planner.calendar.events) == 0:
-            return (
-                "You have no upcoming events scheduled. You can plan events with other characters or on your own. "
-                "Make sure to inform others about events that involve them."
-            )
+            return get_prompt("action_check_calendar_empty")
 
         events = action_character.planner.calendar.events[:count]
         return "\n".join(
             [
-                f"{event.name} will happen in {event.turn - current_turn} turns"
+                format_prompt(
+                    "action_check_calendar_each",
+                    name=event.name,
+                    turn=event.turn - current_turn,
+                )
                 for event in events
             ]
         )

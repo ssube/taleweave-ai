@@ -1,4 +1,5 @@
 from taleweave.context import action_context, get_system_data
+from taleweave.errors import ActionError
 from taleweave.systems.quest import (
     QUEST_SYSTEM,
     complete_quest,
@@ -6,6 +7,7 @@ from taleweave.systems.quest import (
     get_quests_for_character,
     set_active_quest,
 )
+from taleweave.utils.prompt import format_prompt
 from taleweave.utils.search import find_character_in_room
 
 
@@ -17,20 +19,30 @@ def accept_quest(character: str, quest: str) -> str:
     with action_context() as (action_room, action_character):
         quests = get_system_data(QUEST_SYSTEM)
         if not quests:
-            return "No quests available."
+            raise ActionError(
+                format_prompt("action_accept_quest_error_none", character=character)
+            )
 
         target_character = find_character_in_room(action_room, character)
         if not target_character:
-            return f"{character} is not in the room."
+            raise ActionError(
+                format_prompt("action_accept_quest_error_room", character=character)
+            )
 
         available_quests = get_quests_for_character(quests, target_character)
 
         for available_quest in available_quests:
             if available_quest.name == quest:
                 set_active_quest(quests, action_character, available_quest)
-                return f"You have accepted the quest: {quest}"
+                return format_prompt(
+                    "action_accept_quest_result", character=character, quest=quest
+                )
 
-        return f"{character} does not have the quest: {quest}"
+        raise ActionError(
+            format_prompt(
+                "action_accept_quest_error_name", character=character, quest=quest
+            )
+        )
 
 
 def submit_quest(character: str) -> str:
@@ -41,18 +53,32 @@ def submit_quest(character: str) -> str:
     with action_context() as (action_room, action_character):
         quests = get_system_data(QUEST_SYSTEM)
         if not quests:
-            return "No quests available."
+            raise ActionError(
+                format_prompt("action_submit_quest_error_none", character=character)
+            )
 
         active_quest = get_active_quest(quests, action_character)
         if not active_quest:
-            return "You do not have an active quest."
+            raise ActionError(
+                format_prompt("action_submit_quest_error_active", character=character)
+            )
 
         target_character = find_character_in_room(action_room, character)
         if not target_character:
-            return f"{character} is not in the room."
+            raise ActionError(
+                format_prompt("action_submit_quest_error_room", character=character)
+            )
 
         if active_quest.giver.character == target_character.name:
             complete_quest(quests, action_character, active_quest)
-            return f"You have completed the quest: {active_quest.name}"
+            return format_prompt(
+                "action_submit_quest_result",
+                character=character,
+                quest=active_quest.name,
+            )
 
-        return f"{character} is not the quest giver for your active quest."
+        return format_prompt(
+            "action_submit_quest_error_name",
+            character=character,
+            quest=active_quest.name,
+        )

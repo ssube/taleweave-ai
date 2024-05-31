@@ -1,0 +1,378 @@
+prompts:
+  # base actions
+  action_examine_error_target: |
+    You cannot examine the {{target}} because it is not in the room.
+  action_examine_broadcast_action: |
+    {{action_character | name}} looks at {{target}}.
+  action_examine_broadcast_character: |
+    {{action_character | name}} saw {{target_character | name}} in the {{action_room | name}} room.
+  action_examine_broadcast_inventory: |
+    {{action_character | name}} saw the {{target_item | name}} item in their inventory.
+  action_examine_broadcast_item: |
+    {{action_character | name}} saw the {{target_item | name}} item in the {{action_room | name}} room.
+  action_examine_broadcast_room: |
+    {{action_character | name}} saw the {{action_room | name}} room.
+  action_examine_result_character: |
+    You examine the {{target_character | name}}. {{ target_character | describe }}.
+  action_examine_result_inventory: |
+    You examine the {{target_item | name}}. {{target_item | describe}}.
+  action_examine_result_item: |
+    You examine the {{target_item | name}}. {{target_item | describe}}.
+  action_examine_result_room: |
+    You examine the {{target_room | name}}. {{target_room | describe}}.
+
+  action_move_error_direction: |
+    {{direction}} is not an exit from this room. Please choose a valid direction: {{portals}}.
+  action_move_error_room: |
+    You cannot move through {{direction}}, it does not lead anywhere.
+  action_move_broadcast: |
+    {{action_character | name}} moves through {{direction}} to {{dest_room | name}}.
+  action_move_result: |
+    You move through {{direction}} to {{dest_room | name}}.
+
+  action_take_error_item: |
+    You cannot take the {{item}} item because it is not in the room.
+  action_take_broadcast: |
+    {{action_character | name}} picks up the {{item}} item.
+  action_take_result: |
+    You pick up the {{item}} item and put it in your inventory.
+
+  action_ask_error_self: |
+    You cannot ask yourself a question. Stop talking to yourself. Try another action or a different character.
+  action_ask_error_target: |
+    You cannot ask {{character}} a question because they are not in the room.
+  action_ask_error_agent: |
+    You cannot ask {{character}} a question because they are not a character.
+  action_ask_broadcast: |
+    {{action_character | name}} asks {{character}}: {{question}}.
+  action_ask_conversation_first: |
+    {{last_character | name}} asks you: {{response}}
+    Reply with your response to them. Reply with 'END' to end the conversation.
+    Do not include the question or any JSON. Only include your answer for {{last_character | name}}.
+  action_ask_conversation_reply: |
+    {{last_character | name}} continues the conversation with you. They reply: {{response}}
+    Reply with your response to them. Reply with 'END' to end the conversation.
+    Do not include the question or any JSON. Only include your answer for {{last_character | name}}.
+  action_ask_conversation_end: |
+    {{last_character | name}} ends the conversation for now.
+  action_ask_ignore: |
+    {{character}} does not respond.
+
+  action_tell_error_self: |
+    You cannot tell yourself a message. Stop talking to yourself. Try taking notes during your planning phase instead.
+  action_tell_error_target: |
+    You cannot tell {{character}} a message because they are not in the room.
+  action_tell_error_agent: |
+    You cannot tell {{character}} a message because they are not a character.
+  action_tell_broadcast: |
+    {{action_character | name}} tells {{character}}: {{message}}.
+  action_tell_conversation_first: |
+    {{last_character | name}} starts a conversation with you. They say: {{response}}
+    Reply with your response to them. Reply with 'END' to end the conversation.
+    Do not include the question or any JSON. Only include your answer for {{last_character | name}}.
+  action_tell_conversation_reply: |
+    {{last_character | name}} continues the conversation with you. They reply: {{response}}
+    Reply with your response to them. Reply with 'END' to end the conversation.
+    Do not include the question or any JSON. Only include your answer for {{last_character | name}}.
+  action_tell_conversation_end: |
+    {{last_character | name}} ends the conversation for now.
+  action_tell_ignore: |
+    {{character}} does not respond.
+
+  action_give_error_target: |
+    You cannot give the {{item}} item to {{character}} because they are not in the room.
+  action_give_error_self: |
+    You cannot give the {{item}} item to yourself. Try giving it to another character in the room.
+  action_give_error_item: |
+    You cannot give the {{item}} item because it is not in your inventory or in the room.
+  action_give_broadcast: |
+    {{action_character | name}} gives the {{item}} item to {{character}}.
+  action_give_result: |
+    You give the {{item}} item to {{character}}.
+
+  action_drop_error_item: |
+    You cannot drop the {{item}} item because it is not in your inventory.
+  action_drop_broadcast: |
+    {{action_character | name}} drops the {{item}} item.
+  action_drop_result: |
+    You drop the {{item}} item.
+
+  # optional actions
+  action_explore_error_direction: |
+    You cannot explore {{direction}} from here, that direction already leads to {{dest_room}}. Please use action_move to go there.
+  action_explore_error_generating: |
+    You cannot explore {{direction}} from here, something strange happened and nothing exists in that direction.
+  action_explore_broadcast: |
+    {{action_character | name}} explores {{direction}} from {{action_room | name}} and finds a new room: {{new_room | name}}.
+  action_explore_result: |
+    You explore {{direction}} and find a new room: {{new_room | name}}.
+
+  action_search_error_full: |
+    You find nothing hidden in the room. There is no room for more items.
+  action_search_error_generating: |
+    You find nothing hidden in the room. Something strange happened and the item you were looking for is not there.
+  action_search_broadcast: |
+    {{action_character | name}} searches the room and finds a new item: {{new_item | name}}.
+  action_search_result: |
+    You search the room and find a new item: {{new_item | name}}.
+
+  action_use_error_cooldown: |
+    You cannot use the {{item}} item again so soon. Please wait a bit before trying again.
+  action_use_error_exhausted: |
+    You cannot use the {{item}} item anymore. It has been used too many times.
+  action_use_error_item: |
+    The {{item}} item is not available in your inventory or in the room.
+  action_use_error_target: |
+    The {{target}} is not in the room, so you cannot use the {{item}} item on it.
+  action_use_broadcast: |
+    {{action_character | name}} uses {{item}} on {{target}} and applies the {{effect}} effect.
+  action_use_dm_effect: |
+    {{action_character | name}} uses {{item}} on {{target}}. {{item}} can apply any of the following effects: {{effect_names}}.
+    Which effect should be applied? Specify the effect. Do not include the question or any JSON. Only reply with the effect name.
+  action_use_dm_outcome: |
+    {{action_character | name}} uses {{item}} on {{target}} and applies the {{effect | name}} effect.
+    {{action_character | describe}}. {{target_character | describe}}.
+    {{action_item | describe}}. What happens? How does {{target_character | name}} react? What is the outcome?
+    Be creative with the results. The outcome can be positive, negative, or neutral. Describe one possible outcome
+    based on the characters, items, and effects involved. Do not include the question or any JSON. Only reply with the outcome.
+
+  # planning actions
+  action_take_note_error_limit: |
+    You have reached the maximum number of notes. Please delete or summarize some of your existing notes before adding more.
+  action_take_note_error_length: |
+    The note is too long. Please keep notes under 200 characters.
+  action_take_note_error_duplicate: |
+    You already have a note about that fact. If you want to update the note, please edit or summarize the existing note.
+  action_take_note_result: |
+    You make a note of that fact.
+
+  action_erase_notes_error_empty: |
+    You have no notes to erase.
+  action_erase_notes_error_match: |
+    You have no notes that match that text.
+  action_erase_notes_result: |
+    You erased {{count}} notes.
+
+  action_edit_note_error_empty: |
+    You have no notes to edit.
+  action_edit_note_error_match: |
+    You have no notes that match that text.
+  action_edit_note_result: |
+    You edited that note.
+
+  action_summarize_notes_error_empty: |
+    You have no notes to summarize.
+  action_summarize_notes_error_limit: |
+    You still have too many notes. Please condense them further, you can only have up to {{limit}} notes.
+  action_summarize_notes_prompt: |
+    Please summarize your notes. Remove any duplicates and combine similar notes.
+    If a newer note contradicts an older note, keep the newer note.
+    Clean up your notes so you can focus on the most important facts.
+    Respond with one note per line. You can have up to {limit} notes,
+    so make sure you reply with less than {limit} lines. Do not number the lines
+    in your response. Do not include any JSON or other information.
+    Your notes are:\n{notes}
+  action_summarize_notes_result: |
+    You summarized your notes.
+
+  action_schedule_event_error_name: |
+    The event must have a name.
+  action_schedule_event_result: |
+    You scheduled an event that will happen in {{turns}} turns.
+
+  action_check_calendar_empty: |
+    You have no upcoming events on your calendar. You can plan events with other characters during your turn.
+    Make sure you inform the other characters about the event so they can plan accordingly.
+  action_check_calendar_each: |
+    {{event.name}} will happen in {{turns}} turn
+
+  # digest system
+  digest_action_move: |
+    {{event.character | name}} entered the room.
+  digest_action_take: |
+    {{event.character | name}} picked up the {{event.parameters[item]}}.
+  digest_action_give: |
+    {{event.character | name}} gave the {{event.parameters[item]}} to {{event.parameters[character]}}.
+  digest_action_drop: |
+    {{event.character | name}} dropped the {{event.parameters[item]}}.
+  digest_action_ask: |
+    {{event.character | name}} asked {{event.parameters[character]}} about something.
+  digest_action_tell: |
+    {{event.character | name}} told {{event.parameters[character]}} about something.
+  digest_action_examine: |
+    {{event.character | name}} examined the {{event.parameters[target]}}.
+
+  # world defaults
+  world_default_dungeon_master: |
+    You are the dungeon master in charge of creating an engaging fantasy world full of interesting characters who
+    interact with each other and explore their environment. Be creative and original, creating a world that is
+    visually detailed and full of curious details. Do not repeat yourself unless you are given the same prompt with
+    the same characters, room, and context.
+
+  # world generation
+  world_generate_dungeon_master: |
+    You are an experienced dungeon master creating a visually detailed world for a new adventure. Be creative and
+    original, creating a world that is visually detailed and full of curious details. Do not repeat yourself unless you
+    are given the same prompt with the same characters, room, and context. {{flavor}}. The theme is:
+    {{theme}}.
+
+  world_generate_world_broadcast_theme: |
+    Generating a {{theme}} with {{room_count}} rooms
+
+  world_generate_room_name: |
+    Generate one room, area, or location that would make sense in the world of {{world_theme}}.
+    Only respond with the room name in title case, do not include the description or any other text.
+    Do not prefix the name with "the", do not wrap it in quotes. The existing rooms are: {{existing_rooms}}
+  world_generate_room_description: |
+    Generate a detailed description of the {{name}} area. What does it look like?
+    What does it smell like? What can be seen or heard?
+  world_generate_room_broadcast_room: |
+    Generating room: {{name}}
+  world_generate_room_broadcast_items: |
+    Generating {{item_count}} items for room: {{name}}
+  world_generate_room_broadcast_characters: |
+    Generating {{character_count}} characters for room: {{name}}
+
+  world_generate_portal_name_outgoing: |
+    Generate the name of a portal that leads from the {{source_room}} room to the {{dest_room}} room and fits the world theme of {{world_theme}}.
+    Some example portal names are: 'door', 'gate', 'archway', 'staircase', 'trapdoor', 'mirror', and 'magic circle'.
+    Only respond with the portal name in title case, do not include a description or any other text.
+    Do not prefix the name with "the", do not wrap it in quotes. Use a unique name.
+    Do not create any duplicate portals in the same room. The existing portals are: {{existing_portals}}
+  world_generate_portal_name_incoming: |
+    Generate the opposite name of the portal that leads from the {{dest_room}} room to the {{source_room}} room.
+    The name should be the opposite of the {{outgoing_name}} portal and should fit the world theme of {{world_theme}}.
+    Some example portal names are: 'door', 'gate', 'archway', 'staircase', 'trapdoor', 'mirror', and 'magic circle'.
+    Only respond with the portal name in title case, do not include a description or any other text.
+    Do not prefix the name with "the", do not wrap it in quotes. Use a unique name.
+    Do not create any duplicate portals in the same room. The existing portals are: {{existing_portals}}
+  world_generate_portal_broadcast_outgoing: |
+    Generating portal: {{outgoing_name}}
+  world_generate_portal_broadcast_incoming: |
+    Linking {{outgoing_name}} to {{incoming_name}}
+
+  world_generate_item_name: |
+    Generate a new item or object that would make sense in the world of {{world_theme}}. {{dest_note}}.
+    Only respond with the item name in title case, do not include the description or any other text.
+    Do not prefix the name with "the", do not wrap it in quotes. Use a unique name.
+    Do not create any duplicate items in the same room. Do not give characters the same item more than once.
+    The existing items are: {{existing_items}}
+  world_generate_item_description: |
+    Generate a detailed description of the {{name}} item. What does it look like?
+    What is it made of? What is its purpose or function?
+  world_generate_item_broadcast_item: |
+    Generating item: {{name}}
+  world_generate_item_broadcast_effects: |
+    Generating {{effect_count}} effects for item: {{name}}
+
+  world_generate_effect_name: |
+    Generate one effect for an {{entity_type}} named {{entity_name}} that would make sense in the world of {{theme}}.
+    Only respond with the effect name in title case, do not include a description or any other text.
+    Do not prefix the name with "the", do not wrap it in quotes. Use a unique name.
+    Do not create any duplicate effects on the same item. The existing effects are: {{existing_effects}}.
+    Some example effects are: 'fire', 'poison', 'frost', 'haste', 'slow', and 'heal'.
+  world_generate_effect_description: |
+    Generate a detailed description of the {{name}} effect. What does it look like?
+    What does it do? How does it affect the target? Describe the effect from the perspective of an outside observer.
+  world_generate_effect_application: |
+    How should the {{name}} effect be applied? Respond with 'temporary' for a temporary effect that lasts for a duration,
+    or 'permanent' for a permanent effect that immediately modifies the target.
+    For example, a healing potion would be a permanent effect that increases health every turn,
+    while bleeding would be a temporary effect that decreases health every turn.
+    A haste potion would be a temporary effect that increases speed for a duration,
+    while a slow spell would be a temporary effect that decreases speed for a duration.
+    Do not include any other text. Do not use JSON.
+  world_generate_effect_cooldown: |
+    How many turns should the {{name}} effect wait before it can be used again?
+    Enter a positive number to set a cooldown, or 0 for no cooldown.
+    Do not include any other text. Do not use JSON.
+  world_generate_effect_duration: |
+    How many turns does the {{name}} effect last? Enter a positive number to set a duration, or 0 for an instant effect.
+    Do not include any other text. Do not use JSON.
+  world_generate_effect_uses: |
+    How many times can the {{name}} effect be used before it is exhausted?
+    Enter a positive number to set a limit, or -1 for unlimited uses.
+    Do not include any other text. Do not use JSON.
+  world_generate_effect_attribute_names: |
+    Generate a short list of attributes that the {{name}} effect modifies. Include 1 to 3 attributes.
+    For example, 'heal' increases the target's 'health' attribute, while 'poison' decreases it.
+    Use a comma-separated list of attribute names, such as 'health, strength, speed'.
+    Only include the attribute names, do not include the question or any JSON.
+  world_generate_effect_attribute_value: |
+    How much does the {{name}} effect modify the {{attribute_name}} attribute?
+    For example, heal might add 10 to the health attribute, while poison might remove -5 from it.
+    Enter a positive number to increase the attribute or a negative number to decrease it.
+    Do not include any other text. Do not use JSON.
+  world_generate_effect_broadcast_effect: |
+    Generating effect: {{name}}
+  world_generate_effect_error_application: |
+    The application must be either 'temporary' or 'permanent'.
+
+  world_generate_character_name: |
+    Generate a new character that would make sense in the world of {{world_theme}}.
+    Characters can be a person, creature, or some other intelligent entity.
+    The character will be placed in the {{dest_room}} room. {{additional_prompt}}.
+    Only respond with the character name in title case, do not include a description or any other text.
+    Do not prefix the name with "the", do not wrap it in quotes.
+    Do not include the name of the room. Do not give characters any duplicate names.
+    Do not create any duplicate characters. The existing characters are: {{existing_characters}}
+  world_generate_character_description: |
+    Generate a detailed description of {{name}}. {{detail_prompt}}. What do they look like? What are they wearing?
+    What are they doing? Describe their appearance and demeanor from the perspective of an outside observer.
+    Do not include the room or any other characters in the description, because they will change over time.
+  world_generate_character_backstory: |
+    Generate a backstory for the {{name}} character. {{additional_prompt}}. {{detail_prompt}}. Where are they from?
+    What are they doing here? What are their goals?
+    Make sure to phrase the backstory in the second person, starting with "you are" and speaking directly to {{name}}.
+  world_generate_character_broadcast_name: |
+    Generating character: {{name}}
+  world_generate_character_broadcast_items: |
+    Generating {{item_count}} items for character: {{name}}
+
+  world_generate_link_broadcast_portals: |
+    Generating {{portal_count}} portals for room: {{name}}
+
+  world_generate_error_name_exists: |
+    The name '{{name}}' already exists in the world. Please generate a unique name.
+  world_generate_error_name_json: |
+    The name '{{name}}' is not valid. The name cannot contain any JSON or function calls.
+  world_generate_error_name_punctuation: |
+    The name '{{name}}' is not valid. The name cannot contain any quotes, colons, or other sentence punctuation.
+    Apostrophes are allowed in names like "O'Connell" or "D'Artagnan".
+  world_generate_error_name_length: |
+    The name '{{name}}' is too long. Please generate a shorter name with fewer than 50 characters.
+
+  # world simulation
+  world_simulate_character_action: |
+    You are currently in the {{room_name}} room. {{room_description}}. {{attributes}}.
+    The room contains the following characters: {{visible_characters}}.
+    The room contains the following items: {{visible_items}}.
+    Your inventory contains the following items: {{character_items}}.
+    You can take the following actions: {{actions}}.
+    You can move in the following directions: {{directions}}.
+    {{notes_prompt}} {{events_prompt}}
+    What will you do next? Reply with a JSON function call, calling one of the actions.
+    You can only perform one action per turn. What is your next action?
+
+  world_simulate_character_planning: |
+    You are about to start your turn. Plan your next action carefully. Take notes and schedule events to help keep track of your goals.
+    You can check your notes for important facts or check your calendar for upcoming events. You have {{note_count}} notes.
+    If you have plans with other characters, schedule them on your calendar. You have {{event_count}} events on your calendar.
+    {{room_summary}}
+    Think about your goals and any quests that you are working on, and plan your next action accordingly.
+    Try to keep your notes accurate and up-to-date. Replace or erase old notes when they are no longer accurate or useful.
+    Do not keeps notes about upcoming events, use your calendar for that.
+    You can perform up to 3 planning actions in a single turn. When you are done planning, reply with 'END'.
+    {{notes_prompt}} {{events_prompt}}
+  world_simulate_character_planning_done: |
+    You are done planning your turn.
+  world_simulate_character_planning_notes_some: |
+    Your recent notes are: {{notes}}
+  world_simulate_character_planning_notes_none: |
+    You have no recent notes.
+  world_simulate_character_planning_events_some: |
+    Your upcoming events are: {{events}}
+  world_simulate_character_planning_events_none: |
+    You have no upcoming events.
+  world_simulate_character_planning_events_item: |
+    {{event.name}} in {{turns}} turns

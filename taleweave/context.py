@@ -20,6 +20,7 @@ from pyee.base import EventEmitter
 from taleweave.game_system import GameSystem
 from taleweave.models.entity import Character, Room, World
 from taleweave.models.event import GameEvent, StatusEvent
+from taleweave.models.prompt import PromptLibrary
 from taleweave.utils.string import normalize_name
 
 logger = getLogger(__name__)
@@ -34,6 +35,7 @@ dungeon_master: Agent | None = None
 # game context
 event_emitter = EventEmitter()
 game_systems: List[GameSystem] = []
+prompt_library: PromptLibrary = PromptLibrary(prompts={})
 system_data: Dict[str, Any] = {}
 
 
@@ -44,7 +46,7 @@ STRING_EVENT_TYPE = "message"
 
 
 def get_event_name(event: GameEvent | Type[GameEvent]):
-    return f"event:{event.type}"
+    return f"event.{event.type}"
 
 
 def broadcast(message: str | GameEvent):
@@ -162,6 +164,14 @@ def get_game_systems() -> List[GameSystem]:
     return game_systems
 
 
+def get_prompt(name: str) -> str:
+    return prompt_library.prompts[name]
+
+
+def get_prompt_library() -> PromptLibrary:
+    return prompt_library
+
+
 def get_system_data(system: str) -> Any | None:
     return system_data.get(system)
 
@@ -202,6 +212,11 @@ def set_dungeon_master(agent):
 def set_game_systems(systems: Sequence[GameSystem]):
     global game_systems
     game_systems = list(systems)
+
+
+def set_prompt_library(library: PromptLibrary):
+    global prompt_library
+    prompt_library = library
 
 
 def set_system_data(system: str, data: Any):

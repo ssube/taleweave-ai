@@ -34,6 +34,7 @@ from taleweave.player import (
     set_player,
 )
 from taleweave.render.comfy import render_event
+from taleweave.utils.prompt import format_prompt
 
 logger = getLogger(__name__)
 client = None
@@ -86,28 +87,38 @@ class AdventureClient(Client):
         ):
             world = get_current_world()
             if world:
-                active_world = f"Active world: {world.name} (theme: {world.theme})"
+                world_message = format_prompt(
+                    "discord_world_active", bot_name=bot_config.name_title, world=world
+                )
             else:
-                active_world = "No active world"
+                world_message = format_prompt(
+                    "discord_world_none", bot_name=bot_config.name_title
+                )
 
-            await message.channel.send(
-                f"Hello! Welcome to {bot_config.name_title}! {active_world}"
-            )
+            await message.channel.send(world_message)
             return
 
         if message.content.startswith("!help"):
-            await message.channel.send("Type `!join` to start playing!")
+            await message.channel.send(
+                format_prompt("discord_help", bot_name=bot_config.name_command)
+            )
             return
 
         if message.content.startswith("!join"):
             character_name = remove_tags(message.content).replace("!join", "").strip()
             if has_player(character_name):
-                await channel.send(f"{character_name} has already been taken!")
+                await channel.send(
+                    format_prompt("discord_join_error_taken", character=character_name)
+                )
                 return
 
             character, agent = get_character_agent_for_name(character_name)
             if not character:
-                await channel.send(f"Character `{character_name}` not found!")
+                await channel.send(
+                    format_prompt(
+                        "discord_join_error_not_found", character=character_name
+                    )
+                )
                 return
 
             def prompt_player(event: PromptEvent):
@@ -156,9 +167,7 @@ class AdventureClient(Client):
                 )
                 return
 
-        await message.channel.send(
-            "You are not currently playing Adventure! Type `!join` to start playing!"
-        )
+        await message.channel.send(format_prompt("discord_user_new"))
         return
 
 
@@ -317,8 +326,10 @@ def embed_from_event(event: GameEvent) -> Embed | None:
         return embed_from_generate(event)
     elif isinstance(event, ResultEvent):
         return embed_from_result(event)
-    elif isinstance(event, (ActionEvent, ReplyEvent)):
+    elif isinstance(event, ActionEvent):
         return embed_from_action(event)
+    elif isinstance(event, ReplyEvent):
+        return embed_from_reply(event)
     elif isinstance(event, StatusEvent):
         return embed_from_status(event)
     elif isinstance(event, PlayerEvent):
@@ -329,21 +340,23 @@ def embed_from_event(event: GameEvent) -> Embed | None:
         logger.warning("unknown event type: %s", event)
 
 
-def embed_from_action(event: ActionEvent | ReplyEvent):
-    action_embed = Embed(title=event.room.name, description=event.speaker.name)
+def embed_from_action(event: ActionEvent):
+    action_embed = Embed(title=event.room.name, description=event.character.name)
+    action_name = event.action.replace("action_", "").title()
+    action_parameters = event.parameters
 
-    if isinstance(event, ActionEvent):
-        action_name = event.action.replace("action_", "").title()
-        action_parameters = event.parameters
+    action_embed.add_field(name="Action", value=action_name)
 
-        action_embed.add_field(name="Action", value=action_name)
-
-        for key, value in action_parameters.items():
-            action_embed.add_field(name=key.replace("_", " ").title(), value=value)
-    else:
-        action_embed.add_field(name="Message", value=event.text)
+    for key, value in action_parameters.items():
+        action_embed.add_field(name=key.replace("_", " ").title(), value=value)
 
     return action_embed
+
+
+def embed_from_reply(event: ReplyEvent):
+    reply_embed = Embed(title=event.room.name, description=event.speaker.name)
+    reply_embed.add_field(name="Reply", value=event.text)
+    return reply_embed
 
 
 def embed_from_generate(event: GenerateEvent) -> Embed:
@@ -363,11 +376,11 @@ def embed_from_result(event: ResultEvent):
 
 def embed_from_player(event: PlayerEvent):
     if event.status == "join":
-        title = "Player Joined"
-        description = f"{event.client} is now playing as {event.character}"
+        title = format_prompt("discord_join_title", event=event)
+        description = format_prompt("discord_join_result", event=event)
     else:
-        title = "Player Left"
-        description = f"{event.client} has left the game. {event.character} is now controlled by an LLM"
+        title = format_prompt("discord_leave_title", event=event)
+        description = format_prompt("discord_leave_result", event=event)
 
     player_embed = Embed(title=title, description=description)
     return player_embed

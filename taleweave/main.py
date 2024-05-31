@@ -31,6 +31,7 @@ load_dotenv(environ.get("ADVENTURE_ENV", ".env"), override=True)
 
 if True:
     from taleweave.context import (
+        get_prompt_library,
         get_system_data,
         set_current_turn,
         set_dungeon_master,
@@ -43,6 +44,7 @@ if True:
     from taleweave.models.entity import World, WorldState
     from taleweave.models.event import GenerateEvent
     from taleweave.models.files import PromptFile, WorldPrompt
+    from taleweave.models.prompt import PromptLibrary
     from taleweave.plugins import load_plugin
     from taleweave.simulate import simulate_world
     from taleweave.state import (
@@ -51,6 +53,7 @@ if True:
         save_world,
         save_world_state,
     )
+    from taleweave.utils.prompt import format_prompt
 
 # start the debugger, if needed
 if environ.get("DEBUG", "false").lower() == "true":
@@ -115,6 +118,12 @@ def parse_args():
         "--player",
         type=str,
         help="The name of the character to play as",
+    )
+    parser.add_argument(
+        "--prompts",
+        type=str,
+        nargs="*",
+        help="The file to load game prompts from",
     )
     parser.add_argument(
         "--render",
@@ -191,6 +200,18 @@ def get_world_prompt(args) -> WorldPrompt:
     )
 
 
+def load_prompt_library(args) -> None:
+    if args.prompts:
+        for prompt_file in args.prompts:
+            with open(prompt_file, "r") as f:
+                new_library = PromptLibrary(**load_yaml(f))
+                logger.info(f"loaded prompt library from {args.prompts}")
+                library = get_prompt_library()
+                library.prompts.update(new_library.prompts)
+
+    return None
+
+
 def load_or_initialize_system_data(args, systems: List[GameSystem], world: World):
     for system in systems:
         if system.data:
@@ -232,8 +253,11 @@ def load_or_generate_world(
     llm = agent_easy_connect()
     world_builder = Agent(
         "World Builder",
-        f"You are an experienced game master creating a visually detailed world for a new adventure. "
-        f"{world_prompt.flavor}. The theme is: {world_prompt.theme}.",
+        format_prompt(
+            "world_generate_dungeon_master",
+            flavor=world_prompt.flavor,
+            theme=world_prompt.theme,
+        ),
         {},
         llm,
         memory_factory=memory_factory,
@@ -290,6 +314,8 @@ def main():
             config = Config(**load_yaml(f))
     else:
         config = DEFAULT_CONFIG
+
+    load_prompt_library(args)
 
     players = []
     if args.player:
@@ -378,10 +404,8 @@ def main():
     llm = agent_easy_connect()
     world_builder = Agent(
         "dungeon master",
-        (
-            f"You are the dungeon master in charge of a {world.theme} world. Be creative and original, and come up with "
-            f"interesting events that will keep players interested. {args.flavor}"
-            "Do not to repeat yourself unless you are given the same prompt with the same characters and actions."
+        format_prompt(
+            "world_generate_dungeon_master", flavor=args.flavor, theme=world.theme
         ),
         {},
         llm,
