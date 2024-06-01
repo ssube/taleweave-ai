@@ -184,7 +184,7 @@ prompts:
     You have no upcoming events on your calendar. You can plan events with other characters during your turn.
     Make sure you inform the other characters about the event so they can plan accordingly.
   action_check_calendar_each: |
-    {{event.name}} will happen in {{turns}} turn
+    {{name}} will happen in {{turns}} turn
 
   # digest system
   digest_action_move: |
