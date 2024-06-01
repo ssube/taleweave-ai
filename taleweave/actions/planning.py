@@ -146,11 +146,13 @@ def schedule_event(name: str, turns: int):
     # TODO: check for existing events with the same name
     # TODO: limit the number of events that can be scheduled
 
+    current_turn = get_current_turn()
+
     with action_context() as (_, action_character):
         if not name:
             raise ActionError(get_prompt("action_schedule_event_error_name"))
 
-        event = CalendarEvent(name, turns)
+        event = CalendarEvent(name, turns + current_turn)
         action_character.planner.calendar.events.append(event)
         return format_prompt("action_schedule_event_result", name=name, turns=turns)
 
@@ -176,7 +178,7 @@ def check_calendar(count: int):
                 format_prompt(
                     "action_check_calendar_each",
                     name=event.name,
-                    turn=event.turn - current_turn,
+                    turns=event.turn - current_turn,
                 )
                 for event in events
             ]
