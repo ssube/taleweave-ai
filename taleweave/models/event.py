@@ -60,6 +60,7 @@ class PromptEvent(BaseModel):
     A prompt for a character to take an action.
     """
 
+    actions: Dict[str, Any]
     prompt: str
     room: Room
     character: Character

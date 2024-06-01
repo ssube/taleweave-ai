@@ -2,15 +2,13 @@ from taleweave.context import (
     action_context,
     get_agent_for_character,
     get_current_turn,
+    get_game_config,
     get_prompt,
 )
 from taleweave.errors import ActionError
-from taleweave.models.config import DEFAULT_CONFIG
 from taleweave.models.planning import CalendarEvent
 from taleweave.utils.planning import get_recent_notes
 from taleweave.utils.prompt import format_prompt
-
-character_config = DEFAULT_CONFIG.world.character
 
 
 def take_note(fact: str):
@@ -22,11 +20,13 @@ def take_note(fact: str):
         fact: The fact to remember.
     """
 
+    config = get_game_config()
+
     with action_context() as (_, action_character):
         if fact in action_character.planner.notes:
             raise ActionError(get_prompt("action_take_note_error_duplicate"))
 
-        if len(action_character.planner.notes) >= character_config.note_limit:
+        if len(action_character.planner.notes) >= config.world.character.note_limit:
             raise ActionError(get_prompt("action_take_note_error_limit"))
 
         action_character.planner.notes.append(fact)
@@ -103,6 +103,8 @@ def summarize_notes(limit: int) -> str:
         limit: The maximum number of notes to keep.
     """
 
+    config = get_game_config()
+
     with action_context() as (_, action_character):
         notes = action_character.planner.notes
         if len(notes) == 0:
@@ -120,11 +122,11 @@ def summarize_notes(limit: int) -> str:
         )
 
         new_notes = [note.strip() for note in summary.split("\n") if note.strip()]
-        if len(new_notes) > character_config.note_limit:
+        if len(new_notes) > config.world.character.note_limit:
             raise ActionError(
                 format_prompt(
                     "action_summarize_notes_error_limit",
-                    limit=character_config.note_limit,
+                    limit=config.world.character.note_limit,
                 )
             )
 
@@ -165,7 +167,9 @@ def check_calendar(count: int):
         count: The number of upcoming events to read. 5 is usually a good number.
     """
 
-    count = min(count, character_config.event_limit)
+    config = get_game_config()
+
+    count = min(count, config.world.character.event_limit)
     current_turn = get_current_turn()
 
     with action_context() as (_, action_character):

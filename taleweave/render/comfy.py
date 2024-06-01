@@ -15,9 +15,9 @@ from fnvhash import fnv1a_32
 from jinja2 import Environment, FileSystemLoader, select_autoescape
 from PIL import Image
 
-from taleweave.context import broadcast
-from taleweave.models.base import uuid
-from taleweave.models.config import DEFAULT_CONFIG, RenderConfig
+from taleweave.context import broadcast, get_game_config
+from taleweave.models.base import IntRange, uuid
+from taleweave.models.config import RenderConfig
 from taleweave.models.entity import WorldEntity
 from taleweave.models.event import (
     ActionEvent,
@@ -36,7 +36,6 @@ logger = getLogger(__name__)
 
 server_address = environ["COMFY_API"]
 client_id = uuid()
-render_config: RenderConfig = DEFAULT_CONFIG.render
 
 
 # requests to generate images for game events
@@ -44,12 +43,17 @@ render_queue: Queue[GameEvent | WorldEntity] = Queue()
 render_thread: Thread | None = None
 
 
-def generate_cfg():
-    return resolve_int_range(render_config.cfg)
+def get_render_config():
+    config = get_game_config()
+    return config.render
 
 
-def generate_steps():
-    return resolve_int_range(render_config.steps)
+def generate_cfg(cfg: int | IntRange):
+    return resolve_int_range(cfg)
+
+
+def generate_steps(steps: int | IntRange):
+    return resolve_int_range(steps)
 
 
 def generate_batches(
@@ -148,9 +152,10 @@ def generate_image_tool(prompt, count, size="landscape"):
 def generate_images(
     prompt: str, count: int, size="landscape", prefix="output"
 ) -> List[str]:
-    cfg = generate_cfg()
+    render_config = get_render_config()
+    cfg = generate_cfg(render_config.cfg)
     dims = render_config.sizes[size]
-    steps = generate_steps()
+    steps = generate_steps(render_config.steps)
     seed = randint(0, 10000000)
     checkpoint = choice(render_config.checkpoints)
     logger.info(
@@ -248,6 +253,8 @@ def get_image_prefix(event: GameEvent | WorldEntity) -> str:
 
 
 def render_loop():
+    render_config = get_render_config()
+
     while True:
         event = render_queue.get()
         prefix = get_image_prefix(event)
@@ -317,12 +324,7 @@ def render_generated(event: GameEvent):
 
 
 def launch_render(config: RenderConfig):
-    global render_config
     global render_thread
-
-    # update the config
-    logger.info("updating render config: %s", config)
-    render_config = config
 
     # start the render thread
     logger.info("launching render thread")

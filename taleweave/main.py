@@ -27,7 +27,7 @@ except Exception as err:
 
 logger = logger_with_colors(__name__)  # , level="DEBUG")
 
-load_dotenv(environ.get("ADVENTURE_ENV", ".env"), override=True)
+load_dotenv(environ.get("TALEWEAVE_ENV", ".env"), override=True)
 
 if True:
     from taleweave.context import (
@@ -35,6 +35,7 @@ if True:
         get_system_data,
         set_current_turn,
         set_dungeon_master,
+        set_game_config,
         set_system_data,
         subscribe,
     )
@@ -312,6 +313,7 @@ def main():
     if args.config:
         with open(args.config, "r") as f:
             config = Config(**load_yaml(f))
+            set_game_config(config)
     else:
         config = DEFAULT_CONFIG
 

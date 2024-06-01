@@ -36,6 +36,7 @@ from taleweave.context import (
     get_character_for_agent,
     get_current_turn,
     get_current_world,
+    get_game_config,
     get_prompt,
     set_current_character,
     set_current_room,
@@ -44,7 +45,6 @@ from taleweave.context import (
     set_game_systems,
 )
 from taleweave.game_system import GameSystem
-from taleweave.models.config import DEFAULT_CONFIG
 from taleweave.models.entity import Character, Room, World
 from taleweave.models.event import ActionEvent, ResultEvent
 from taleweave.utils.conversation import make_keyword_condition, summarize_room
@@ -55,9 +55,6 @@ from taleweave.utils.search import find_containing_room
 from taleweave.utils.world import describe_entity, format_attributes
 
 logger = getLogger(__name__)
-
-
-turn_config = DEFAULT_CONFIG.world.turn
 
 
 def world_result_parser(value, agent, **kwargs):
@@ -121,10 +118,11 @@ def prompt_character_action(
             event = ActionEvent.from_json(value, room, character)
         else:
             # TODO: this path should be removed and throw
-            logger.warning(
-                "invalid action, emitting as result event - this is a bug somewhere"
-            )
-            event = ResultEvent(value, room, character)
+            # logger.warning(
+            #     "invalid action, emitting as result event - this is a bug somewhere"
+            # )
+            # event = ResultEvent(value, room, character)
+            raise ValueError("invalid non-JSON action")
 
         broadcast(event)
 
@@ -198,7 +196,8 @@ def prompt_character_planning(
     current_turn: int,
     max_steps: int | None = None,
 ) -> str:
-    max_steps = max_steps or turn_config.planning_steps
+    config = get_game_config()
+    max_steps = max_steps or config.world.turn.planning_steps
 
     notes_prompt, events_prompt = get_notes_events(character, current_turn)
 

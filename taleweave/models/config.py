@@ -1,6 +1,6 @@
 from typing import Dict, List
 
-from .base import IntRange, dataclass
+from .base import Attributes, IntRange, dataclass
 
 
 @dataclass
@@ -45,6 +45,15 @@ class ServerConfig:
 
 
 @dataclass
+class SystemsConfig:
+    """
+    Configuration for the game systems.
+    """
+
+    data: Attributes
+
+
+@dataclass
 class WorldCharacterConfig:
     conversation_limit: int
     event_limit: int
@@ -80,6 +89,7 @@ class Config:
     bot: BotConfig
     render: RenderConfig
     server: ServerConfig
+    systems: SystemsConfig
     world: WorldConfig
 
 
@@ -107,6 +117,7 @@ DEFAULT_CONFIG = Config(
         steps=30,
     ),
     server=ServerConfig(websocket=WebsocketServerConfig(host="localhost", port=8001)),
+    systems=SystemsConfig(data={}),
     world=WorldConfig(
         character=WorldCharacterConfig(
             conversation_limit=2,

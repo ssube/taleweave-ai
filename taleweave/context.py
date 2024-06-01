@@ -18,6 +18,7 @@ from packit.agent import Agent
 from pyee.base import EventEmitter
 
 from taleweave.game_system import GameSystem
+from taleweave.models.config import DEFAULT_CONFIG, Config
 from taleweave.models.entity import Character, Room, World
 from taleweave.models.event import GameEvent, StatusEvent
 from taleweave.models.prompt import PromptLibrary
@@ -34,6 +35,7 @@ dungeon_master: Agent | None = None
 
 # game context
 event_emitter = EventEmitter()
+game_config: Config = DEFAULT_CONFIG
 game_systems: List[GameSystem] = []
 prompt_library: PromptLibrary = PromptLibrary(prompts={})
 system_data: Dict[str, Any] = {}
@@ -160,6 +162,10 @@ def get_dungeon_master() -> Agent:
     return dungeon_master
 
 
+def get_game_config() -> Config:
+    return game_config
+
+
 def get_game_systems() -> List[GameSystem]:
     return game_systems
 
@@ -170,6 +176,10 @@ def get_prompt(name: str) -> str:
 
 def get_prompt_library() -> PromptLibrary:
     return prompt_library
+
+
+def get_system_config(system: str) -> Any | None:
+    return game_config.systems.data.get(system)
 
 
 def get_system_data(system: str) -> Any | None:
@@ -207,6 +217,11 @@ def set_character_agent(name, character, agent):
 def set_dungeon_master(agent):
     global dungeon_master
     dungeon_master = agent
+
+
+def set_game_config(config: Config):
+    global game_config
+    game_config = config
 
 
 def set_game_systems(systems: Sequence[GameSystem]):

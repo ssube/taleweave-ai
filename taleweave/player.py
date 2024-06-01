@@ -197,15 +197,20 @@ class RemotePlayer(BasePlayer):
         Ask the player for input.
         """
 
+        actions = {}
         formatted_prompt = prompt.format(**kwargs)
         if toolbox:
+            actions = toolbox.list_definitions()
             formatted_prompt += self.format_psuedo_functions(toolbox)
 
         self.memory.append(HumanMessage(content=formatted_prompt))
 
         with action_context() as (current_room, current_character):
             prompt_event = PromptEvent(
-                prompt=formatted_prompt, room=current_room, character=current_character
+                actions=actions,
+                prompt=formatted_prompt,
+                room=current_room,
+                character=current_character,
             )
 
             try:

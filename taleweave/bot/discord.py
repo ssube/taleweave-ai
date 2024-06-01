@@ -11,10 +11,11 @@ from taleweave.context import (
     broadcast,
     get_character_agent_for_name,
     get_current_world,
+    get_game_config,
     set_character_agent,
     subscribe,
 )
-from taleweave.models.config import DEFAULT_CONFIG, DiscordBotConfig
+from taleweave.models.config import DiscordBotConfig
 from taleweave.models.event import (
     ActionEvent,
     GameEvent,
@@ -38,7 +39,6 @@ from taleweave.utils.prompt import format_prompt
 
 logger = getLogger(__name__)
 client = None
-bot_config: DiscordBotConfig = DEFAULT_CONFIG.bot.discord
 
 active_tasks = set()
 event_messages: Dict[int, str | GameEvent] = {}
@@ -78,21 +78,24 @@ class AdventureClient(Client):
         if message.author == self.user:
             return
 
+        config = get_game_config()
         author = message.author
         channel = message.channel
         user_name = author.name  # include nick
 
         if message.content.startswith(
-            bot_config.command_prefix + bot_config.name_command
+            config.bot.discord.command_prefix + config.bot.discord.name_command
         ):
             world = get_current_world()
             if world:
                 world_message = format_prompt(
-                    "discord_world_active", bot_name=bot_config.name_title, world=world
+                    "discord_world_active",
+                    bot_name=config.bot.discord.name_title,
+                    world=world,
                 )
             else:
                 world_message = format_prompt(
-                    "discord_world_none", bot_name=bot_config.name_title
+                    "discord_world_none", bot_name=config.bot.discord.name_title
                 )
 
             await message.channel.send(world_message)
@@ -100,7 +103,7 @@ class AdventureClient(Client):
 
         if message.content.startswith("!help"):
             await message.channel.send(
-                format_prompt("discord_help", bot_name=bot_config.name_command)
+                format_prompt("discord_help", bot_name=config.bot.discord.name_command)
             )
             return
 
@@ -172,14 +175,11 @@ class AdventureClient(Client):
 
 
 def launch_bot(config: DiscordBotConfig):
-    global bot_config
     global client
-
-    bot_config = config
 
     # message contents need to be enabled for multi-server bots
     intents = Intents.default()
-    if bot_config.content_intent:
+    if config.content_intent:
         intents.message_content = True
 
     client = AdventureClient(intents=intents)
@@ -246,12 +246,14 @@ def get_active_channels():
     if not client:
         return []
 
+    config = get_game_config()
+
     # return client.private_channels
     return [
         channel
         for guild in client.guilds
         for channel in guild.text_channels
-        if channel.name in bot_config.channels
+        if channel.name in config.bot.discord.channels
     ]
 
 

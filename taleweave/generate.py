@@ -7,9 +7,14 @@ from packit.loops import loop_retry
 from packit.results import enum_result, int_result
 from packit.utils import could_be_json
 
-from taleweave.context import broadcast, get_prompt, set_current_world, set_system_data
+from taleweave.context import (
+    broadcast,
+    get_game_config,
+    get_prompt,
+    set_current_world,
+    set_system_data,
+)
 from taleweave.game_system import GameSystem
-from taleweave.models.config import DEFAULT_CONFIG, WorldConfig
 from taleweave.models.effect import (
     EffectPattern,
     FloatEffectPattern,
@@ -33,7 +38,10 @@ from taleweave.utils.string import normalize_name
 
 logger = getLogger(__name__)
 
-world_config: WorldConfig = DEFAULT_CONFIG.world
+
+def get_world_config():
+    config = get_game_config()
+    return config.world
 
 
 def duplicate_name_parser(existing_names: List[str]):
@@ -112,6 +120,7 @@ def generate_room(
     actions = {}
     room = Room(name=name, description=desc, items=[], characters=[], actions=actions)
 
+    world_config = get_world_config()
     item_count = resolve_int_range(world_config.size.room_items) or 0
     broadcast_generated(
         format_prompt(
@@ -276,6 +285,7 @@ def generate_item(
     item = Item(name=name, description=desc, actions=actions)
     generate_system_attributes(agent, world, item, systems)
 
+    world_config = get_world_config()
     effect_count = resolve_int_range(world_config.size.item_effects) or 0
     broadcast_generated(
         message=format_prompt(
@@ -343,6 +353,7 @@ def generate_character(
     generate_system_attributes(agent, world, character, systems)
 
     # generate the character's inventory
+    world_config = get_world_config()
     item_count = resolve_int_range(world_config.size.character_items) or 0
     broadcast_generated(
         message=format_prompt(
@@ -499,6 +510,7 @@ def link_rooms(
     rooms: List[Room] | None = None,
 ) -> None:
     rooms = rooms or world.rooms
+    world_config = get_world_config()
 
     for room in rooms:
         num_portals = resolve_int_range(world_config.size.portals) or 0
@@ -550,6 +562,7 @@ def generate_world(
     systems: List[GameSystem],
     room_count: int | None = None,
 ) -> World:
+    world_config = get_world_config()
     room_count = room_count or resolve_int_range(world_config.size.rooms) or 0
 
     broadcast_generated(message=format_prompt("world_generate_world_broadcast_theme"))

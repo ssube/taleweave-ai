@@ -8,8 +8,7 @@ from packit.conditions import condition_or, condition_threshold, make_flag_condi
 from packit.results import multi_function_or_str_result
 from packit.utils import could_be_json
 
-from taleweave.context import broadcast
-from taleweave.models.config import DEFAULT_CONFIG
+from taleweave.context import broadcast, get_game_config
 from taleweave.models.entity import Character, Room
 from taleweave.models.event import ReplyEvent
 from taleweave.utils.prompt import format_str
@@ -17,9 +16,6 @@ from taleweave.utils.prompt import format_str
 from .string import and_list, normalize_name
 
 logger = getLogger(__name__)
-
-
-character_config = DEFAULT_CONFIG.world.character
 
 
 def make_keyword_condition(end_message: str, keywords=["end", "stop"]):
@@ -99,8 +95,10 @@ def loop_conversation(
     Loop through a conversation between a series of agents, using metadata from their characters.
     """
 
+    config = get_game_config()
+
     if max_length is None:
-        max_length = character_config.conversation_limit
+        max_length = config.world.character.conversation_limit
 
     if len(characters) != len(agents):
         raise ValueError("The number of characters and agents must match.")

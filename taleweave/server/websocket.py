@@ -16,10 +16,11 @@ from taleweave.context import (
     broadcast,
     get_character_agent_for_name,
     get_current_world,
+    get_game_config,
     set_character_agent,
     subscribe,
 )
-from taleweave.models.config import DEFAULT_CONFIG, WebsocketServerConfig
+from taleweave.models.config import WebsocketServerConfig
 from taleweave.models.entity import World, WorldEntity
 from taleweave.models.event import (
     GameEvent,
@@ -47,7 +48,6 @@ last_snapshot: str | None = None
 player_names: Dict[str, str] = {}
 recent_events: MutableSequence[GameEvent] = deque(maxlen=100)
 recent_json: MutableSequence[str] = deque(maxlen=100)
-server_config: WebsocketServerConfig = DEFAULT_CONFIG.server.websocket
 
 
 def get_player_name(client_id: str) -> str:
@@ -59,16 +59,15 @@ async def handler(websocket):
     logger.info("client connected, given id: %s", id)
     connected.add(websocket)
 
-    async def next_turn(character: str, prompt: str) -> None:
+    async def next_turn(event: PromptEvent) -> None:
         await websocket.send(
             dumps(
                 {
-                    # TODO: these should be fields in the PromptEvent
-                    "type": "prompt",
-                    "client": id,
-                    "character": character,
-                    "prompt": prompt,
-                    "actions": [],
+                    "type": event.type,
+                    "client": id,  # TODO: this should be a field in the PromptEvent
+                    "character": event.character,
+                    "prompt": event.prompt,
+                    "actions": event.actions,
                 }
             ),
         )
@@ -77,7 +76,7 @@ async def handler(websocket):
         # TODO: nothing about this is good
         player = get_player(id)
         if player and player.name == event.character.name:
-            asyncio.run(next_turn(event.character.name, event.prompt))
+            asyncio.run(next_turn(event))
             return True
 
         return False
@@ -303,10 +302,6 @@ def send_and_append(id: str, message: Dict):
 
 def launch_server(config: WebsocketServerConfig):
     global socket_thread
-    global server_config
-
-    logger.info("configuring websocket server: %s", config)
-    server_config = config
 
     def run_sockets():
         asyncio.run(server_main())
@@ -321,7 +316,11 @@ def launch_server(config: WebsocketServerConfig):
 
 
 async def server_main():
-    async with websockets.serve(handler, server_config.host, server_config.port):
+    config = get_game_config()
+
+    async with websockets.serve(
+        handler, config.server.websocket.host, config.server.websocket.port
+    ):
         logger.info("websocket server started")
         await asyncio.Future()  # run forever
 

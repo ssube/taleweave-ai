@@ -5,3 +5,5 @@ venv/
 client/node_modules/
 client/out/
 taleweave/custom_*
+.coverage
+coverage.*
