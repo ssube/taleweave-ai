@@ -1,19 +1,22 @@
 import { Maybe, doesExist, mustDefault, mustExist } from '@apextoaster/js-utils';
-import { Alert, Button, Dialog, DialogActions, DialogContent, DialogContentText, DialogTitle, Divider, MenuItem, Stack, Switch, TextField } from '@mui/material';
+import { Alert, Button, Dialog, DialogActions, DialogContent, DialogContentText, DialogTitle, Divider, FormControlLabel, MenuItem, Stack, Switch, TextField } from '@mui/material';
 import React from 'react';
 import { useStore } from 'zustand';
-import { World, NumberParameter, StringParameter, Parameter, Action } from './models';
+import { World, BooleanParameter, NumberParameter, StringParameter, Parameter, Action } from './models';
 import { StoreState, store } from './store';
 
 // region parameter components
 export interface BooleanParameterProps {
   name: string;
+  parameter: BooleanParameter;
 
   setParameter: (value: boolean) => void;
 }
 
-export function BooleanParameter(props: BooleanParameterProps) {
-  return <Switch />;
+export function BooleanParameterItem(props: BooleanParameterProps) {
+  const { name, setParameter } = props;
+
+  return <FormControlLabel control={<Switch onChange={(event) => setParameter(event.target.checked)} />} label={name} />;
 }
 
 export function EnumParameterItem(props: NumberParameterProps | StringParameterProps) {
@@ -127,6 +130,10 @@ export function enumerateSignificantParameterValues(name: string, world: World) 
 }
 
 export function convertSignificantParameter(name: string, parameter: Parameter, world: Maybe<World>): Parameter {
+  if (parameter.type === 'boolean') {
+    return parameter;
+  }
+
   if (doesExist(world) && SIGNIFICANT_PARAMETERS.includes(name)) {
     return {
       ...parameter,
@@ -143,8 +150,23 @@ export function selectWorld(state: StoreState) {
   };
 }
 
-export function formatAction(action: string, parameters: Record<string, number | string>) {
+export function formatAction(action: string, parameters: Record<string, boolean | number | string>) {
   return `~${action}:${Object.entries(parameters).map(([name, value]) => `${name}=${value}`).join(',')}`;
+}
+
+export function makeDefaultParameterValues(parameters: Record<string, Parameter>) {
+  return Object.entries(parameters).reduce((acc, [name, parameter]) => {
+    switch (parameter.type) {
+      case 'boolean':
+        return { ...acc, [name]: mustDefault(parameter.default, false) };
+      case 'number':
+        return { ...acc, [name]: mustDefault(parameter.default, 0) };
+      case 'string':
+        return { ...acc, [name]: mustDefault(parameter.default, '') };
+      default:
+        return acc;
+    }
+  }, {} as Record<string, boolean | number | string>);
 }
 
 export interface PromptActionProps {
@@ -157,10 +179,11 @@ export function PromptAction(props: PromptActionProps) {
   const { action, setAction } = props;
   const { world } = useStore(store, selectWorld);
 
-  const [parameterValues, setParameterValues] = React.useState<Record<string, number | string>>({});
+  // initialize with default values
+  const [parameterValues, setParameterValues] = React.useState(makeDefaultParameterValues(action.function.parameters.properties));
 
   // create an input for each parameter
-  const inputs = Object.entries(action.function.parameters.properties).map(([name, parameter]) => {
+  const inputs = Object.entries(action.function.parameters.properties).filter(([name, _parameter]) => name !== 'unused').map(([name, parameter]) => {
     const convertedParameter = convertSignificantParameter(name, parameter, world);
 
     switch (convertedParameter.type) {
@@ -170,6 +193,10 @@ export function PromptAction(props: PromptActionProps) {
         }} />;
       case 'number':
         return <NumberParameterItem name={name} parameter={convertedParameter as NumberParameter} setParameter={(value) => {
+          setParameterValues((old) => ({ ...old, [name]: value }));
+        }} />;
+      case 'boolean':
+        return <BooleanParameterItem name={name} parameter={convertedParameter as BooleanParameter} setParameter={(value) => {
           setParameterValues((old) => ({ ...old, [name]: value }));
         }} />;
       default:

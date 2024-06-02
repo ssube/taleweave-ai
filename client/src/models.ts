@@ -55,6 +55,11 @@ export interface World {
 
 //
 
+export interface BooleanParameter {
+  type: 'boolean';
+  default?: boolean;
+}
+
 export interface StringParameter {
   type: 'string';
   default?: string;
@@ -63,11 +68,11 @@ export interface StringParameter {
 
 export interface NumberParameter {
   type: 'number';
-  default?: string;
+  default?: number;
   enum?: Array<string>;
 }
 
-export type Parameter = NumberParameter | StringParameter;
+export type Parameter = BooleanParameter | NumberParameter | StringParameter;
 
 export interface Action {
   type: 'function';

@@ -255,7 +255,7 @@ export function PromptEventItem(props: EventItemProps) {
 
   return <ListItem alignItems="flex-start" ref={props.focusRef}>
     <ListItemAvatar>
-      <Avatar>{character.substring(0, 1)}</Avatar>
+      <Avatar>{character.name.substring(0, 1)}</Avatar>
     </ListItemAvatar>
     <ListItemText
       primary="Prompt"
@@ -268,7 +268,7 @@ export function PromptEventItem(props: EventItemProps) {
           variant="body2"
           color="text.primary"
         >
-          Prompt for {character}: {prompt}
+          Prompt for {character.name}: {prompt}
         </Typography>
       }
     />

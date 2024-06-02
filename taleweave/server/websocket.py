@@ -68,7 +68,8 @@ async def handler(websocket):
                     "character": event.character,
                     "prompt": event.prompt,
                     "actions": event.actions,
-                }
+                },
+                default=server_json,
             ),
         )
 
@@ -288,7 +289,11 @@ socket_thread = None
 
 def server_json(obj):
     if isinstance(obj, WorldEntity):
-        return obj.name
+        return {
+            "id": obj.id,
+            "name": obj.name,
+            "type": obj.type,
+        }
 
     return world_json(obj)
 

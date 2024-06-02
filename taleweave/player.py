@@ -201,7 +201,7 @@ class RemotePlayer(BasePlayer):
         formatted_prompt = prompt.format(**kwargs)
         if toolbox:
             actions = toolbox.list_definitions()
-            formatted_prompt += self.format_psuedo_functions(toolbox)
+        #     formatted_prompt += self.format_psuedo_functions(toolbox)
 
         self.memory.append(HumanMessage(content=formatted_prompt))
 
