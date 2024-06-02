@@ -132,19 +132,19 @@ def prompt_character_action(
     logger.info("starting turn for character: %s", character.name)
     result = loop_retry(
         agent,
-        get_prompt("world_simulate_character_action"),
-        context={
-            "actions": action_names,
-            "character_items": character_items,
-            "attributes": character_attributes,
-            "directions": room_directions,
-            "room_name": room.name,
-            "room_description": describe_entity(room),
-            "visible_characters": room_characters,
-            "visible_items": room_items,
-            "notes_prompt": notes_prompt,
-            "events_prompt": events_prompt,
-        },
+        format_prompt(
+            "world_simulate_character_action",
+            actions=action_names,
+            character_items=character_items,
+            attributes=character_attributes,
+            directions=room_directions,
+            room_name=room.name,
+            room_description=describe_entity(room),
+            visible_characters=room_characters,
+            visible_items=room_items,
+            notes_prompt=notes_prompt,
+            events_prompt=events_prompt,
+        ),
         result_parser=result_parser,
         toolbox=action_toolbox,
     )

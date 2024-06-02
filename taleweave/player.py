@@ -197,7 +197,7 @@ class RemotePlayer(BasePlayer):
         Ask the player for input.
         """
 
-        actions = {}
+        actions = []
         formatted_prompt = prompt.format(**kwargs)
         if toolbox:
             actions = toolbox.list_definitions()
