@@ -4,7 +4,7 @@ import { createStore, StateCreator } from 'zustand';
 import { doesExist, Maybe } from '@apextoaster/js-utils';
 import { PaletteMode } from '@mui/material';
 import { ReadyState } from 'react-use-websocket';
-import { Character, GameEvent, Item, Portal, Room, World } from './models';
+import { Character, GameEvent, Item, Portal, PromptEvent, Room, World } from './models';
 
 export type LayoutMode = 'horizontal' | 'vertical';
 
@@ -45,14 +45,15 @@ export interface WorldState {
 }
 
 export interface PlayerState {
-  activeTurn: boolean;
   playerCharacter: Maybe<Character>;
+  promptEvent: Maybe<PromptEvent>;
 
   // setters
-  setActiveTurn: (activeTurn: boolean) => void;
   setPlayerCharacter: (character: Maybe<Character>) => void;
+  setPromptEvent: (promptEvent: Maybe<PromptEvent>) => void;
 
   // misc helpers
+  isActive: () => boolean;
   isPlaying: () => boolean;
 }
 
@@ -117,10 +118,15 @@ export function createWorldStore(): StateCreator<WorldState> {
 
 export function createPlayerStore(): StateCreator<PlayerState> {
   return (set) => ({
-    activeTurn: false,
     playerCharacter: undefined,
-    setActiveTurn: (activeTurn: boolean) => set({ activeTurn }),
+    promptEvent: undefined,
     setPlayerCharacter: (character: Maybe<Character>) => set({ playerCharacter: character }),
+    setPromptEvent(promptEvent) {
+      set({ promptEvent });
+    },
+    isActive() {
+      return doesExist(this.playerCharacter) && doesExist(this.promptEvent);
+    },
     isPlaying() {
       return doesExist(this.playerCharacter);
     },

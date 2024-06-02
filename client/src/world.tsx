@@ -147,7 +147,7 @@ export function WorldPanel(props: BaseEntityItemProps) {
         </Typography>
         <Divider />
         <SimpleTreeView>
-          <TreeItem itemId="world-graph" label="Graph" onClick={() => setDetailEntity(world)} />
+          <TreeItem itemId="world-graph" label="Details" onClick={() => setDetailEntity(world)} />
           {world.rooms.map((room) => <RoomItem key={room.name} room={room} setPlayer={setPlayer} />)}
         </SimpleTreeView>
       </Stack>

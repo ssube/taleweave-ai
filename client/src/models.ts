@@ -53,7 +53,43 @@ export interface World {
   turn: number;
 }
 
+//
+
+export interface StringParameter {
+  type: 'string';
+  default?: string;
+  enum?: Array<string>;
+}
+
+export interface NumberParameter {
+  type: 'number';
+  default?: string;
+  enum?: Array<string>;
+}
+
+export type Parameter = NumberParameter | StringParameter;
+
+export interface Action {
+  type: 'function';
+  function: {
+    name: string;
+    description: string;
+    parameters: {
+      type: 'object';
+      properties: Record<string, Parameter>;
+    };
+  };
+}
+
 // TODO: copy event types from server
 export interface GameEvent {
   type: string;
+}
+
+export interface PromptEvent {
+  type: 'prompt';
+  prompt: string;
+  actions: Array<Action>;
+  character: Character;
+  room: Room;
 }

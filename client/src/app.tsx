@@ -18,9 +18,10 @@ import { PlayerPanel } from './player.js';
 import { Statusbar } from './status.js';
 import { StoreState, store } from './store.js';
 import { WorldPanel } from './world.js';
+import { DetailDialog } from './details.js';
+import { PromptDialog } from './prompt.js';
 
 import 'allotment/dist/style.css';
-import { DetailDialog } from './details.js';
 import './main.css';
 
 const useWebSocket = (useWebSocketModule as any).default;
@@ -63,11 +64,16 @@ export function App(props: AppProps) {
   }
 
   function sendInput(input: string) {
-    const { playerCharacter: character, setActiveTurn } = store.getState();
+    const { playerCharacter: character, setPromptEvent } = store.getState();
     if (doesExist(character)) {
       sendMessage(JSON.stringify({ type: 'input', input }));
-      setActiveTurn(false);
+      setPromptEvent(undefined);
     }
+  }
+
+  function skipPrompt() {
+    const { setPromptEvent } = store.getState();
+    setPromptEvent(undefined);
   }
 
   function setName(name: string) {
@@ -83,7 +89,7 @@ export function App(props: AppProps) {
   });
 
   useEffect(() => {
-    const { setClientId, setActiveTurn, setPlayers, appendEvent, setTurn, setWorld, world, clientId, setPlayerCharacter: setCharacter } = store.getState();
+    const { setClientId, setPromptEvent, setPlayers, appendEvent, setTurn, setWorld, world, clientId, setPlayerCharacter: setCharacter } = store.getState();
     if (doesExist(lastMessage)) {
       const event = JSON.parse(lastMessage.data);
 
@@ -95,8 +101,13 @@ export function App(props: AppProps) {
           return;
         case 'prompt':
           // prompts are broadcast to all players
-          // only notify the active player
-          setActiveTurn(event.client === clientId);
+          if (event.client === clientId) {
+            // only notify the active player
+            setPromptEvent(event);
+          } else {
+            // if it has moved on to another player, clear the prompt
+            setPromptEvent(undefined);
+          }
           break;
         case 'player':
           if (doesExist(world) && event.client === clientId) {
@@ -155,13 +166,14 @@ export function App(props: AppProps) {
   return <ThemeProvider theme={theme}>
     <CssBaseline />
     <DetailDialog renderEntity={renderEntity} />
+    <PromptDialog sendInput={sendInput} skipPrompt={skipPrompt} />
     <Container maxWidth='xl'>
       <Stack direction="column">
         <Statusbar setName={setName} />
         <Stack direction="row" spacing={2}>
           {innerLayout(
             <Stack direction="column" spacing={2} sx={{ minWidth: leftWidth }} className="scroll-history">
-              <PlayerPanel sendInput={sendInput} />
+              <PlayerPanel />
               <WorldPanel setPlayer={setPlayer} />
             </Stack>,
             <Stack direction="column" sx={{ minWidth: rightWidth }} className="scroll-history">

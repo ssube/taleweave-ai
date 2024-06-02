@@ -127,6 +127,14 @@ export function WorldDetails(props: WorldDetailsProps) {
       <Typography variant='body2'>
         Theme: {world.theme}
       </Typography>
+      <Typography variant='body2'>
+        Order:
+      </Typography>
+      <ol>
+        {world.order.map((name) => (
+          <li key={name}>{name}</li>
+        ))}
+      </ol>
       <div id="graph" />
     </DialogContent>
   </Fragment>;
