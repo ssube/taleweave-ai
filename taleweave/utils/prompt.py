@@ -3,9 +3,16 @@ from logging import getLogger
 from jinja2 import Environment
 
 from taleweave.context import get_prompt_library
+from taleweave.utils.string import and_list, or_list
 from taleweave.utils.world import describe_entity, name_entity
 
 logger = getLogger(__name__)
+
+jinja_env = Environment()
+jinja_env.filters["describe"] = describe_entity
+jinja_env.filters["name"] = name_entity
+jinja_env.filters["and_list"] = and_list
+jinja_env.filters["or_list"] = or_list
 
 
 def format_prompt(prompt_key: str, **kwargs) -> str:
@@ -19,9 +26,5 @@ def format_prompt(prompt_key: str, **kwargs) -> str:
 
 
 def format_str(template_str: str, **kwargs) -> str:
-    env = Environment()
-    env.filters["describe"] = describe_entity
-    env.filters["name"] = name_entity
-
-    template = env.from_string(template_str)
+    template = jinja_env.from_string(template_str)
     return template.render(**kwargs)

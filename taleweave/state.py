@@ -7,11 +7,13 @@ from langchain_core.messages import AIMessage, BaseMessage, HumanMessage, System
 from packit.agent import Agent, agent_easy_connect
 from pydantic import RootModel
 
-from taleweave.context import get_all_character_agents, set_character_agent
+from taleweave.context import (
+    get_all_character_agents,
+    get_game_config,
+    set_character_agent,
+)
 from taleweave.models.entity import World
 from taleweave.player import LocalPlayer
-
-MEMORY_LIMIT = 25  # 10
 
 
 def create_agents(
@@ -69,6 +71,7 @@ def snapshot_world(world: World, turn: int):
 def restore_memory(
     data: Sequence[str | Dict[str, str]]
 ) -> deque[str | AIMessage | HumanMessage | SystemMessage]:
+    config = get_game_config()
     memories = []
 
     for memory in data:
@@ -85,7 +88,7 @@ def restore_memory(
             elif memory_type == "ai":
                 memories.append(AIMessage(content=memory_content))
 
-    return deque(memories, maxlen=MEMORY_LIMIT)
+    return deque(memories, maxlen=config.world.character.memory_limit)
 
 
 def save_world(world, filename):

@@ -416,7 +416,7 @@ def main():
     set_dungeon_master(world_builder)
 
     # start the sim
-    logger.debug("simulating world: %s", world)
+    logger.debug("simulating world: %s", world.name)
     simulate_world(
         world,
         turns=args.turns,

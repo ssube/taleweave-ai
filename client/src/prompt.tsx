@@ -129,7 +129,7 @@ export function enumerateSignificantParameterValues(name: string, world: World) 
   }
 }
 
-export function convertSignificantParameter(name: string, parameter: Parameter, world: Maybe<World>): Parameter {
+export function convertSignificantParameter<T extends Parameter>(name: string, parameter: T, world: Maybe<World>): T {
   if (parameter.type === 'boolean') {
     return parameter;
   }
@@ -154,15 +154,27 @@ export function formatAction(action: string, parameters: Record<string, boolean 
   return `~${action}:${Object.entries(parameters).map(([name, value]) => `${name}=${value}`).join(',')}`;
 }
 
+export function getEnumOrDefault<T>(defaultValue: Maybe<T>, enumValues: Maybe<Array<T>>, evenMoreDefault: T): T {
+  if (doesExist(defaultValue)) {
+    return defaultValue;
+  }
+
+  if (doesExist(enumValues)) {
+    return enumValues[0];
+  }
+
+  return evenMoreDefault;
+}
+
 export function makeDefaultParameterValues(parameters: Record<string, Parameter>) {
   return Object.entries(parameters).reduce((acc, [name, parameter]) => {
     switch (parameter.type) {
       case 'boolean':
-        return { ...acc, [name]: mustDefault(parameter.default, false) };
+        return { ...acc, [name]: getEnumOrDefault(parameter.default, [], false) };
       case 'number':
-        return { ...acc, [name]: mustDefault(parameter.default, 0) };
+        return { ...acc, [name]: getEnumOrDefault(parameter.default, parameter.enum, 0) };
       case 'string':
-        return { ...acc, [name]: mustDefault(parameter.default, '') };
+        return { ...acc, [name]: getEnumOrDefault(parameter.default, parameter.enum, '') };
       default:
         return acc;
     }

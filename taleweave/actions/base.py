@@ -5,6 +5,7 @@ from taleweave.context import (
     broadcast,
     get_agent_for_character,
     get_character_agent_for_name,
+    get_game_config,
     get_prompt,
     world_context,
 )
@@ -21,8 +22,6 @@ from taleweave.utils.search import (
 from taleweave.utils.string import normalize_name
 
 logger = getLogger(__name__)
-
-MAX_CONVERSATION_STEPS = 2
 
 
 def action_examine(target: str) -> str:
@@ -173,7 +172,8 @@ def action_ask(character: str, question: str) -> str:
         character: The name of the character to ask. You cannot ask yourself questions.
         question: The question to ask them.
     """
-    # capture references to the current character and room, because they will be overwritten
+    config = get_game_config()
+
     with action_context() as (action_room, action_character):
         # sanity checks
         question_character, question_agent = get_character_agent_for_name(character)
@@ -216,7 +216,7 @@ def action_ask(character: str, question: str) -> str:
             end_prompt,
             echo_function=action_tell.__name__,
             echo_parameter="message",
-            max_length=MAX_CONVERSATION_STEPS,
+            max_length=config.world.character.conversation_limit,
         )
 
         if result:
@@ -233,7 +233,7 @@ def action_tell(character: str, message: str) -> str:
         character: The name of the character to tell. You cannot talk to yourself.
         message: The message to tell them.
     """
-    # capture references to the current character and room, because they will be overwritten
+    config = get_game_config()
 
     with action_context() as (action_room, action_character):
         # sanity checks
@@ -268,7 +268,7 @@ def action_tell(character: str, message: str) -> str:
             end_prompt,
             echo_function=action_tell.__name__,
             echo_parameter="message",
-            max_length=MAX_CONVERSATION_STEPS,
+            max_length=config.world.character.conversation_limit,
         )
 
         if result:

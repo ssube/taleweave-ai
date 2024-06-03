@@ -323,6 +323,12 @@ async def broadcast_event(message: str | GameEvent):
         event_messages[event_message.id] = message
 
 
+def truncate(text: str, length: int = 1000) -> str:
+    if len(text) > length:
+        return text[:length] + "..."
+    return text
+
+
 def embed_from_event(event: GameEvent) -> Embed | None:
     if isinstance(event, GenerateEvent):
         return embed_from_generate(event)
@@ -357,7 +363,7 @@ def embed_from_action(event: ActionEvent):
 
 def embed_from_reply(event: ReplyEvent):
     reply_embed = Embed(title=event.room.name, description=event.speaker.name)
-    reply_embed.add_field(name="Reply", value=event.text)
+    reply_embed.add_field(name="Reply", value=truncate(event.text))
     return reply_embed
 
 
@@ -367,12 +373,8 @@ def embed_from_generate(event: GenerateEvent) -> Embed:
 
 
 def embed_from_result(event: ResultEvent):
-    text = event.result
-    if len(text) > 1000:
-        text = text[:1000] + "..."
-
     result_embed = Embed(title=event.room.name, description=event.character.name)
-    result_embed.add_field(name="Result", value=text)
+    result_embed.add_field(name="Result", value=truncate(event.result))
     return result_embed
 
 
@@ -384,14 +386,14 @@ def embed_from_player(event: PlayerEvent):
         title = format_prompt("discord_leave_title", event=event)
         description = format_prompt("discord_leave_result", event=event)
 
-    player_embed = Embed(title=title, description=description)
+    player_embed = Embed(title=title, description=truncate(description))
     return player_embed
 
 
 def embed_from_prompt(event: PromptEvent):
     # TODO: ping the player
     prompt_embed = Embed(title=event.room.name, description=event.character.name)
-    prompt_embed.add_field(name="Prompt", value=event.prompt)
+    prompt_embed.add_field(name="Prompt", value=truncate(event.prompt))
     return prompt_embed
 
 
@@ -400,5 +402,5 @@ def embed_from_status(event: StatusEvent):
         title=event.room.name if event.room else "",
         description=event.character.name if event.character else "",
     )
-    status_embed.add_field(name="Status", value=event.text)
+    status_embed.add_field(name="Status", value=truncate(event.text))
     return status_embed

@@ -69,7 +69,7 @@ export interface StringParameter {
 export interface NumberParameter {
   type: 'number';
   default?: number;
-  enum?: Array<string>;
+  enum?: Array<number>;
 }
 
 export type Parameter = BooleanParameter | NumberParameter | StringParameter;

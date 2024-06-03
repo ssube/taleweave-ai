@@ -44,6 +44,7 @@ from taleweave.context import (
     set_current_world,
     set_game_systems,
 )
+from taleweave.errors import ActionError
 from taleweave.game_system import GameSystem
 from taleweave.models.entity import Character, Room, World
 from taleweave.models.event import ActionEvent, ResultEvent
@@ -117,12 +118,9 @@ def prompt_character_action(
             # TODO: only emit valid actions that parse and run correctly, and try to avoid parsing the JSON twice
             event = ActionEvent.from_json(value, room, character)
         else:
-            # TODO: this path should be removed and throw
-            # logger.warning(
-            #     "invalid action, emitting as result event - this is a bug somewhere"
-            # )
-            # event = ResultEvent(value, room, character)
-            raise ValueError("invalid non-JSON action")
+            raise ActionError(
+                "Your last reply was not valid JSON. Please try again and reply with a valid function call in JSON format."
+            )
 
         broadcast(event)
 
@@ -216,14 +214,14 @@ def prompt_character_planning(
     while not stop_condition(current=i):
         result = loop_retry(
             agent,
-            get_prompt("world_simulate_character_planning"),
-            context={
-                "event_count": event_count,
-                "events_prompt": events_prompt,
-                "note_count": note_count,
-                "notes_prompt": notes_prompt,
-                "room_summary": summarize_room(room, character),
-            },
+            format_prompt(
+                "world_simulate_character_planning",
+                event_count=event_count,
+                events_prompt=events_prompt,
+                note_count=note_count,
+                notes_prompt=notes_prompt,
+                room_summary=summarize_room(room, character),
+            ),
             result_parser=result_parser,
             stop_condition=stop_condition,
             toolbox=planner_toolbox,

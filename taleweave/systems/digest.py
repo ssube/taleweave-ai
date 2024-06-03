@@ -5,6 +5,7 @@ from taleweave.context import get_current_world, get_prompt_library, subscribe
 from taleweave.game_system import FormatPerspective, GameSystem
 from taleweave.models.entity import Character, Room, World, WorldEntity
 from taleweave.models.event import ActionEvent, GameEvent
+from taleweave.utils.prompt import format_str
 from taleweave.utils.search import find_containing_room
 
 logger = getLogger(__name__)
@@ -22,7 +23,7 @@ def create_turn_digest(
                 if prompt_key in library.prompts:
                     try:
                         template = library.prompts[prompt_key]
-                        message = template.format(event=event)
+                        message = format_str(template, event=event)
                         messages.append(message)
                     except Exception:
                         logger.exception("error formatting digest event: %s", event)
