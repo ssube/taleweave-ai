@@ -48,12 +48,7 @@ if True:
     from taleweave.models.prompt import PromptLibrary
     from taleweave.plugins import load_plugin
     from taleweave.simulate import simulate_world
-    from taleweave.state import (
-        MEMORY_LIMIT,
-        create_agents,
-        save_world,
-        save_world_state,
-    )
+    from taleweave.state import create_agents, save_world, save_world_state
     from taleweave.utils.prompt import format_prompt
 
 # start the debugger, if needed
@@ -63,9 +58,6 @@ if environ.get("DEBUG", "false").lower() == "true":
     debugpy.listen(5679)
     logger.info("waiting for debugger to attach...")
     debugpy.wait_for_client()
-
-
-memory_factory = partial(make_limited_memory, limit=MEMORY_LIMIT)
 
 
 def int_or_inf(value: str) -> float | int:
@@ -241,7 +233,7 @@ def save_system_data(args, systems: List[GameSystem]):
 
 
 def load_or_generate_world(
-    args, players, systems: List[GameSystem], world_prompt: WorldPrompt
+    args, config: Config, players, systems: List[GameSystem], world_prompt: WorldPrompt
 ):
     world_file = args.world + ".json"
     world_state_file = args.state or (args.world + ".state.json")
@@ -252,6 +244,9 @@ def load_or_generate_world(
 
     # prepare an agent for the world builder
     llm = agent_easy_connect()
+    memory_factory = partial(
+        make_limited_memory, limit=config.world.character.memory_limit
+    )
     world_builder = Agent(
         "World Builder",
         format_prompt(
@@ -388,7 +383,7 @@ def main():
     # load or generate the world
     world_prompt = get_world_prompt(args)
     world, world_state_file, world_turn = load_or_generate_world(
-        args, players, extra_systems, world_prompt=world_prompt
+        args, config, players, extra_systems, world_prompt=world_prompt
     )
 
     # make sure the snapshot system runs last
@@ -404,6 +399,9 @@ def main():
 
     # create the DM
     llm = agent_easy_connect()
+    memory_factory = partial(
+        make_limited_memory, limit=config.world.character.memory_limit
+    )
     world_builder = Agent(
         "dungeon master",
         format_prompt(

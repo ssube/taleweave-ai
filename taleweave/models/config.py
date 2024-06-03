@@ -57,6 +57,7 @@ class SystemsConfig:
 class WorldCharacterConfig:
     conversation_limit: int
     event_limit: int
+    memory_limit: int
     note_limit: int
 
 
@@ -122,6 +123,7 @@ DEFAULT_CONFIG = Config(
         character=WorldCharacterConfig(
             conversation_limit=2,
             event_limit=5,
+            memory_limit=25,
             note_limit=10,
         ),
         size=WorldSizeConfig(

@@ -1,6 +1,9 @@
 bot:
   discord:
     channels: [taleweave]
+    command_prefix: "!"
+    name_command: taleweave
+    name_title: TaleWeave AI
 render:
   cfg:
     min: 5
@@ -8,6 +11,7 @@ render:
   checkpoints: [
     "diffusion-sdxl-dynavision-0-5-5-7.safetensors",
   ]
+  count: 2
   path: /tmp/taleweave-images
   sizes:
     landscape:
@@ -26,7 +30,14 @@ server:
   websocket:
     host: 0.0.0.0
     port: 8001
+systems:
+  data: {}
 world:
+  character:
+    conversation_limit: 2
+    event_limit: 5
+    memory_limit: 25
+    note_limit: 10
   size:
     character_items:
       min: 0
@@ -46,3 +57,7 @@ world:
     room_items:
       min: 0
       max: 3
+  turn:
+    action_retries: 5
+    planning_retries: 3
+    planning_steps: 3

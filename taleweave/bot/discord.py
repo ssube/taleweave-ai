@@ -31,6 +31,7 @@ from taleweave.player import (
     RemotePlayer,
     get_player,
     has_player,
+    list_players,
     remove_player,
     set_player,
 )
@@ -50,7 +51,7 @@ def remove_tags(text: str) -> str:
     Remove any <foo> tags.
     """
 
-    return sub(r"<[^>]*>", "", text)
+    return sub(r"<[^>]*>", "", text).strip()
 
 
 class AdventureClient(Client):
@@ -82,8 +83,9 @@ class AdventureClient(Client):
         author = message.author
         channel = message.channel
         user_name = author.name  # include nick
+        content = remove_tags(message.content)
 
-        if message.content.startswith(
+        if content.startswith(
             config.bot.discord.command_prefix + config.bot.discord.name_command
         ):
             world = get_current_world()
@@ -101,14 +103,14 @@ class AdventureClient(Client):
             await message.channel.send(world_message)
             return
 
-        if message.content.startswith("!help"):
+        if content.startswith("!help"):
             await message.channel.send(
                 format_prompt("discord_help", bot_name=config.bot.discord.name_command)
             )
             return
 
-        if message.content.startswith("!join"):
-            character_name = remove_tags(message.content).replace("!join", "").strip()
+        if content.startswith("!join"):
+            character_name = content.replace("!join", "").strip()
             if has_player(character_name):
                 await channel.send(
                     format_prompt("discord_join_error_taken", character=character_name)
@@ -145,9 +147,14 @@ class AdventureClient(Client):
             join_event = PlayerEvent("join", character_name, user_name)
             return broadcast(join_event)
 
+        if content.startswith("!players"):
+            players = list_players()
+            await channel.send(embed=format_players(players))
+            return
+
         player = get_player(user_name)
         if isinstance(player, RemotePlayer):
-            if message.content.startswith("!leave"):
+            if content.startswith("!leave"):
                 remove_player(user_name)
 
                 # revert to LLM agent
@@ -163,7 +170,6 @@ class AdventureClient(Client):
                 leave_event = PlayerEvent("leave", player.name, user_name)
                 return broadcast(leave_event)
             else:
-                content = remove_tags(message.content)
                 player.input_queue.put(content)
                 logger.info(
                     f"received message from {user_name} for {player.name}: {content}"
@@ -172,6 +178,14 @@ class AdventureClient(Client):
 
         await message.channel.send(format_prompt("discord_user_new"))
         return
+
+
+def format_players(players: Dict[str, str]):
+    player_embed = Embed(title="Players")
+    for player, character in players.items():
+        player_embed.add_field(name=player, value=character)
+
+    return player_embed
 
 
 def launch_bot(config: DiscordBotConfig):
