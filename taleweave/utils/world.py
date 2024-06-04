@@ -12,7 +12,7 @@ def describe_character(
     perspective: FormatPerspective = FormatPerspective.SECOND_PERSON,
 ) -> str:
     attribute_descriptions = format_attributes(character, perspective=perspective)
-    logger.info("describing character: %s, %s", character, attribute_descriptions)
+    logger.info("describing character: %s, %s", character.name, attribute_descriptions)
 
     if perspective == FormatPerspective.SECOND_PERSON:
         character_description = character.backstory

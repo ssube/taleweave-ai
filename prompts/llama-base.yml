@@ -232,6 +232,8 @@ prompts:
     Generating {{item_count}} items for room: {{name}}
   world_generate_room_broadcast_characters: |
     Generating {{character_count}} characters for room: {{name}}
+  world_generate_room_broadcast_portals: |
+    Generating {{portal_count}} portals for room: {{name}}
 
   world_generate_portal_name_outgoing: |
     Generate the name of a portal that leads from the {{source_room}} room to the {{dest_room}} room and fits the world theme of {{world_theme}}.

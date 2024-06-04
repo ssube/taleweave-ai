@@ -522,7 +522,7 @@ def link_rooms(
         broadcast_generated(
             format_prompt(
                 "world_generate_room_broadcast_portals",
-                num_portals=num_portals,
+                portal_count=num_portals,
                 name=room.name,
             )
         )
