@@ -4,11 +4,15 @@
 
 - [Player's Guide to TaleWeave AI](#players-guide-to-taleweave-ai)
   - [Contents](#contents)
-  - [Discord Command Syntax](#discord-command-syntax)
-  - [Prompt Syntax](#prompt-syntax)
-    - [Prompt Function Syntax](#prompt-function-syntax)
+  - [Playing in Discord](#playing-in-discord)
+    - [Discord command syntax](#discord-command-syntax)
+    - [Rendering events in Discord](#rendering-events-in-discord)
+  - [Prompt syntax](#prompt-syntax)
+    - [Prompt action syntax](#prompt-action-syntax)
 
-## Discord Command Syntax
+## Playing in Discord
+
+### Discord command syntax
 
 *Note 1:* Because TaleWeave AI offers a dynamic set of actions depending on the game world, it does not currently use
 Discord's command feature. If you know a way to make this work with constantly-changing actions, please let me know.
@@ -34,11 +38,20 @@ The Discord bot offers the following commands:
 Other messages will be treated as in-character input and used as your character's action or reply, depending on the
 current prompt.
 
-## Prompt Syntax
+### Rendering events in Discord
 
-The web client displays a menu with all of the available actions on your turn, but you can also input your own actions.
+You can render recent events in Discord by reacting to them with the camera emoji: 📷
 
-### Prompt Function Syntax
+If the bot can render that event, it will acknowledge your request with the camera flash emoji: 📸
+
+When the images are ready, they will be posted to Discord as a reply to the event message.
+
+## Prompt syntax
+
+The web client displays a menu with all of the available actions on your turn, but you can also input your own actions
+through text.
+
+### Prompt action syntax
 
 In order to call functions or use actions from your prompt replies, you (or more likely your GUI) can send valid JSON,
 or you can use this prompt function syntax. Discord and the web client both support this syntax.
