@@ -481,7 +481,6 @@ python3 -m taleweave.main \
   --optional-actions \
   --actions taleweave.systems.sim:init_actions \
   --systems taleweave.systems.sim:init_logic
-  # TODO: add others
 ```
 
 This will generate a relatively small world with 3 rooms or areas, run for 30 steps, then save the game and shut down.
