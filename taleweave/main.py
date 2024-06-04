@@ -198,7 +198,7 @@ def load_prompt_library(args) -> None:
         for prompt_file in args.prompts:
             with open(prompt_file, "r") as f:
                 new_library = PromptLibrary(**load_yaml(f))
-                logger.info(f"loaded prompt library from {args.prompts}")
+                logger.info(f"loaded prompt library from {prompt_file}")
                 library = get_prompt_library()
                 library.prompts.update(new_library.prompts)
 
