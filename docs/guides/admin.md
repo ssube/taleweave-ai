@@ -468,15 +468,20 @@ server:
 ```bash
 # Start the TaleWeave AI engine
 python3 -m taleweave.main \
+  --config config.yml \
+  --prompts prompts/llama-base.yml prompts/llama-quest.yml prompts/discord-en-us.yml \
   --world worlds/outback-animals-1 \
-  --world-template ./taleweave/prompts.yml:outback-animals \
+  --world-template ./worlds.yml:outback-animals \
   --discord  \
+  --render \
+  --render-generated \
   --server \
   --rooms 3 \
   --turns 30 \
   --optional-actions \
   --actions taleweave.systems.sim:init_actions \
   --systems taleweave.systems.sim:init_logic
+  # TODO: add others
 ```
 
 This will generate a relatively small world with 3 rooms or areas, run for 30 steps, then save the game and shut down.
