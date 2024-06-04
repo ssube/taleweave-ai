@@ -128,7 +128,7 @@ export function WorldDetails(props: WorldDetailsProps) {
         Theme: {world.theme}
       </Typography>
       <Typography variant='body2'>
-        Order:
+        Turn Order:
       </Typography>
       <ol>
         {world.order.map((name) => (

@@ -140,7 +140,7 @@ def action_move(direction: str) -> str:
 
 def action_take(item: str) -> str:
     """
-    Take an item from the room and put it in your inventory.
+    Pick up an item from the room and put it in your inventory.
 
     Args:
         item: The name of the item to take.
@@ -279,7 +279,7 @@ def action_tell(character: str, message: str) -> str:
 
 def action_give(character: str, item: str) -> str:
     """
-    Give an item to another character in the room.
+    Give an item in your inventory to another character in the room.
 
     Args:
         character: The name of the character to give the item to.
@@ -315,7 +315,7 @@ def action_give(character: str, item: str) -> str:
 
 def action_drop(item: str) -> str:
     """
-    Drop an item from your inventory into the room.
+    Drop an item from your inventory and leave it in the current room.
 
     Args:
         item: The name of the item to drop.

@@ -103,6 +103,8 @@ class AdventureClient(Client):
             await message.channel.send(world_message)
             return
 
+        # TODO: command to list available characters
+
         if content.startswith("!help"):
             await message.channel.send(
                 format_prompt("discord_help", bot_name=config.bot.discord.name_command)

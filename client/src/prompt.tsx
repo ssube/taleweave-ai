@@ -29,7 +29,7 @@ export function EnumParameterItem(props: NumberParameterProps | StringParameterP
     label={name}
     variant="outlined"
     defaultValue={defaultValue}
-    onChange={(event) => setParameter(event.target.value)}
+    onChange={(event) => (setParameter as (value: number | string) => void)(event.target.value)}
   >
     {enumValues.map((value) => <MenuItem value={value}>{value}</MenuItem>)}
   </TextField>;
