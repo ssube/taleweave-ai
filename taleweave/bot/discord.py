@@ -37,6 +37,7 @@ from taleweave.player import (
 )
 from taleweave.render.comfy import render_event
 from taleweave.utils.prompt import format_prompt
+from taleweave.utils.search import list_characters
 
 logger = getLogger(__name__)
 client = None
@@ -103,15 +104,13 @@ class AdventureClient(Client):
             await message.channel.send(world_message)
             return
 
-        # TODO: command to list available characters
-
-        if content.startswith("!help"):
+        if content.startswith(config.bot.discord.command_prefix + "help"):
             await message.channel.send(
                 format_prompt("discord_help", bot_name=config.bot.discord.name_command)
             )
             return
 
-        if content.startswith("!join"):
+        if content.startswith(config.bot.discord.command_prefix + "join"):
             character_name = content.replace("!join", "").strip()
             if has_player(character_name):
                 await channel.send(
@@ -149,14 +148,35 @@ class AdventureClient(Client):
             join_event = PlayerEvent("join", character_name, user_name)
             return broadcast(join_event)
 
-        if content.startswith("!players"):
+        if content.startswith(config.bot.discord.command_prefix + "characters"):
+            world = get_current_world()
+            if not world:
+                await channel.send(
+                    format_prompt(
+                        "discord_characters_none",
+                        bot_name=config.bot.discord.name_title,
+                    )
+                )
+                return
+
+            characters = [character.name for character in list_characters(world)]
+            await channel.send(
+                format_prompt(
+                    "discord_characters_list",
+                    bot_name=config.bot.discord.name_title,
+                    characters=characters,
+                )
+            )
+            return
+
+        if content.startswith(config.bot.discord.command_prefix + "players"):
             players = list_players()
             await channel.send(embed=format_players(players))
             return
 
         player = get_player(user_name)
         if isinstance(player, RemotePlayer):
-            if content.startswith("!leave"):
+            if content.startswith(config.bot.discord.command_prefix + "leave"):
                 remove_player(user_name)
 
                 # revert to LLM agent

@@ -1,4 +1,8 @@
 prompts:
+  discord_characters_none: There are no characters available to play.
+  discord_characters_list: |
+    **Characters:**
+    {{ characters | and_list }}
   discord_help: |
     **Commands:**
     - `!help` - Show this help message
