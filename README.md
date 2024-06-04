@@ -100,8 +100,8 @@ Detailed guides are available for:
 
 ## Contributing
 
-TaleWeave AI is working and playable, and looking for contributors to help improve the web client, add new mechanics
-and systems to the game, and fine-tune models for better role playing.
+TaleWeave AI is working, playable, and looking for contributors. We need developers to help improve the web client, add
+new mechanics and systems to the game, and fine-tune models for better role playing.
 
 [Check out the developer pitch for more details](https://docs.google.com/presentation/d/1weHYaLzbRCq5A9K1iy33KdSvZ0bzCaBT6Trc0RCNJZE/edit?usp=sharing).
 
