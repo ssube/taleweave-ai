@@ -16,12 +16,8 @@ captivate and engage players' imaginations.
 - [TaleWeave AI](#taleweave-ai)
   - [Contents](#contents)
   - [Features](#features)
-  - [Installation](#installation)
-    - [Step 1: Clone the Repository](#step-1-clone-the-repository)
-    - [Step 2: Set Up Your Environment](#step-2-set-up-your-environment)
-    - [Step 3: Configuration](#step-3-configuration)
-    - [Step 4: Run the Dependencies](#step-4-run-the-dependencies)
-    - [Step 5: Launch the Game Server](#step-5-launch-the-game-server)
+  - [Requirements](#requirements)
+    - [Recommended](#recommended)
   - [Documentation](#documentation)
   - [Contributing](#contributing)
   - [Support and Community](#support-and-community)
@@ -72,82 +68,39 @@ behaviors and responses of the language models. This architecture allows for a d
 underlying logic subtly guides the actions and reactions of the AI, enriching the narrative depth and realism of the
 game environment.
 
-## Installation
+## Requirements
 
-### Step 1: Clone the Repository
+- Python 3.10
+- Ollama, vLLM, or another OpenAI-compatible LLM API (including OpenAI)
 
-```bash
-git clone https://github.com/ssube/taleweave-ai.git
-cd taleweave-ai
-```
+### Recommended
 
-### Step 2: Set Up Your Environment
-
-```bash
-# Create a virtual environment
-python3 -m venv venv
-# Load the virtual environment
-source venv/bin/activate
-# Install dependencies
-pip install -r requirements.txt
-```
-
-### Step 3: Configuration
-
-Configure the settings by editing the `.env` file to match your setup, including Discord tokens and web server details.
-
-### Step 4: Run the Dependencies
-
-Launch Comfy UI for image generation and Ollama for text generation.
-
-### Step 5: Launch the Game Server
-
-To start a game simulation using the "outback animals" example prompt and running both the Discord both and websocket
-server:
-
-```bash
-# Start the TaleWeave AI engine
-python3 -m taleweave.main \
-  --world worlds/outback-animals-1 \
-  --world-prompt ./taleweave/prompts.yml:outback-animals \
-  --discord=true  \
-  --server=true \
-  --rooms 3 \
-  --turns 30 \
-  --optional-actions=true \
-  --actions taleweave.systems.sim:init_actions \
-  --systems taleweave.systems.sim:init_logic
-```
-
-This will generate a relatively small world with 3 rooms or areas, run for 30 steps, then shut down.
-
-The world will be saved to a file named `worlds/outback-animals-1.json` and the state will be saved after each step to
-another file named `worlds/outback-animals-1.state.json`. The world can be stopped at any time by pressing Ctrl-C,
-although the step in progress will be lost. The saved state can be resumed and played for any number of additional
-steps by running the server again with the same arguments.
-
-> Note: `module.name:function_name` and `path/filename.yml:key` are patterns you will see repeated throughout TaleWeave AI.
-> They indicate a Python module and function within it, or a data file and key within it, respectively.
-
-The `sim_systems` provide many mechanics from popular life simulations, including hunger, thirst, exhaustion, and mood.
-Custom actions and systems can be used to provide any other mechanics that are desired for your setting. The logic
-system uses a combination of Python and YAML to modify the prompts connected to rooms, characters, and items in the
-world, influencing the behavior of the language models.
+- 1-2 16GB or larger GPUs
+- ComfyUI
+- Discord account
 
 ## Documentation
 
 For a detailed guide on how to use TaleWeave AI, customize adventures, and integrate with Discord and web browsers,
-please refer to our [Documentation](./docs). This guide includes comprehensive instructions on:
+please check out to [the documentation folder](./docs).
+
+Detailed guides are available for:
+
+- [admins](./docs/guides/admin.md)
 
 ## Contributing
 
-TaleWeave AI is a community-driven project, and we welcome contributions of all kinds. If you're interested in improving
-the engine or adding new features, please check out our contributing guidelines in [CONTRIBUTING.md](./CONTRIBUTING.md).
+TaleWeave AI is working and playable, and looking for contributors to help improve the web client, add new mechanics
+and systems to the game, and fine-tune models for better role playing.
+
+[Check out the developer pitch for more details](https://docs.google.com/presentation/d/1weHYaLzbRCq5A9K1iy33KdSvZ0bzCaBT6Trc0RCNJZE/edit?usp=sharing).
 
 ## Support and Community
 
 Join our community on Discord to discuss TaleWeave AI, share your experiences, and get help from fellow users and
-developers. Click here to join: [TaleWeave AI Discord Community](#)
+developers.
+
+[Click here to join the TaleWeave AI Discord Community](https://discord.gg/4RfZBE77fa).
 
 ## License
 

@@ -25,10 +25,17 @@
     - [Recommended: Configure image generation](#recommended-configure-image-generation)
     - [Optional: Configure websocket server](#optional-configure-websocket-server)
     - [Optional: Configure world size](#optional-configure-world-size)
-  - [Run](#run)
+  - [Running locally](#running-locally)
+    - [Checklist for running locally](#checklist-for-running-locally)
     - [Choose a world prompt or template](#choose-a-world-prompt-or-template)
     - [Launch the game](#launch-the-game)
     - [Connect and play](#connect-and-play)
+  - [Running on RunPod](#running-on-runpod)
+    - [Checklist for running on RunPod](#checklist-for-running-on-runpod)
+    - [Running ComfyUI on RunPod](#running-comfyui-on-runpod)
+    - [Running Ollama on RunPod](#running-ollama-on-runpod)
+    - [Upload config file to pod](#upload-config-file-to-pod)
+    - [Running TaleWeave AI on RunPod](#running-taleweave-ai-on-runpod)
 
 ## Hardware
 
@@ -287,9 +294,11 @@ OLLAMA_NUM_GPU=100
 OLLAMA_NUM_CTX=8192
 
 # servers
-OLLAMA_API=http://127.0.0.1:11434
-DISCORD_TOKEN=YOUR_TOKEN
 COMFY_API="127.0.0.1:8188"
+OLLAMA_API=http://127.0.0.1:11434
+
+# secrets
+DISCORD_TOKEN=YOUR_TOKEN
 ```
 
 ### Configure the Discord bot
@@ -390,7 +399,33 @@ world:
       max: 3
 ```
 
-## Run
+## Running locally
+
+### Checklist for running locally
+
+- [ ] clone TaleWeave AI
+- [ ] set up a virtual environment
+- [ ] install the pip dependencies
+- [ ] launch Ollama
+  - [ ] and pull a model
+  - [ ] or launch vLLM
+  - [ ] or get an OpenAI API key
+- [ ] recommended: launch ComfyUI
+  - [ ] download a checkpoint
+- [ ] register a Discord bot
+- [ ] invite the Discord bot to your server
+- [ ] configure the server environment
+  - [ ] set packit driver
+  - [ ] set packit model
+  - [ ] set ComfyUI API
+  - [ ] set Ollama API
+  - [ ] set Discord token
+- [ ] configure the Discord bot
+  - [ ] set or create the `channels`
+- [ ] recommended: configure the checkpoint for ComfyUI
+- [ ] choose a world template
+  - [ ] or come up with a world prompt
+- [ ] launch the game server
 
 ### Choose a world prompt or template
 
@@ -464,3 +499,37 @@ that are desired for your setting. The logic system uses a combination of Python
 connected to rooms, characters, and items in the world, influencing the behavior of the language models.
 
 ### Connect and play
+
+## Running on RunPod
+
+### Checklist for running on RunPod
+
+- [ ] launch Ollama pod
+  - [ ] pull a model
+- [ ] recommended: launch ComfyUI pod
+  - [ ] download or upload a checkpoint
+- [ ] register a Discord bot
+- [ ] invite the Discord bot to your server
+- [ ] configure the TaleWeave AI template
+  - [ ] set packit driver
+  - [ ] set packit model
+  - [ ] set ComfyUI API
+  - [ ] set Ollama API
+  - [ ] set Discord token
+- [ ] configure the Discord bot
+  - [ ] set or create the `channels`
+- [ ] recommended: configure the checkpoint for ComfyUI
+- [ ] choose a world template
+  - [ ] or come up with a world prompt
+- [ ] configure TaleWeave AI template
+- [ ] launch TaleWeave AI pod
+  - [ ] upload config
+  - [ ] restart pod
+
+### Running ComfyUI on RunPod
+
+### Running Ollama on RunPod
+
+### Upload config file to pod
+
+### Running TaleWeave AI on RunPod
