@@ -18,6 +18,7 @@ captivate and engage players' imaginations.
   - [Features](#features)
   - [Requirements](#requirements)
     - [Recommended](#recommended)
+  - [Setup](#setup)
   - [Documentation](#documentation)
   - [Contributing](#contributing)
   - [Support and Community](#support-and-community)
@@ -78,6 +79,14 @@ game environment.
 - 1-2 16GB or larger GPUs
 - ComfyUI
 - Discord account
+
+## Setup
+
+Please [see the admin guide for setup instructions](./docs/guides/admin.md).
+
+TaleWeave AI is provided as both a Python module and a Docker container. [Everything can be run
+locally](./docs/guides/admin.md#running-locally) or [run on a container host like
+RunPod](./docs/guides/admin.md#running-on-runpod).
 
 ## Documentation
 
