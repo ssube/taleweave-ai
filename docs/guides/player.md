@@ -9,6 +9,7 @@
     - [Rendering events in Discord](#rendering-events-in-discord)
   - [Prompt syntax](#prompt-syntax)
     - [Prompt action syntax](#prompt-action-syntax)
+    - [Prompt replies](#prompt-replies)
 
 ## Playing in Discord
 
@@ -76,3 +77,15 @@ There are some limits on this syntax:
   - this is also true in Python and should not be a problem
 - the values cannot contain `,`
   - this is a problem and support for quotes is needed
+
+### Prompt replies
+
+While playing TaleWeave AI, the LLM-powered characters can ask you questions and start conversations with your
+character. When this happens, you will be prompted with their question or message.
+
+You can end the conversation by ending your reply with `END`, which includes a reply that only contains `END`.
+Ending the conversation on your first reply without providing any other text will ignore the character that was
+talking to you.
+
+Your reply will be taken literally, other than the `END` suffix. If you provide text along with the `END` suffix,
+the suffix will be removed and the rest of the text will be sent to the other character as your reply.
