@@ -3,8 +3,6 @@ from logging import getLogger
 from jinja2 import Environment
 
 from taleweave.context import get_prompt_library
-
-# from taleweave.utils.conversation import summarize_room
 from taleweave.utils.string import and_list, or_list
 from taleweave.utils.world import describe_entity, name_entity
 
@@ -13,7 +11,6 @@ logger = getLogger(__name__)
 jinja_env = Environment()
 jinja_env.filters["describe"] = describe_entity
 jinja_env.filters["name"] = name_entity
-# jinja_env.filters["summary"] = summarize_room
 jinja_env.filters["and_list"] = and_list
 jinja_env.filters["or_list"] = or_list
 

@@ -29,8 +29,13 @@ def describe_character(
 
 
 def describe_static(entity: WorldEntity) -> str:
-    # TODO: include attributes
-    return entity.description
+    attribute_descriptions = format_attributes(entity)
+    logger.info(
+        "describing entity: %s, attributes: '%s'",
+        entity.name,
+        attribute_descriptions,
+    )
+    return f"{entity.description} {attribute_descriptions}"
 
 
 def describe_entity(
