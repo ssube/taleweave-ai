@@ -1,18 +1,18 @@
 prompts:
   action_accept_quest_error_none: No quests are available at the moment.
   action_accept_quest_error_name: |
-    {{character}} does not have a quest named "{{quest_name}}".
+    {{character}} does not have a quest named "{{quest.name}}".
   action_accept_quest_error_room: |
     {{character}} is not in the room.
   action_accept_quest_result: |
-    You have started the quest "{{quest_name}}".
+    You have started the quest "{{quest.name}}".
 
   action_submit_quest_error_active: |
     You do not have any active quests.
   action_submit_quest_error_none: No quests are available at the moment.
   action_submit_quest_error_name: |
-    {{character}} does not have a quest named "{{quest_name}}".
+    {{character}} does not have a quest named "{{quest.name}}".
   action_submit_quest_error_room: |
     {{character}} is not in the room.
   action_submit_quest_result: |
-    You have completed the quest "{{quest_name}}".
+    You have completed the quest "{{quest.name}}".

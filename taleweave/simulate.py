@@ -53,7 +53,7 @@ from taleweave.utils.effect import expire_effects
 from taleweave.utils.planning import expire_events, get_upcoming_events
 from taleweave.utils.prompt import format_prompt
 from taleweave.utils.search import find_containing_room
-from taleweave.utils.world import describe_entity, format_attributes
+from taleweave.utils.world import format_attributes
 
 logger = getLogger(__name__)
 
@@ -136,8 +136,7 @@ def prompt_character_action(
             character_items=character_items,
             attributes=character_attributes,
             directions=room_directions,
-            room_name=room.name,
-            room_description=describe_entity(room),
+            room=room,
             visible_characters=room_characters,
             visible_items=room_items,
             notes_prompt=notes_prompt,

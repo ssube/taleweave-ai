@@ -186,23 +186,7 @@ prompts:
   action_check_calendar_each: |
     {{name}} will happen in {{turns}} turn
 
-  # digest system
-  digest_action_move: |
-    {{event.character | name}} entered the room.
-  digest_action_take: |
-    {{event.character | name}} picked up the {{event.parameters[item]}}.
-  digest_action_give: |
-    {{event.character | name}} gave the {{event.parameters[item]}} to {{event.parameters[character]}}.
-  digest_action_drop: |
-    {{event.character | name}} dropped the {{event.parameters[item]}}.
-  digest_action_ask: |
-    {{event.character | name}} asked {{event.parameters[character]}} about something.
-  digest_action_tell: |
-    {{event.character | name}} told {{event.parameters[character]}} about something.
-  digest_action_examine: |
-    {{event.character | name}} examined the {{event.parameters[target]}}.
-
-  # world defaults
+  # default dungeon master
   world_default_dungeon_master: |
     You are the dungeon master in charge of creating an engaging fantasy world full of interesting characters who
     interact with each other and explore their environment. Be creative and original, creating a world that is
@@ -233,7 +217,7 @@ prompts:
   world_generate_room_broadcast_characters: |
     Generating {{character_count}} characters for room: {{name}}
   world_generate_room_broadcast_portals: |
-    Generating {{portal_count}} portals for room: {{name}}
+    Generating {{portal_count}} portals for room: {{room | name}}
 
   world_generate_portal_name_outgoing: |
     Generate the name of a portal that leads from the {{source_room}} room to the {{dest_room}} room and fits the world theme of {{world_theme}}.
@@ -346,7 +330,7 @@ prompts:
 
   # world simulation
   world_simulate_character_action: |
-    You are currently in the {{room_name}} room. {{room_description}}. {{attributes}}.
+    You are currently in the {{room | name}} room. {{room | describe}}. {{attributes}}.
     The room contains the following characters: {{visible_characters}}.
     The room contains the following items: {{visible_items}}.
     Your inventory contains the following items: {{character_items}}.

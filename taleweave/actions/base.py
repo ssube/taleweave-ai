@@ -37,6 +37,7 @@ def action_examine(target: str) -> str:
             format_prompt(
                 "action_examine_broadcast_action",
                 action_character=action_character,
+                action_room=action_room,
                 target=target,
             )
         )
@@ -49,7 +50,7 @@ def action_examine(target: str) -> str:
                     action_room=action_room,
                 )
             )
-            return format_prompt("action_examine_result_room", action_room=action_room)
+            return format_prompt("action_examine_result_room", target_room=action_room)
 
         target_character = find_character_in_room(action_room, target)
         if target_character:
@@ -118,7 +119,7 @@ def action_move(direction: str) -> str:
                 format_prompt(
                     "action_move_error_room",
                     direction=direction,
-                    destination=portal.destination,
+                    portal=portal,
                 )
             )
 

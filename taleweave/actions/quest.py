@@ -74,11 +74,11 @@ def submit_quest(character: str) -> str:
             return format_prompt(
                 "action_submit_quest_result",
                 character=character,
-                quest=active_quest.name,
+                quest=active_quest,
             )
 
         return format_prompt(
             "action_submit_quest_error_name",
             character=character,
-            quest=active_quest.name,
+            quest=active_quest,
         )

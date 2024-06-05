@@ -1,5 +1,6 @@
 import atexit
 from functools import partial
+from glob import glob
 from logging.config import dictConfig
 from os import environ, path
 from typing import List
@@ -195,7 +196,11 @@ def get_world_prompt(args) -> WorldPrompt:
 
 def load_prompt_library(args) -> None:
     if args.prompts:
+        prompt_files = []
         for prompt_file in args.prompts:
+            prompt_files.extend(glob(prompt_file, recursive=True))
+
+        for prompt_file in prompt_files:
             with open(prompt_file, "r") as f:
                 new_library = PromptLibrary(**load_yaml(f))
                 logger.info(f"loaded prompt library from {prompt_file}")
@@ -258,6 +263,7 @@ def load_or_generate_world(
         llm,
         memory_factory=memory_factory,
     )
+    set_dungeon_master(world_builder)
 
     if path.exists(world_state_file):
         logger.info(f"loading world state from {world_state_file}")
@@ -285,6 +291,8 @@ def load_or_generate_world(
             systems,
             room_count=args.rooms,
         )
+        load_or_initialize_system_data(args, systems, world)
+
         save_world(world, world_file)
         save_system_data(args, systems)
 

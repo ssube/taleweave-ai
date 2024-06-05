@@ -10,6 +10,7 @@ from packit.toolbox import Toolbox
 
 from taleweave.context import action_context
 from taleweave.models.event import PromptEvent
+from taleweave.utils import try_parse_float, try_parse_int
 
 logger = getLogger(__name__)
 
@@ -122,12 +123,18 @@ class BasePlayer:
         def parse_value(value: str) -> str | bool | float | int:
             if value.startswith("~"):
                 return value[1:]
-            if value.lower() in ["true", "false"]:
-                return value.lower() == "true"
-            if value.isdecimal():
-                return float(value)
-            if value.isnumeric():
+
+            if value.lower() in ["true", "false", "yes", "no", "y", "n"]:
+                return value.lower() in ["true", "yes", "y"]
+
+            int_value = try_parse_int(value)
+            if int_value is not None:
                 return int(value)
+
+            float_value = try_parse_float(value)
+            if float_value is not None:
+                return float(value)
+
             return value
 
         params = {
