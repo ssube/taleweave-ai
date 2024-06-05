@@ -13,6 +13,13 @@ from taleweave.models.entity import (
 from .string import normalize_name
 
 
+def get_entity_name(entity: WorldEntity | str) -> str:
+    if isinstance(entity, str):
+        return entity
+
+    return normalize_name(entity.name)
+
+
 def find_room(world: World, room_name: str) -> Room | None:
     for room in world.rooms:
         if normalize_name(room.name) == normalize_name(room_name):
@@ -58,61 +65,60 @@ def find_portal_in_room(room: Room, portal_name: str) -> Portal | None:
 # TODO: allow item or str
 def find_item(
     world: World,
-    item_name: str,
+    item: Item | str,
     include_character_inventory=False,
     include_item_inventory=False,
 ) -> Item | None:
+    item_name = get_entity_name(item)
+
     for room in world.rooms:
-        item = find_item_in_room(
+        result = find_item_in_room(
             room, item_name, include_character_inventory, include_item_inventory
         )
-        if item:
-            return item
+        if result:
+            return result
 
     return None
 
 
 def find_item_in_character(
-    character: Character, item_name: str, include_item_inventory=False
+    character: Character, item: Item | str, include_item_inventory=False
 ) -> Item | None:
-    return find_item_in_container(character, item_name, include_item_inventory)
+    return find_item_in_container(character, item, include_item_inventory)
 
 
 def find_item_in_container(
-    container: Character | Item, item_name: str, include_item_inventory=False
+    container: Room | Character | Item, item: Item | str, include_item_inventory=False
 ) -> Item | None:
+    item_name = get_entity_name(item)
+
     for item in container.items:
         if normalize_name(item.name) == normalize_name(item_name):
             return item
 
         if include_item_inventory:
-            item = find_item_in_container(item, item_name, include_item_inventory)
-            if item:
-                return item
+            result = find_item_in_container(item, item_name, include_item_inventory)
+            if result:
+                return result
 
     return None
 
 
 def find_item_in_room(
     room: Room,
-    item_name: str,
+    item: Item | str,
     include_character_inventory=False,
     include_item_inventory=False,
 ) -> Item | None:
-    for item in room.items:
-        if normalize_name(item.name) == normalize_name(item_name):
-            return item
-
-        if include_item_inventory:
-            item = find_item_in_container(item, item_name, include_item_inventory)
-            if item:
-                return item
+    result = find_item_in_container(room, item, include_item_inventory)
+    if result:
+        return result
 
     if include_character_inventory:
         for character in room.characters:
-            item = find_item_in_character(character, item_name, include_item_inventory)
-            if item:
-                return item
+            result = find_item_in_character(character, item, include_item_inventory)
+            if result:
+                return result
 
     return None
 

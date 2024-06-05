@@ -76,10 +76,10 @@ def generate_room_weather(agent: Agent, theme: str, entity: Room) -> None:
     logger.info(f"generated environment for {entity.name}: {environment}")
 
 
-def generate_weather(agent: Agent, theme: str, entity: WorldEntity) -> None:
+def generate_weather(agent: Agent, world: World, entity: WorldEntity) -> None:
     if isinstance(entity, Room):
         if "environment" not in entity.attributes:
-            generate_room_weather(agent, theme, entity)
+            generate_room_weather(agent, world.theme, entity)
 
 
 def simulate_weather(world: World, turn: int, data: None = None):

@@ -10,7 +10,6 @@ class WorldPrompt:
     flavor: str = ""
 
 
-# TODO: rename to WorldTemplates
 @dataclass
-class PromptFile:
-    prompts: List[WorldPrompt]
+class TemplateFile:
+    templates: List[WorldPrompt]

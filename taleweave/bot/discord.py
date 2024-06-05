@@ -68,7 +68,7 @@ class AdventureClient(Client):
             message_id = reaction.message.id
             if message_id not in event_messages:
                 logger.warning(f"message {message_id} not found in event messages")
-                # TODO: return error message
+                await reaction.message.add_reaction("❌")
                 return
 
             event = event_messages[message_id]

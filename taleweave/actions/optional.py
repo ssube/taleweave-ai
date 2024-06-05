@@ -214,7 +214,7 @@ def action_use(item: str, target: str) -> str:
 
         broadcast(
             format_prompt(
-                "action_use_broadcast",
+                "action_use_broadcast_effect",
                 action_character=action_character,
                 effect=effect,
                 item=item,
@@ -233,8 +233,16 @@ def action_use(item: str, target: str) -> str:
             )
         )
         broadcast(
-            f"The action resulted in: {outcome}"
-        )  # TODO: should this be removed or moved to the prompt library?
+            format_prompt(
+                "action_use_broadcast_outcome",
+                action_character=action_character,
+                action_item=action_item,
+                effect=effect,
+                item=item,
+                target=target,
+                outcome=outcome,
+            )
+        )
 
         # make sure both agents remember the outcome
         target_agent = get_agent_for_character(target_character)

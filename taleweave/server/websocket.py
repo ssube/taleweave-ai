@@ -63,8 +63,9 @@ async def handler(websocket):
         await websocket.send(
             dumps(
                 {
+                    "id": event.id,
                     "type": event.type,
-                    "client": id,  # TODO: this should be a field in the PromptEvent
+                    "client": id,  # TODO: should this be a field in the PromptEvent?
                     "character": event.character,
                     "prompt": event.prompt,
                     "actions": event.actions,

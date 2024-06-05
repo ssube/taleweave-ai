@@ -23,9 +23,11 @@ class SystemFormat(Protocol):
 
 
 class SystemGenerate(Protocol):
-    def __call__(self, agent: Agent, theme: str, entity: WorldEntity) -> None:
+    def __call__(self, agent: Agent, world: World, entity: WorldEntity) -> None:
         """
         Generate a new world entity based on the given theme and entity.
+
+        TODO: should this include the WorldPrompt as a parameter?
         """
         ...
 

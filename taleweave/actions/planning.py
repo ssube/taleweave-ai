@@ -145,14 +145,21 @@ def schedule_event(name: str, turns: int):
         turns: The number of turns until the event happens.
     """
 
-    # TODO: check for existing events with the same name
-    # TODO: limit the number of events that can be scheduled
-
+    config = get_game_config()
     current_turn = get_current_turn()
 
     with action_context() as (_, action_character):
         if not name:
             raise ActionError(get_prompt("action_schedule_event_error_name"))
+
+        if (
+            len(action_character.planner.calendar.events)
+            >= config.world.character.event_limit
+        ):
+            raise ActionError(get_prompt("action_schedule_event_error_limit"))
+
+        if name in [event.name for event in action_character.planner.calendar.events]:
+            raise ActionError(get_prompt("action_schedule_event_error_duplicate"))
 
         event = CalendarEvent(name, turns + current_turn)
         action_character.planner.calendar.events.append(event)

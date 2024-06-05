@@ -274,9 +274,9 @@ def render_loop():
             )
 
             if isinstance(event, WorldEntity):
-                title = event.name  # TODO: generate a real title
+                title = event.name
             else:
-                title = event.type
+                title = event.type  # TODO: generate a real title
 
             broadcast(
                 RenderEvent(
@@ -292,7 +292,7 @@ def render_loop():
         if isinstance(event, WorldEntity):
             logger.info("rendering entity %s", event.name)
             prompt = prompt_from_entity(event)
-            title = event.name  # TODO: generate a real title
+            title = event.name
         else:
             logger.info("rendering event %s", event.id)
             prompt = prompt_from_event(event)

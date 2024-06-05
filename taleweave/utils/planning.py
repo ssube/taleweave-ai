@@ -31,9 +31,13 @@ def get_upcoming_events(
     """
 
     calendar = character.planner.calendar
-    # TODO: sort events by turn
-    return [
+    upcoming = [
         event
         for event in calendar.events
         if event.turn - current_turn <= upcoming_turns
     ]
+
+    # sort by turn
+    upcoming.sort(key=lambda event: event.turn)
+
+    return upcoming

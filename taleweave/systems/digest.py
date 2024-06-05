@@ -127,7 +127,7 @@ def format_digest(
     return "\n".join(digest)
 
 
-def generate_digest(agent: Any, theme: str, entity: WorldEntity):
+def generate_digest(agent: Any, world: World, entity: WorldEntity):
     if isinstance(entity, Character):
         if entity.name not in character_buffers:
             character_buffers[entity.name] = []

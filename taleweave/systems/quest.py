@@ -172,7 +172,7 @@ def initialize_quests(world: World) -> QuestData:
     return QuestData(active={}, available={}, completed={})
 
 
-def generate_quests(agent: Agent, theme: str, entity: WorldEntity) -> None:
+def generate_quests(agent: Agent, world: World, entity: WorldEntity) -> None:
     """
     Generate new quests for the world.
     """

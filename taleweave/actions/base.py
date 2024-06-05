@@ -177,21 +177,20 @@ def action_ask(character: str, question: str) -> str:
 
     with action_context() as (action_room, action_character):
         # sanity checks
-        question_character, question_agent = get_character_agent_for_name(character)
-        if question_character == action_character:
-            raise ActionError(format_prompt("action_ask_error_self"))
-
+        question_character = find_character_in_room(action_room, character)
         if not question_character:
             raise ActionError(
                 format_prompt("action_ask_error_target", character=character)
             )
 
+        if question_character == action_character:
+            raise ActionError(format_prompt("action_ask_error_self"))
+
+        question_agent = get_agent_for_character(question_character)
         if not question_agent:
             raise ActionError(
                 format_prompt("action_ask_error_agent", character=character)
             )
-
-        # TODO: make sure they are in the same room
 
         broadcast(
             format_prompt(

@@ -26,5 +26,6 @@ def format_prompt(prompt_key: str, **kwargs) -> str:
 
 
 def format_str(template_str: str, **kwargs) -> str:
+    # TODO: cache templates
     template = jinja_env.from_string(template_str)
     return template.render(**kwargs)

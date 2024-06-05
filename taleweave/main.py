@@ -45,7 +45,7 @@ if True:
     from taleweave.models.config import DEFAULT_CONFIG, Config
     from taleweave.models.entity import World, WorldState
     from taleweave.models.event import GenerateEvent
-    from taleweave.models.files import PromptFile, WorldPrompt
+    from taleweave.models.files import TemplateFile, WorldPrompt
     from taleweave.models.prompt import PromptLibrary
     from taleweave.plugins import load_plugin
     from taleweave.simulate import simulate_world
@@ -180,8 +180,8 @@ def get_world_prompt(args) -> WorldPrompt:
     if args.world_template:
         prompt_file, prompt_name = args.world_template.split(":")
         with open(prompt_file, "r") as f:
-            prompts = PromptFile(**load_yaml(f))
-            for prompt in prompts.prompts:
+            prompts = TemplateFile(**load_yaml(f))
+            for prompt in prompts.templates:
                 if prompt.name == prompt_name:
                     return prompt
 

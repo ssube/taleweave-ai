@@ -124,8 +124,10 @@ prompts:
     The {{item}} item is not available in your inventory or in the room.
   action_use_error_target: |
     The {{target}} is not in the room, so you cannot use the {{item}} item on it.
-  action_use_broadcast: |
+  action_use_broadcast_effect: |
     {{action_character | name}} uses {{item}} on {{target}} and applies the {{effect}} effect.
+  action_use_broadcast_outcome: |
+    Using the {{item}} item on {{target}} resulted in: {{outcome}}.
   action_use_dm_effect: |
     {{action_character | name}} uses {{item}} on {{target}}. {{item}} can apply any of the following effects: {{effect_names}}.
     Which effect should be applied? Specify the effect. Do not include the question or any JSON. Only reply with the effect name.
@@ -177,6 +179,10 @@ prompts:
 
   action_schedule_event_error_name: |
     The event must have a name.
+  action_schedule_event_error_limit: |
+    You have reached the maximum number of events. Please delete or reschedule some of your existing events before adding more.
+  action_schedule_event_error_duplicate: |
+    You already have an event with that name. Please choose a unique name for the event.
   action_schedule_event_result: |
     You scheduled an event that will happen in {{turns}} turns.
 

@@ -92,8 +92,7 @@ def generate_system_attributes(
 ) -> None:
     for system in systems:
         if system.generate:
-            # TODO: pass the whole world
-            system.generate(agent, world.theme, entity)
+            system.generate(agent, world, entity)
 
 
 def generate_room(
