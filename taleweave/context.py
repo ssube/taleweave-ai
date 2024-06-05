@@ -34,15 +34,14 @@ current_character: Character | None = None
 dungeon_master: Agent | None = None
 
 # game context
+# TODO: wrap this into a class that can be passed around
+character_agents: Dict[str, Tuple[Character, Agent]] = {}
 event_emitter = EventEmitter()
 game_config: Config = DEFAULT_CONFIG
 game_systems: List[GameSystem] = []
 prompt_library: PromptLibrary = PromptLibrary(prompts={})
 system_data: Dict[str, Any] = {}
 
-
-# TODO: where should this one go?
-character_agents: Dict[str, Tuple[Character, Agent]] = {}
 
 STRING_EVENT_TYPE = "message"
 

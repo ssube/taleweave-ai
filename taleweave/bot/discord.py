@@ -427,9 +427,33 @@ def embed_from_player(event: PlayerEvent):
 
 
 def embed_from_prompt(event: PromptEvent):
-    # TODO: ping the player
     prompt_embed = Embed(title=event.room.name, description=event.character.name)
     prompt_embed.add_field(name="Prompt", value=truncate(event.prompt))
+
+    if has_player(event.character.name):
+        players = list_players()
+        user = next(
+            (
+                player
+                for player, character in players.items()
+                if character == event.character.name
+            ),
+            None,
+        )
+
+        if user:
+            # TODO: use Discord user.mention to ping the user
+            prompt_embed.add_field(
+                name="Player",
+                value=user,
+            )
+
+    for action in event.actions:
+        # TODO: use a prompt template to summarize actions
+        action_name = action["function"]["name"]
+        action_description = action["function"]["description"]
+        prompt_embed.add_field(name=action_name, value=action_description)
+
     return prompt_embed
 
 

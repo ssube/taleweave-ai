@@ -299,7 +299,9 @@ def load_or_generate_world(
     new_rooms = []
     for i in range(add_rooms):
         logger.info(f"generating room {i + 1} of {add_rooms}")
-        room = generate_room(world_builder, world, systems)
+        room = generate_room(
+            world_builder, world, systems, current_room=i, total_rooms=add_rooms
+        )
         new_rooms.append(room)
         world.rooms.append(room)
 

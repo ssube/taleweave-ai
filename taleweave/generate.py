@@ -38,6 +38,9 @@ from taleweave.utils.string import normalize_name
 
 logger = getLogger(__name__)
 
+MAX_NAME_LENGTH = 50
+DISALLOWED_PUNCTUATION = ['"', ":"]
+
 
 def get_world_config():
     config = get_game_config()
@@ -58,12 +61,12 @@ def duplicate_name_parser(existing_names: List[str]):
                 format_prompt("world_generate_error_name_json", name=value)
             )
 
-        if '"' in value or ":" in value:
+        if any(p in value for p in DISALLOWED_PUNCTUATION):
             raise ValueError(
                 format_prompt("world_generate_error_name_punctuation", name=value)
             )
 
-        if len(value) > 50:
+        if len(value) > MAX_NAME_LENGTH:
             raise ValueError(
                 format_prompt("world_generate_error_name_length", name=value)
             )
@@ -99,6 +102,8 @@ def generate_room(
     agent: Agent,
     world: World,
     systems: List[GameSystem],
+    current_room: int | None = None,
+    total_rooms: int | None = None,
 ) -> Room:
     existing_rooms = [room.name for room in list_rooms(world)]
 
@@ -108,6 +113,8 @@ def generate_room(
         context={
             "world_theme": world.theme,
             "existing_rooms": existing_rooms,
+            "current_room": current_room,
+            "total_rooms": total_rooms,
         },
         result_parser=duplicate_name_parser(existing_rooms),
         toolbox=None,
@@ -575,9 +582,11 @@ def generate_world(
             set_system_data(system.name, data)
 
     # generate the rooms
-    for _ in range(room_count):
+    for i in range(room_count):
         try:
-            room = generate_room(agent, world, systems)
+            room = generate_room(
+                agent, world, systems, current_room=i, total_rooms=room_count
+            )
             generate_system_attributes(agent, world, room, systems)
             broadcast_generated(entity=room)
             world.rooms.append(room)
