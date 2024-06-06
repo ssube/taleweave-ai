@@ -22,9 +22,9 @@ from taleweave.generate import (
     link_rooms,
 )
 from taleweave.utils.effect import apply_effects, is_effect_ready
-from taleweave.utils.prompt import format_prompt
 from taleweave.utils.search import find_character_in_room
 from taleweave.utils.string import normalize_name
+from taleweave.utils.template import format_prompt
 from taleweave.utils.world import describe_entity
 
 logger = getLogger(__name__)

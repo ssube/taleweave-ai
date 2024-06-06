@@ -36,8 +36,8 @@ from taleweave.player import (
     set_player,
 )
 from taleweave.render.comfy import render_event
-from taleweave.utils.prompt import format_prompt
 from taleweave.utils.search import list_characters
+from taleweave.utils.template import format_prompt
 
 logger = getLogger(__name__)
 client = None

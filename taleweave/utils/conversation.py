@@ -11,7 +11,7 @@ from packit.utils import could_be_json
 from taleweave.context import broadcast, get_game_config
 from taleweave.models.entity import Character, Room
 from taleweave.models.event import ReplyEvent
-from taleweave.utils.prompt import format_str
+from taleweave.utils.template import format_str
 
 from .string import and_list, normalize_name
 

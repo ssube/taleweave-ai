@@ -14,6 +14,7 @@ from taleweave.context import (
 )
 from taleweave.models.entity import World
 from taleweave.player import LocalPlayer
+from taleweave.utils.template import format_prompt
 
 
 def create_agents(
@@ -31,7 +32,10 @@ def create_agents(
                 agent_memory = restore_memory(memory.get(character.name, []))
                 agent.load_history(agent_memory)
             else:
-                agent = Agent(character.name, character.backstory, {}, llm)
+                backstory = format_prompt(
+                    "world_agent_backstory", character=character, world=world
+                )
+                agent = Agent(character.name, backstory, {}, llm)
                 agent.memory = restore_memory(memory.get(character.name, []))
             set_character_agent(character.name, character, agent)
 

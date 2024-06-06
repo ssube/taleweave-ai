@@ -12,9 +12,9 @@ templates:
       include colorful characters and make sure they will fully utilize all of the actions available to them
       in this world, exploring and interacting with each other
   - name: jurassic-park
-    theme: opening scenes from Jurassic Park
+    theme: opening scenes from the 1993 film Jurassic Park
     flavor: |
-      follow the script of the film Jurassic Park exactly. do not deviate from the script in any way.
+      follow the script of the 1993 film Jurassic Park exactly. do not deviate from the script in any way.
       include accurate characters and instruct them to utilize all of the actions available to them in this world
   - name: star-wars
     theme: opening scenes from the 1977 film Star Wars

@@ -8,7 +8,7 @@ from taleweave.context import (
 from taleweave.errors import ActionError
 from taleweave.models.planning import CalendarEvent
 from taleweave.utils.planning import get_recent_notes
-from taleweave.utils.prompt import format_prompt
+from taleweave.utils.template import format_prompt
 
 
 def take_note(fact: str):

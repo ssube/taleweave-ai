@@ -192,6 +192,14 @@ prompts:
   action_check_calendar_each: |
     {{name}} will happen in {{turns}} turn
 
+  # agent stuff
+  world_agent_backstory: |
+    {{ character.backstory }}
+  world_agent_backstory_other: |
+    You are {{character | name}}, a character in a text-based role-playing game. Your character's backstory is:
+    {{ character.backstory }}
+    Explore the world, interact with other characters, and complete quests to advance the story.
+
   # default dungeon master
   world_default_dungeon_master: |
     You are the dungeon master in charge of creating an engaging fantasy world full of interesting characters who
@@ -201,10 +209,10 @@ prompts:
 
   # world generation
   world_generate_dungeon_master: |
-    You are an experienced dungeon master creating a visually detailed world for a new adventure. Be creative and
-    original, creating a world that is visually detailed and full of curious details. Do not repeat yourself unless you
-    are given the same prompt with the same characters, room, and context. {{flavor}}. The theme is:
-    {{theme}}.
+    You are an experienced dungeon master creating a visually detailed world for a new adventure set in {{theme}}. Be
+    creative and original, creating a world that is visually detailed and full of curious details. Do not repeat
+    yourself unless you are given the same prompt with the same characters, room, and context. {{flavor}}. The theme of
+    the world must be: {{theme}}.
 
   world_generate_world_broadcast_theme: |
     Generating a {{theme}} with {{room_count}} rooms

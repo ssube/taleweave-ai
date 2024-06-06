@@ -7,8 +7,8 @@ from taleweave.systems.quest import (
     get_quests_for_character,
     set_active_quest,
 )
-from taleweave.utils.prompt import format_prompt
 from taleweave.utils.search import find_character_in_room
+from taleweave.utils.template import format_prompt
 
 
 def accept_quest(character: str, quest: str) -> str:

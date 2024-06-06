@@ -50,7 +50,7 @@ if True:
     from taleweave.plugins import load_plugin
     from taleweave.simulate import simulate_world
     from taleweave.state import create_agents, save_world, save_world_state
-    from taleweave.utils.prompt import format_prompt
+    from taleweave.utils.template import format_prompt
 
 # start the debugger, if needed
 if environ.get("DEBUG", "false").lower() == "true":

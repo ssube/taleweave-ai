@@ -11,7 +11,6 @@ from taleweave.context import (
 )
 from taleweave.errors import ActionError
 from taleweave.utils.conversation import loop_conversation
-from taleweave.utils.prompt import format_prompt
 from taleweave.utils.search import (
     find_character_in_room,
     find_item_in_character,
@@ -20,6 +19,7 @@ from taleweave.utils.search import (
     find_room,
 )
 from taleweave.utils.string import normalize_name
+from taleweave.utils.template import format_prompt
 
 logger = getLogger(__name__)
 

@@ -51,8 +51,8 @@ from taleweave.models.event import ActionEvent, ResultEvent
 from taleweave.utils.conversation import make_keyword_condition, summarize_room
 from taleweave.utils.effect import expire_effects
 from taleweave.utils.planning import expire_events, get_upcoming_events
-from taleweave.utils.prompt import format_prompt
 from taleweave.utils.search import find_containing_room
+from taleweave.utils.template import format_prompt
 from taleweave.utils.world import format_attributes
 
 logger = getLogger(__name__)

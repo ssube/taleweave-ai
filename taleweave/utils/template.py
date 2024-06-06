@@ -8,11 +8,41 @@ from taleweave.utils.world import describe_entity, name_entity
 
 logger = getLogger(__name__)
 
+
+def a_prefix(name: str) -> str:
+    first_word = name.split(" ")[0]
+    if first_word.lower() in ["a", "an", "the"]:
+        return name
+
+    if name[0].lower() in "aeiou":
+        return f"an {name}"
+
+    return f"a {name}"
+
+
+def the_prefix(name: str) -> str:
+    first_word = name.split(" ")[0]
+    if first_word.lower() in ["a", "an", "the"]:
+        return name
+
+    return f"the {name}"
+
+
+def punctuate(name: str, suffix: str) -> str:
+    if name[-1] in [".", "!", "?", suffix]:
+        return name
+
+    return f"{name}{suffix}"
+
+
 jinja_env = Environment()
 jinja_env.filters["describe"] = describe_entity
 jinja_env.filters["name"] = name_entity
 jinja_env.filters["and_list"] = and_list
 jinja_env.filters["or_list"] = or_list
+jinja_env.filters["a_prefix"] = a_prefix
+jinja_env.filters["the_prefix"] = the_prefix
+jinja_env.filters["punctuate"] = punctuate
 
 
 def format_prompt(prompt_key: str, **kwargs) -> str:

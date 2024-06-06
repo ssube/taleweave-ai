@@ -25,7 +25,6 @@ from taleweave.models.entity import Character, Item, Portal, Room, World, WorldE
 from taleweave.models.event import GenerateEvent
 from taleweave.utils import try_parse_float, try_parse_int
 from taleweave.utils.effect import resolve_int_range
-from taleweave.utils.prompt import format_prompt
 from taleweave.utils.search import (
     list_characters,
     list_characters_in_room,
@@ -35,6 +34,7 @@ from taleweave.utils.search import (
     list_rooms,
 )
 from taleweave.utils.string import normalize_name
+from taleweave.utils.template import format_prompt
 
 logger = getLogger(__name__)
 
@@ -571,7 +571,13 @@ def generate_world(
     world_config = get_world_config()
     room_count = room_count or resolve_int_range(world_config.size.rooms) or 0
 
-    broadcast_generated(message=format_prompt("world_generate_world_broadcast_theme"))
+    broadcast_generated(
+        message=format_prompt(
+            "world_generate_world_broadcast_theme",
+            theme=theme,
+            room_count=room_count,
+        )
+    )
     world = World(name=name, rooms=[], theme=theme, order=[])
     set_current_world(world)
 
