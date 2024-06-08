@@ -1,0 +1,208 @@
+<!DOCTYPE html>
+<html lang="en-US"><head>
+    <title>TaleWeave AI</title>
+    <style>
+/* Base colors */
+:root {
+  --primary-bg: #f7f5f2; /* Soft cream for background */
+  --secondary-bg: #5a7d52; /* Earthy olive brown for sections */
+  --primary-text: #3d405b; /* Dark grey for primary text */
+  --secondary-text: #81b29a; /* Forest green for secondary text */
+  --highlight: #e9806e; /* Soft coral for highlights */
+  --accent: #3a86ff; /* Bright sky blue for accents */
+}
+
+/* Global styles */
+body {
+  font-family: 'Arial', sans-serif;
+  background: linear-gradient(135deg, var(--primary-bg) 0%, var(--secondary-bg) 100%);
+  background-size: cover;
+  color: var(--primary-text);
+  margin: 0;
+  padding: 0;
+  line-height: 1.6;
+}
+
+a {
+  color: var(--accent);
+  text-decoration: none;
+}
+
+a:hover {
+  text-decoration: underline;
+}
+
+/* Header styles */
+header {
+  background: var(--secondary-bg);
+  padding: 20px;
+  text-align: center;
+  color: var(--primary-bg);
+}
+
+header h1 {
+  margin: 0;
+  font-size: 2.5em;
+}
+
+header p {
+  font-size: 1.2em;
+}
+
+/* Navigation styles */
+nav {
+  background: var(--primary-text);
+  padding: 10px;
+  text-align: center;
+}
+
+nav a {
+  color: var(--primary-bg);
+  margin: 0 15px;
+  font-weight: bold;
+}
+
+nav a:hover {
+  color: var(--highlight);
+}
+
+/* Main content styles */
+main {
+  padding: 20px;
+}
+
+section {
+  margin-bottom: 40px;
+}
+
+section h2 {
+  color: var(--secondary-bg);
+  font-size: 2em;
+  margin-bottom: 10px;
+}
+
+section p {
+  color: var(--primary-text);
+  font-size: 1.1em;
+}
+
+.highlight {
+  color: var(--accent);
+  font-weight: bold;
+}
+
+/* Footer styles */
+footer {
+  background: var(--primary-text);
+  color: var(--primary-bg);
+  text-align: center;
+  padding: 20px;
+}
+
+footer p {
+  margin: 0;
+  font-size: 1em;
+}
+
+/* Accessibility improvements */
+@media (prefers-color-scheme: dark) {
+  :root {
+    --primary-bg: #2c2c2c;
+    --secondary-bg: #1b1b1b;
+    --primary-text: #e0e0e0;
+    --secondary-text: #81b29a;
+    --highlight: #e9806e;
+    --accent: #3a86ff;
+  }
+
+  body {
+    background: linear-gradient(135deg, var(--primary-bg) 0%, var(--secondary-bg) 100%);
+  }
+
+  header, footer, nav {
+    background: var(--secondary-bg);
+    color: var(--primary-text);
+  }
+}
+
+@media (max-width: 768px) {
+  header h1 {
+    font-size: 2em;
+  }
+
+  nav a {
+    display: block;
+    margin: 10px 0;
+  }
+
+  section h2 {
+    font-size: 1.5em;
+  }
+}
+    </style>
+  </head>
+  <body>
+    <header>
+        <h1>TaleWeave AI</h1>
+        <p>An innovative open-source text adventure engine powered by advanced AI.</p>
+    </header>
+    <nav>
+        <a href="https://taleweave.ai/index.html#about">About</a>
+        <a href="https://taleweave.ai/index.html#features">Features</a>
+        <a href="https://taleweave.ai/index.html#play">How to Play</a>
+        <a href="https://taleweave.ai/index.html#modding">Modding</a>
+        <a href="https://taleweave.ai/index.html#community">Community</a>
+    </nav>
+    <main>
+        <section id="about">
+            <h2>About TaleWeave AI</h2>
+            <p>
+                TaleWeave AI merges the classic depth of traditional text-based role-playing games with the cutting-edge capabilities of modern artificial intelligence. It delivers an immersive and versatile experience accessible via both Discord and web browsers.
+            </p>
+            <p>
+                At the core of TaleWeave AI is the AI-powered dungeon master, guiding narratives and populating the world with dynamic AI characters. These characters interact within the game environment through advanced, extensible function calls, allowing for complex, evolving scenarios.
+            </p>
+        </section>
+        <section id="features">
+            <h2>Features</h2>
+            <ul>
+                <li><span class="highlight">Cross-Platform Gameplay</span>: Enjoy a seamless experience across Discord and web browsers.</li>
+                <li><span class="highlight">Rich Interactions</span>: AI-generated characters and human players coexist, adding unique elements to the narrative and gameplay.</li>
+                <li><span class="highlight">Play as Any Character</span>: Every character in the world can be interacted with, making each playthrough unique.</li>
+                <li><span class="highlight">Dynamic World</span>: The game world evolves based on players' actions and AI behaviors.</li>
+                <li><span class="highlight">Customizable Adventures</span>: Craft your unique worlds, tailor adventures to your liking, and script engaging scenarios.</li>
+            </ul>
+        </section>
+        <section id="play">
+            <h2>How to Play</h2>
+            <p>
+                Playing TaleWeave AI is easy and fun! You can join a game through Discord or access it directly from your web browser. The AI dungeon master will guide you through the narrative, allowing you to make choices and interact with characters.
+            </p>
+            <p>
+                Whether you're a player looking to explore a new world or a storyteller wanting to craft an adventure, TaleWeave AI offers a flexible and engaging platform to dive into.
+            </p>
+        </section>
+        <section id="modding">
+            <h2>Modding and Development</h2>
+            <p>
+                TaleWeave AI is a community-driven project, welcoming contributions from developers and storytellers alike. You can customize adventures, integrate with various platforms, and add new features. Our detailed documentation and active community will help you get started.
+            </p>
+            <p>
+                Interested in contributing? Check out our <a href="https://taleweave.ai/CONTRIBUTING.md">contributing guidelines</a> and join the development effort!
+            </p>
+        </section>
+        <section id="community">
+            <h2>Join the Community</h2>
+            <p>
+                Join our vibrant community on Discord to discuss TaleWeave AI, share your experiences, and get help from fellow users and developers.
+            </p>
+            <p>
+                <a href="https://taleweave.ai/index.html#">Click here to join the TaleWeave AI Discord Community</a>
+            </p>
+        </section>
+    </main>
+    <footer>
+        <p>© 2024 TaleWeave AI. Released under the MIT License.</p>
+    </footer>
+
+</body></html>

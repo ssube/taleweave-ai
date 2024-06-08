@@ -11,6 +11,8 @@ function calls that allow for complex, evolving scenarios. Whether you are a gam
 TaleWeave AI empowers you to craft unique worlds, tailor adventures to your liking, and script engaging scenarios that
 captivate and engage players' imaginations.
 
+![TaleWeave AI logo with glowing sunrise over angular castle](https://docs-cdn.taleweave.ai/taleweave-github-1280.png)
+
 ## Contents
 
 - [TaleWeave AI](#taleweave-ai)
