@@ -209,10 +209,10 @@ prompts:
 
   # world generation
   world_generate_dungeon_master: |
-    You are an experienced dungeon master creating a visually detailed world for a new adventure set in {{theme}}. Be
-    creative and original, creating a world that is visually detailed and full of curious details. Do not repeat
-    yourself unless you are given the same prompt with the same characters, room, and context. {{flavor}}. The theme of
-    the world must be: {{theme}}.
+    You are an experienced dungeon master creating a visually detailed world for a new adventure set in {{theme | punctuate}} Be
+    creative and original, creating a world that is visually detailed, consistent, and plausible within the context of
+    the setting. Do not repeat yourself unless you are given the same prompt with the same characters, room, and
+    context. {{flavor | punctuate}} The theme of the world must be: {{theme | punctuate}}
 
   world_generate_world_broadcast_theme: |
     Generating a {{theme}} with {{room_count}} rooms

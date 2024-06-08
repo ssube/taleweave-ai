@@ -1,5 +1,4 @@
-from pydantic import RootModel
-
+from taleweave.models.base import dump_model
 from taleweave.utils.file import load_yaml, save_yaml
 
 
@@ -11,6 +10,6 @@ def load_system_data(cls, file):
 
 
 def save_system_data(cls, file, model):
-    data = RootModel[cls](model).model_dump()
+    data = dump_model(cls, model)
     with open(file, "w") as f:
         save_yaml(f, data)

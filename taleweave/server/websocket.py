@@ -10,7 +10,6 @@ from uuid import uuid4
 
 import websockets
 from PIL import Image
-from pydantic import RootModel
 
 from taleweave.context import (
     broadcast,
@@ -20,6 +19,7 @@ from taleweave.context import (
     set_character_agent,
     subscribe,
 )
+from taleweave.models.base import dump_model
 from taleweave.models.config import WebsocketServerConfig
 from taleweave.models.entity import World, WorldEntity
 from taleweave.models.event import (
@@ -343,7 +343,7 @@ def server_system(world: World, turn: int, data: Any | None = None):
 
 
 def server_event(event: GameEvent):
-    json_event: Dict[str, Any] = RootModel[event.__class__](event).model_dump()
+    json_event: Dict[str, Any] = dump_model(event.__class__, event)
     json_event.update(
         {
             "id": event.id,

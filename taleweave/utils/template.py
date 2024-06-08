@@ -28,7 +28,7 @@ def the_prefix(name: str) -> str:
     return f"the {name}"
 
 
-def punctuate(name: str, suffix: str) -> str:
+def punctuate(name: str, suffix: str = ".") -> str:
     if name[-1] in [".", "!", "?", suffix]:
         return name
 

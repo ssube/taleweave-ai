@@ -10,9 +10,10 @@ from packit.agent import Agent, agent_easy_connect
 from packit.memory import make_limited_memory
 from packit.utils import logger_with_colors
 
+# configure logging
+# this is the only taleweave import allowed before the logger has been created
 from taleweave.utils.file import load_yaml
 
-# configure logging
 LOG_PATH = "logging.json"
 try:
     if path.exists(LOG_PATH):
@@ -29,6 +30,15 @@ except Exception as err:
 logger = logger_with_colors(__name__)  # , level="DEBUG")
 
 load_dotenv(environ.get("TALEWEAVE_ENV", ".env"), override=True)
+
+# start the debugger, if needed
+if environ.get("DEBUG", "false").lower() == "true":
+    import debugpy
+
+    debugpy.listen(5679)
+    logger.info("waiting for debugger to attach...")
+    debugpy.wait_for_client()
+
 
 if True:
     from taleweave.context import (
@@ -51,14 +61,6 @@ if True:
     from taleweave.simulate import simulate_world
     from taleweave.state import create_agents, save_world, save_world_state
     from taleweave.utils.template import format_prompt
-
-# start the debugger, if needed
-if environ.get("DEBUG", "false").lower() == "true":
-    import debugpy
-
-    debugpy.listen(5679)
-    logger.info("waiting for debugger to attach...")
-    debugpy.wait_for_client()
 
 
 def int_or_inf(value: str) -> float | int:
@@ -415,7 +417,9 @@ def main():
     world_builder = Agent(
         "dungeon master",
         format_prompt(
-            "world_generate_dungeon_master", flavor=args.flavor, theme=world.theme
+            "world_generate_dungeon_master",
+            flavor=world_prompt.flavor,
+            theme=world_prompt.theme,
         ),
         {},
         llm,

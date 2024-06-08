@@ -5,13 +5,13 @@ from typing import Dict, List, Sequence
 
 from langchain_core.messages import AIMessage, BaseMessage, HumanMessage, SystemMessage
 from packit.agent import Agent, agent_easy_connect
-from pydantic import RootModel
 
 from taleweave.context import (
     get_all_character_agents,
     get_game_config,
     set_character_agent,
 )
+from taleweave.models.base import dump_model, dump_model_json
 from taleweave.models.entity import World
 from taleweave.player import LocalPlayer
 from taleweave.utils.template import format_prompt
@@ -58,10 +58,9 @@ def graph_world(world: World, turn: int):
 
 def snapshot_world(world: World, turn: int):
     # save the world itself, along with the turn number and the memory of each agent
-    json_world = RootModel[World](world).model_dump()
+    json_world = dump_model(World, world)
 
     json_memory = {}
-
     for character, agent in get_all_character_agents():
         json_memory[character.name] = list(agent.memory or [])
 
@@ -97,7 +96,7 @@ def restore_memory(
 
 def save_world(world, filename):
     with open(filename, "w") as f:
-        json_world = RootModel[World](world).model_dump_json(indent=2)
+        json_world = dump_model_json(World, world)
         f.write(json_world)
 
 
