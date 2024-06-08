@@ -18,10 +18,14 @@ from .string import and_list, normalize_name
 logger = getLogger(__name__)
 
 
-def make_keyword_condition(end_message: str, keywords=["end", "stop"]):
+def make_keyword_condition(
+    end_message: str,
+    keywords=["end", "stop"],
+    result_parser=multi_function_or_str_result,
+):
     set_end, condition_end = make_flag_condition()
 
-    def result_parser(value, **kwargs):
+    def inner_parser(value, **kwargs):
         normalized_value = normalize_name(value)
         if normalized_value in keywords:
             logger.debug(f"found keyword, setting stop condition: {normalized_value}")
@@ -51,9 +55,9 @@ def make_keyword_condition(end_message: str, keywords=["end", "stop"]):
                 set_end()
                 return end_message
 
-        return multi_function_or_str_result(value, **kwargs)
+        return result_parser(value, **kwargs)
 
-    return set_end, condition_end, result_parser
+    return set_end, condition_end, inner_parser
 
 
 def summarize_room(room: Room, player: Character) -> str:

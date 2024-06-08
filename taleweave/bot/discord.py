@@ -45,6 +45,7 @@ client = None
 active_tasks = set()
 event_messages: Dict[int, str | GameEvent] = {}
 event_queue: Queue[GameEvent] = Queue()
+player_mentions: Dict[str, str] = {}
 
 
 def remove_tags(text: str) -> str:
@@ -80,6 +81,12 @@ class AdventureClient(Client):
         if message.author == self.user:
             return
 
+        # make sure the message was in a valid channel
+        active_channels = get_active_channels()
+        if message.channel not in active_channels:
+            return
+
+        # get message contents
         config = get_game_config()
         author = message.author
         channel = message.channel
@@ -143,6 +150,7 @@ class AdventureClient(Client):
             )
             set_character_agent(character_name, character, player)
             set_player(user_name, player)
+            player_mentions[user_name] = author.mention
 
             logger.info(f"{user_name} has joined the game as {character.name}!")
             join_event = PlayerEvent("join", character_name, user_name)
@@ -178,6 +186,9 @@ class AdventureClient(Client):
         if isinstance(player, RemotePlayer):
             if content.startswith(config.bot.discord.command_prefix + "leave"):
                 remove_player(user_name)
+
+                if user_name in player_mentions:
+                    del player_mentions[user_name]
 
                 # revert to LLM agent
                 character, _ = get_character_agent_for_name(player.name)
@@ -443,6 +454,9 @@ def embed_from_prompt(event: PromptEvent):
 
         if user:
             # TODO: use Discord user.mention to ping the user
+            if user in player_mentions:
+                user = player_mentions[user]
+
             prompt_embed.add_field(
                 name="Player",
                 value=user,

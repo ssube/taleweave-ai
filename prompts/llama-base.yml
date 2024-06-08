@@ -353,6 +353,9 @@ prompts:
     {{notes_prompt}} {{events_prompt}}
     What will you do next? Reply with a JSON function call, calling one of the actions.
     You can only perform one action per turn. What is your next action?
+  world_simulate_character_action_error_json: |
+    Your last reply was not a valid action or the action you tried to use does not exist. Please try again, being
+    careful to reply with a valid function call in JSON format. The available actions are: {{actions}}.
 
   world_simulate_character_planning: |
     You are about to start your turn. Plan your next action carefully. Take notes and schedule events to help keep track of your goals.
@@ -376,3 +379,6 @@ prompts:
     You have no upcoming events.
   world_simulate_character_planning_events_item: |
     {{event.name}} in {{turns}} turns
+  world_simulate_character_planning_error_json: |
+    Your last reply was not a valid action or the action you tried to use does not exist. Please try again, being
+    careful to reply with a valid function call in JSON format. The available actions are: {{actions}}.

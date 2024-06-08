@@ -7,10 +7,10 @@ from typing import Callable, Sequence
 
 from packit.agent import Agent
 from packit.conditions import condition_or, condition_threshold
+from packit.errors import ToolError
 from packit.loops import loop_retry
 from packit.results import function_result
 from packit.toolbox import Toolbox
-from packit.utils import could_be_json
 
 from taleweave.actions.base import (
     action_ask,
@@ -80,8 +80,10 @@ def world_result_parser(value, agent, **kwargs):
 
 
 def prompt_character_action(
-    room, character, agent, action_names, action_toolbox, current_turn
+    room, character, agent, action_toolbox, current_turn
 ) -> str:
+    action_names = action_toolbox.list_tools()
+
     # collect data for the prompt
     notes_prompt, events_prompt = get_notes_events(character, current_turn)
 
@@ -114,17 +116,20 @@ def prompt_character_action(
                 except Exception:
                     pass
 
-        if could_be_json(value):
-            # TODO: only emit valid actions that parse and run correctly, and try to avoid parsing the JSON twice
+        try:
+            result = world_result_parser(value, **kwargs)
+
+            # TODO: try to avoid parsing the JSON twice
             event = ActionEvent.from_json(value, room, character)
-        else:
+            broadcast(event)
+
+            return result
+        except ToolError:
             raise ActionError(
-                "Your last reply was not valid JSON. Please try again and reply with a valid function call in JSON format."
+                format_prompt(
+                    "world_simulate_character_action_error_json", actions=action_names
+                )
             )
-
-        broadcast(event)
-
-        return world_result_parser(value, **kwargs)
 
     # prompt and act
     logger.info("starting turn for character: %s", character.name)
@@ -201,9 +206,21 @@ def prompt_character_planning(
     event_count = len(character.planner.calendar.events)
     note_count = len(character.planner.notes)
 
+    def result_parser(value, **kwargs):
+        try:
+            return function_result(value, **kwargs)
+        except ToolError:
+            raise ActionError(
+                format_prompt(
+                    "world_simulate_character_planning_error_json",
+                    actions=planner_toolbox.list_tools(),
+                )
+            )
+
     logger.info("starting planning for character: %s", character.name)
     _, condition_end, result_parser = make_keyword_condition(
-        get_prompt("world_simulate_character_planning_done")
+        get_prompt("world_simulate_character_planning_done"),
+        result_parser=result_parser,
     )
     stop_condition = condition_or(
         condition_end, partial(condition_threshold, max=max_steps)
@@ -256,7 +273,6 @@ def simulate_world(
             *actions,
         ]
     )
-    action_names = action_tools.list_tools()
 
     # build a toolbox for the planners
     planner_toolbox = Toolbox(
@@ -309,7 +325,7 @@ def simulate_world(
 
             try:
                 result = prompt_character_action(
-                    room, character, agent, action_names, action_tools, current_turn
+                    room, character, agent, action_tools, current_turn
                 )
                 result_event = ResultEvent(
                     result=result, room=room, character=character
