@@ -238,17 +238,17 @@ def launch_bot(config: DiscordBotConfig):
         client.run(environ["DISCORD_TOKEN"])
 
     def send_main():
-        from time import sleep
+        # from time import sleep
 
         while True:
-            sleep(0.1)
-            if event_queue.empty():
-                # logger.debug("no events to prompt")
-                continue
+            # sleep(0.05)
+            # if event_queue.empty():
+            # logger.debug("no events to prompt")
+            #    continue
 
             # wait for pending messages to send, to keep them in order
             if len(active_tasks) > 0:
-                logger.debug("waiting for active tasks to complete")
+                # logger.debug("waiting for active tasks to complete")
                 continue
 
             event = event_queue.get()

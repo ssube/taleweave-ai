@@ -103,6 +103,10 @@ def prompt_character_action(
         # trim suffixes that are used elsewhere
         value = value.removesuffix("END").strip()
 
+        # fix the "action_ move" whitespace issue
+        if '"action_ ' in value:
+            value = value.replace('"action_ ', '"action_')
+
         # fix unbalanced curly braces
         if value.startswith("{") and not value.endswith("}"):
             open_count = value.count("{")
@@ -124,12 +128,35 @@ def prompt_character_action(
             broadcast(event)
 
             return result
-        except ToolError:
-            raise ActionError(
-                format_prompt(
-                    "world_simulate_character_action_error_json", actions=action_names
+        except ToolError as e:
+            e_str = str(e)
+            if e_str and "Error running tool" in e_str:
+                # extract the tool name and rest of the message from the error
+                # the format is: "Error running tool: <action_name>: <message>"
+                action_name, message = e_str.split(":", 1)
+                action_name = action_name.removeprefix("Error running tool").strip()
+                message = message.strip()
+                raise ActionError(
+                    format_prompt(
+                        "world_simulate_character_action_error_action",
+                        action=action_name,
+                        message=message,
+                    )
                 )
-            )
+            elif e_str and "Unknown tool" in e_str:
+                raise ActionError(
+                    format_prompt(
+                        "world_simulate_character_action_error_unknown_tool",
+                        actions=action_names,
+                    )
+                )
+            else:
+                raise ActionError(
+                    format_prompt(
+                        "world_simulate_character_action_error_json",
+                        actions=action_names,
+                    )
+                )
 
     # prompt and act
     logger.info("starting turn for character: %s", character.name)
@@ -209,13 +236,35 @@ def prompt_character_planning(
     def result_parser(value, **kwargs):
         try:
             return function_result(value, **kwargs)
-        except ToolError:
-            raise ActionError(
-                format_prompt(
-                    "world_simulate_character_planning_error_json",
-                    actions=planner_toolbox.list_tools(),
+        except ToolError as e:
+            e_str = str(e)
+            if e_str and "Error running tool" in e_str:
+                # extract the tool name and rest of the message from the error
+                # the format is: "Error running tool: <action_name>: <message>"
+                action_name, message = e_str.split(":", 2)
+                action_name = action_name.removeprefix("Error running tool").strip()
+                message = message.strip()
+                raise ActionError(
+                    format_prompt(
+                        "world_simulate_character_planning_error_action",
+                        action=action_name,
+                        message=message,
+                    )
                 )
-            )
+            elif e_str and "Unknown tool" in e_str:
+                raise ActionError(
+                    format_prompt(
+                        "world_simulate_character_planning_error_unknown_tool",
+                        actions=planner_toolbox.list_tools(),
+                    )
+                )
+            else:
+                raise ActionError(
+                    format_prompt(
+                        "world_simulate_character_planning_error_json",
+                        actions=planner_toolbox.list_tools(),
+                    )
+                )
 
     logger.info("starting planning for character: %s", character.name)
     _, condition_end, result_parser = make_keyword_condition(

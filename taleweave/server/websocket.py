@@ -324,8 +324,22 @@ def launch_server(config: WebsocketServerConfig):
 async def server_main():
     config = get_game_config()
 
+    ssl_context = None
+    if config.server.websocket.ssl:
+        from ssl import PROTOCOL_TLS_SERVER, SSLContext
+
+        ssl_context = SSLContext(PROTOCOL_TLS_SERVER)
+        ssl_context.load_cert_chain(
+            config.server.websocket.ssl.cert,
+            keyfile=config.server.websocket.ssl.key,
+            password=config.server.websocket.ssl.password,
+        )
+
     async with websockets.serve(
-        handler, config.server.websocket.host, config.server.websocket.port
+        handler,
+        config.server.websocket.host,
+        config.server.websocket.port,
+        ssl=ssl_context,
     ):
         logger.info("websocket server started")
         await asyncio.Future()  # run forever

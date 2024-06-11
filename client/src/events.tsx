@@ -230,7 +230,7 @@ export function RenderEventItem(props: EventItemProps) {
           >{prompt}</Typography>
         }
       />
-      <ImageList cols={3} rowHeight={256}>
+      <ImageList>
         {Object.entries(images).map(([name, image]) => <ImageListItem key={name}>
           <a href='#' onClick={() => openImage(image as string)}>
             <img src={`data:image/jpeg;base64,${image}`} alt="Render" style={{ maxHeight: 256, maxWidth: 256 }} />

@@ -41,11 +41,11 @@ def create_move_digest(
     if not source_portal:
         raise ValueError(f"Could not find source portal for {destination_portal.name}")
 
-    mode = "self" if (event.character == active_character) else "other"
-    mood = "enter" if (destination_room == active_room) else "exit"
+    character_mode = "self" if (event.character == active_character) else "other"
+    direction_mode = "enter" if (destination_room == active_room) else "exit"
 
     message = format_str(
-        f"digest_move_{mode}_{mood}",
+        f"digest_move_{character_mode}_{direction_mode}",
         destination_portal=destination_portal,
         destination_room=destination_room,
         direction=direction,
@@ -67,10 +67,15 @@ def create_turn_digest(
         if isinstance(event, ActionEvent):
             # special handling for move actions
             if event.action == "action_move":
-                message = create_move_digest(
-                    world, active_room, active_character, event
-                )
-                messages.append(message)
+                try:
+                    message = create_move_digest(
+                        world, active_room, active_character, event
+                    )
+                    messages.append(message)
+                except Exception:
+                    logger.exception(
+                        "error formatting digest for move event: %s", event
+                    )
             elif event.character == active_character or event.room == active_room:
                 prompt_key = f"digest_{event.action}"
                 if prompt_key in library.prompts:

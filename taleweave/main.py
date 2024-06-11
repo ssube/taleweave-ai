@@ -212,10 +212,12 @@ def load_prompt_library(args) -> None:
     return None
 
 
-def load_or_initialize_system_data(args, systems: List[GameSystem], world: World):
+def load_or_initialize_system_data(
+    world_path: str, systems: List[GameSystem], world: World
+):
     for system in systems:
         if system.data:
-            system_data_file = f"{args.world}.{system.name}.json"
+            system_data_file = f"{world_path}.{system.name}.json"
 
             if path.exists(system_data_file):
                 logger.info(f"loading system data from {system_data_file}")
@@ -273,7 +275,7 @@ def load_or_generate_world(
             state = WorldState(**load_yaml(f))
 
         set_current_turn(state.turn)
-        load_or_initialize_system_data(args, systems, state.world)
+        load_or_initialize_system_data(args.world, systems, state.world)
 
         memory = state.memory
         turn = state.turn
@@ -283,7 +285,7 @@ def load_or_generate_world(
         with open(world_file, "r") as f:
             world = World(**load_yaml(f))
 
-        load_or_initialize_system_data(args, systems, world)
+        load_or_initialize_system_data(args.world, systems, world)
     else:
         logger.info(f"generating a new world using theme: {world_prompt.theme}")
         world = generate_world(
@@ -293,10 +295,11 @@ def load_or_generate_world(
             systems,
             room_count=args.rooms,
         )
-        load_or_initialize_system_data(args, systems, world)
+        load_or_initialize_system_data(args.world, systems, world)
 
-        save_world(world, world_file)
-        save_system_data(args, systems)
+    # TODO: check if there have been any changes before saving
+    save_world(world, world_file)
+    save_system_data(args, systems)
 
     new_rooms = []
     for i in range(add_rooms):

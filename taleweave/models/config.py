@@ -34,9 +34,17 @@ class RenderConfig:
 
 
 @dataclass
+class WebsocketServerSSLConfig:
+    cert: str
+    key: str | None = None
+    password: str | None = None
+
+
+@dataclass
 class WebsocketServerConfig:
     host: str
     port: int
+    ssl: WebsocketServerSSLConfig | None = None
 
 
 @dataclass

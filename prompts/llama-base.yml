@@ -193,9 +193,9 @@ prompts:
     {{name}} will happen in {{turns}} turn
 
   # agent stuff
-  world_agent_backstory: |
-    {{ character.backstory }}
   world_agent_backstory_other: |
+    {{ character.backstory }}
+  world_agent_backstory: |
     You are {{character | name}}, a character in a text-based role-playing game. Your character's backstory is:
     {{ character.backstory }}
     Explore the world, interact with other characters, and complete quests to advance the story.
@@ -218,11 +218,11 @@ prompts:
     Generating a {{theme}} with {{room_count}} rooms
 
   world_generate_room_name: |
-    Generate one room, area, or location that would make sense in the world of {{world_theme}}.
+    Generate one room, area, or location that would make sense in the world of {{world_theme}}. {{ additional_prompt | punctuate }}
     Only respond with the room name in title case, do not include the description or any other text.
     Do not prefix the name with "the", do not wrap it in quotes. The existing rooms are: {{existing_rooms}}
   world_generate_room_description: |
-    Generate a detailed description of the {{name}} area. What does it look like?
+    Generate a detailed description of the {{name}} area. {{ additional_prompt | punctuate }} What does it look like?
     What does it smell like? What can be seen or heard?
   world_generate_room_broadcast_room: |
     Generating room: {{name}}
@@ -356,6 +356,11 @@ prompts:
   world_simulate_character_action_error_json: |
     Your last reply was not a valid action or the action you tried to use does not exist. Please try again, being
     careful to reply with a valid function call in JSON format. The available actions are: {{actions}}.
+  world_simulate_character_action_error_action: |
+    You cannot use the '{{action}}' action because {{message | punctuate}}
+  world_simulate_character_action_error_unknown_tool: |
+    That action is not available during the action phase or it does not exist. Please try again using a different
+    action. The available actions are: {{actions}}.
 
   world_simulate_character_planning: |
     You are about to start your turn. Plan your next action carefully. Take notes and schedule events to help keep track of your goals.
@@ -379,6 +384,11 @@ prompts:
     You have no upcoming events.
   world_simulate_character_planning_events_item: |
     {{event.name}} in {{turns}} turns
+  world_simulate_character_planning_error_action: |
+    You cannot perform the '{{action}}' action because {{message | punctuate}}
   world_simulate_character_planning_error_json: |
     Your last reply was not a valid action or the action you tried to use does not exist. Please try again, being
     careful to reply with a valid function call in JSON format. The available actions are: {{actions}}.
+  world_simulate_character_planning_error_unknown_tool: |
+    That action is not available during the planning phase or it does not exist. Please try again using a different
+    action. The available actions are: {{actions}}.

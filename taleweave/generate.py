@@ -102,6 +102,7 @@ def generate_room(
     agent: Agent,
     world: World,
     systems: List[GameSystem],
+    additional_prompt: str = "",
     current_room: int | None = None,
     total_rooms: int | None = None,
 ) -> Room:
@@ -111,6 +112,7 @@ def generate_room(
         agent,
         get_prompt("world_generate_room_name"),
         context={
+            "additional_prompt": additional_prompt,
             "world_theme": world.theme,
             "existing_rooms": existing_rooms,
             "current_room": current_room,
@@ -121,7 +123,13 @@ def generate_room(
     )
 
     broadcast_generated(format_prompt("world_generate_room_broadcast_room", name=name))
-    desc = agent(get_prompt("world_generate_room_description"), name=name)
+    desc = agent(
+        format_prompt(
+            "world_generate_room_description",
+            name=name,
+            additional_prompt=additional_prompt,
+        )
+    )
 
     actions = {}
     room = Room(name=name, description=desc, items=[], characters=[], actions=actions)
@@ -581,12 +589,6 @@ def generate_world(
     world = World(name=name, rooms=[], theme=theme, order=[])
     set_current_world(world)
 
-    # initialize the systems
-    for system in systems:
-        if system.initialize:
-            data = system.initialize(world)
-            set_system_data(system.name, data)
-
     # generate the rooms
     for i in range(room_count):
         try:
@@ -602,6 +604,12 @@ def generate_world(
 
     # generate portals to link the rooms together
     link_rooms(agent, world, systems)
+
+    # initialize the systems
+    for system in systems:
+        if system.initialize:
+            data = system.initialize(world)
+            set_system_data(system.name, data)
 
     # ensure characters act in a stable order
     world.order = [
