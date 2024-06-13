@@ -37,6 +37,7 @@ dungeon_master: Agent | None = None
 # TODO: wrap this into a class that can be passed around
 character_agents: Dict[str, Tuple[Character, Agent]] = {}
 event_emitter = EventEmitter()
+extra_actions: List[Callable[..., str]] = []
 game_config: Config = DEFAULT_CONFIG
 game_systems: List[GameSystem] = []
 prompt_library: PromptLibrary = PromptLibrary(prompts={})
@@ -185,6 +186,10 @@ def get_system_data(system: str) -> Any | None:
     return system_data.get(system)
 
 
+def get_extra_actions() -> List[Callable[..., str]]:
+    return extra_actions
+
+
 # endregion
 
 
@@ -235,6 +240,11 @@ def set_prompt_library(library: PromptLibrary):
 
 def set_system_data(system: str, data: Any):
     system_data[system] = data
+
+
+def set_extra_actions(actions: List[Callable[..., str]]):
+    global extra_actions
+    extra_actions = actions
 
 
 # endregion

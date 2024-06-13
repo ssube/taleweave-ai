@@ -1,6 +1,8 @@
+import argparse
 import atexit
 from functools import partial
 from glob import glob
+from itertools import count
 from logging.config import dictConfig
 from os import environ, path
 from typing import List
@@ -42,11 +44,15 @@ if environ.get("DEBUG", "false").lower() == "true":
 
 if True:
     from taleweave.context import (
+        get_current_turn,
         get_prompt_library,
         get_system_data,
         set_current_turn,
+        set_current_world,
         set_dungeon_master,
+        set_extra_actions,
         set_game_config,
+        set_game_systems,
         set_system_data,
         subscribe,
     )
@@ -58,8 +64,9 @@ if True:
     from taleweave.models.files import TemplateFile, WorldPrompt
     from taleweave.models.prompt import PromptLibrary
     from taleweave.plugins import load_plugin
-    from taleweave.simulate import simulate_world
     from taleweave.state import create_agents, save_world, save_world_state
+    from taleweave.systems.action import init_action
+    from taleweave.systems.planning import init_planning
     from taleweave.utils.template import format_prompt
 
 
@@ -72,8 +79,6 @@ def int_or_inf(value: str) -> float | int:
 
 # main
 def parse_args():
-    import argparse
-
     parser = argparse.ArgumentParser(
         description="Generate and simulate a text adventure world"
     )
@@ -364,9 +369,9 @@ def main():
     extra_actions = []
     if args.optional_actions:
         logger.info("loading optional actions")
-        from taleweave.actions.optional import init as init_optional_actions
+        from taleweave.actions.optional import init_optional
 
-        optional_actions = init_optional_actions()
+        optional_actions = init_optional()
         logger.info(
             f"loaded optional actions: {[action.__name__ for action in optional_actions]}"
         )
@@ -381,63 +386,61 @@ def main():
         )
         extra_actions.extend(module_actions)
 
+    set_extra_actions(extra_actions)
+
+    # set up the game systems
+    systems: List[GameSystem] = []
+    systems.extend(init_planning())
+    systems.extend(init_action())
+
     # load extra systems from plugins
-    extra_systems: List[GameSystem] = []
     for system_name in args.systems or []:
         logger.info(f"loading extra systems from {system_name}")
         module_systems = load_plugin(system_name)
         logger.info(f"loaded extra systems: {module_systems}")
-        extra_systems.extend(module_systems)
+        systems.extend(module_systems)
 
     # make sure the server system runs after any updates
     if args.server:
         from taleweave.server.websocket import server_system
 
-        extra_systems.append(GameSystem(name="server", simulate=server_system))
+        systems.append(GameSystem(name="server", simulate=server_system))
+
+    set_game_systems(systems)
 
     # load or generate the world
     world_prompt = get_world_prompt(args)
     world, world_state_file, world_turn = load_or_generate_world(
-        args, config, players, extra_systems, world_prompt=world_prompt
+        args, config, players, systems, world_prompt=world_prompt
     )
+    set_current_world(world)
 
     # make sure the snapshot system runs last
     def snapshot_system(world: World, turn: int, data: None = None) -> None:
         logger.info("taking snapshot of world state")
         save_world_state(world, turn, world_state_file)
 
-    extra_systems.append(GameSystem(name="snapshot", simulate=snapshot_system))
+    systems.append(GameSystem(name="snapshot", simulate=snapshot_system))
 
     # hack: send a snapshot to the websocket server
     if args.server:
         server_system(world, world_turn)
 
-    # create the DM
-    llm = agent_easy_connect()
-    memory_factory = partial(
-        make_limited_memory, limit=config.world.character.memory_limit
-    )
-    world_builder = Agent(
-        "dungeon master",
-        format_prompt(
-            "world_generate_dungeon_master",
-            flavor=world_prompt.flavor,
-            theme=world_prompt.theme,
-        ),
-        {},
-        llm,
-        memory_factory=memory_factory,
-    )
-    set_dungeon_master(world_builder)
+    # run game systems for each turn
+    logger.info(f"simulating the world for {args.turns} turns using systems: {systems}")
+    for i in count():
+        current_turn = get_current_turn()
+        logger.info(f"simulating turn {i} of {args.turns} (world turn {current_turn})")
 
-    # start the sim
-    logger.debug("simulating world: %s", world.name)
-    simulate_world(
-        world,
-        turns=args.turns,
-        actions=extra_actions,
-        systems=extra_systems,
-    )
+        for system in systems:
+            if system.simulate:
+                logger.info(f"running system {system.name}")
+                system.simulate(world, current_turn)
+
+        set_current_turn(current_turn + 1)
+        if i >= args.turns:
+            logger.info("reached turn limit at world turn %s", current_turn + 1)
+            break
 
 
 if __name__ == "__main__":

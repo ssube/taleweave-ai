@@ -36,16 +36,16 @@ lint-check:
 	black --check tests/
 	flake8 taleweave
 	flake8 tests
-	isort --check-only --skip __init__.py --filter-files taleweave
-	isort --check-only --skip __init__.py --filter-files tests
+	isort --check-only --filter-files taleweave
+	isort --check-only --filter-files tests
 
 lint-fix:
 	black taleweave/
 	black tests/
 	flake8 taleweave
 	flake8 tests
-	isort --skip __init__.py --filter-files taleweave
-	isort --skip __init__.py --filter-files tests
+	isort --filter-files taleweave
+	isort --filter-files tests
 
 style: lint-fix
 

@@ -28,8 +28,12 @@ templates:
     theme: post-apocalyptic world where the only survivors are sentient robots
     flavor: create a world where the only survivors of a nuclear apocalypse are sentient robots, who must now rebuild society from scratch
   - name: haunted-house
-    theme: haunted house in the middle of nowhere
-    flavor: create a spooky and suspenseful world where a group of people are trapped in a haunted house in the middle of nowhere
+    theme: group of unexpecting friends find a haunted house in the middle of nowhere
+    flavor: |
+      create a spooky and suspenseful world where a group of innocent, unexpecting people find and become trapped in a
+      haunted house in the middle of nowhere. make sure you create some rooms for the road up to the house as well as
+      the interior of the house itself. include a variety of characters and make sure they will fully utilize all of the
+      actions available to them in this world, exploring and interacting with each other and the environment.
   - name: magical-kingdom
     theme: dangerous magical fantasy world
     flavor: make a strange and dangerous world where magic winds its way through everything and incredibly powerful beings drink, fight, and wander the halls

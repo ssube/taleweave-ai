@@ -58,6 +58,11 @@ def format_attributes(
         for system in systems
         if system.format
     ]
+    attribute_descriptions = [
+        description
+        for description in attribute_descriptions
+        if len(description.strip()) > 0
+    ]
 
     return f"{'. '.join(attribute_descriptions)}"
 

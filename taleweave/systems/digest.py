@@ -6,7 +6,7 @@ from taleweave.game_system import FormatPerspective, GameSystem
 from taleweave.models.entity import Character, Room, World, WorldEntity
 from taleweave.models.event import ActionEvent, GameEvent
 from taleweave.utils.search import find_containing_room, find_portal, find_room
-from taleweave.utils.template import format_str
+from taleweave.utils.template import format_prompt, format_str
 
 logger = getLogger(__name__)
 
@@ -44,11 +44,12 @@ def create_move_digest(
     character_mode = "self" if (event.character == active_character) else "other"
     direction_mode = "enter" if (destination_room == active_room) else "exit"
 
-    message = format_str(
+    message = format_prompt(
         f"digest_move_{character_mode}_{direction_mode}",
         destination_portal=destination_portal,
         destination_room=destination_room,
         direction=direction,
+        event=event,
         source_portal=source_portal,
         source_room=source_room,
     )
@@ -116,6 +117,9 @@ def format_digest(
     perspective: FormatPerspective = FormatPerspective.SECOND_PERSON,
 ) -> str:
     if not isinstance(entity, Character):
+        return ""
+
+    if perspective != FormatPerspective.SECOND_PERSON:
         return ""
 
     buffer = character_buffers[entity.name]

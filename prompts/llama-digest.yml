@@ -1,13 +1,5 @@
 prompts:
-  # digest system
-  digest_action_move_other_enter: |
-    {{event.character | name}} entered the room through the {{source_portal | name}}.
-  digest_action_move_other_exit: |
-    {{event.character | name}} left the room, heading through the {{destination_portal | name}}.
-  digest_action_move_self_enter: |
-    You entered the room through the {{source_portal | name}}.
-  digest_action_move_self_exit: |
-    You left the room, heading through the {{destination_portal | name}}.
+  # action digest
   digest_action_move: |
     {{event.character | name}} entered the room.
   digest_action_take: |
@@ -22,3 +14,13 @@ prompts:
     {{event.character | name}} told {{event.parameters[character]}} about something.
   digest_action_examine: |
     {{event.character | name}} examined the {{event.parameters[target]}}.
+
+  # movement digest
+  digest_move_other_enter: |
+    {{event.character | name}} entered the room through the {{source_portal | name}}.
+  digest_move_other_exit: |
+    {{event.character | name}} left the room, heading through the {{destination_portal | name}}.
+  digest_move_self_enter: |
+    You entered the room through the {{source_portal | name}}.
+  digest_move_self_exit: |
+    You left the room, heading through the {{destination_portal | name}}.

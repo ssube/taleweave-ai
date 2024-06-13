@@ -252,7 +252,7 @@ def action_use(item: str, target: str) -> str:
         return outcome
 
 
-def init() -> List[Callable]:
+def init_optional() -> List[Callable]:
     """
     Initialize the custom actions.
     """

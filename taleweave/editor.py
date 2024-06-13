@@ -9,6 +9,7 @@ from taleweave.generate import (
     generate_item,
     generate_portals,
     generate_room,
+    link_rooms,
 )
 from taleweave.main import load_or_initialize_system_data
 from taleweave.models.base import dump_model
@@ -26,7 +27,6 @@ from taleweave.utils.search import (
     list_rooms,
 )
 from taleweave.utils.world import describe_entity
-
 
 ENTITY_TYPES = ["room", "portal", "item", "character"]
 
@@ -72,6 +72,9 @@ def parse_args():
         "prompt", type=str, help="Prompt to generate the entity"
     )
     generate_parser.add_argument("--room", type=str, help="Room the entity is in")
+    generate_parser.add_argument(
+        "--dest-room", type=str, help="Destination room for portals"
+    )
 
     # Set up the 'delete' command
     delete_parser = subparsers.add_parser("delete", help="Delete an entity")
@@ -89,6 +92,15 @@ def parse_args():
     update_parser.add_argument("--backstory", type=str, help="Backstory of the entity")
     update_parser.add_argument(
         "--description", type=str, help="Description of the entity"
+    )
+
+    # Set up the 'link' command
+    link_parser = subparsers.add_parser("link", help="Link rooms")
+    link_parser.add_argument(
+        "rooms",
+        type=str,
+        nargs="*",
+        help="Rooms to link. Leave blank to link all rooms.",
     )
 
     return parser.parse_args()
@@ -212,24 +224,47 @@ def command_generate(args):
     dungeon_master = get_dungeon_master()
     systems = get_game_systems()
 
-    # TODO: Generate the entity
     if args.type == "room":
         room = generate_room(dungeon_master, world, systems)
         world.rooms.append(room)
 
     if args.type == "portal":
-        portal = generate_portals(dungeon_master, world, "TODO", "TODO", systems)
-        # TODO: Add portal to room and generate reverse portal from destination room
+        source_room = find_room(world, args.room)
+        if not source_room:
+            print(f"Room {args.room} not found")
+            return
+
+        destination_room = find_room(world, args.dest_room)
+        if not destination_room:
+            print(f"Room {args.dest_room} not found")
+            return
+
+        outgoing_portal, incoming_portal = generate_portals(
+            dungeon_master, world, source_room, destination_room, systems
+        )
+        source_room.portals.append(outgoing_portal)
+        destination_room.portals.append(incoming_portal)
 
     if args.type == "item":
+        # TODO: add item to character or container inventory
+        room = find_room(world, args.room)
+        if not room:
+            print(f"Room {args.room} not found")
+            return
+
         item = generate_item(dungeon_master, world, systems)
-        # TODO: Add item to room or character inventory
+        room.items.append(item)
 
     if args.type == "character":
+        room = find_room(world, args.room)
+        if not room:
+            print(f"Room {args.room} not found")
+            return
+
         character = generate_character(
-            dungeon_master, world, systems, "TODO", args.prompt
+            dungeon_master, world, systems, room, args.prompt
         )
-        # TODO: Add character to room
+        room.characters.append(character)
 
     save_world(args.state, args.world, world, state)
 
@@ -291,6 +326,19 @@ def command_update(args):
     save_world(args.state, args.world, world, state)
 
 
+def command_link(args):
+    print(f"Linking rooms {args.rooms}")
+    world, state = load_world(args.state, args.world)
+    print(world.name)
+
+    dungeon_master = get_dungeon_master()
+    systems = get_game_systems()
+
+    link_rooms(dungeon_master, world, systems)
+
+    save_world(args.state, args.world, world, state)
+
+
 COMMAND_TABLE = {
     "list": command_list,
     "describe": command_describe,
@@ -298,6 +346,7 @@ COMMAND_TABLE = {
     "generate": command_generate,
     "delete": command_delete,
     "update": command_update,
+    "link": command_link,
 }
 
 
