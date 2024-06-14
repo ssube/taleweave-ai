@@ -59,6 +59,10 @@ def format_prompt(prompt_key: str, **kwargs) -> str:
 
 
 def format_str(template_str: str, **kwargs) -> str:
-    # TODO: cache templates
+    """
+    Render a template string with the given keyword arguments.
+
+    Jinja will cache the template for future use.
+    """
     template = jinja_env.from_string(template_str)
     return template.render(**kwargs)

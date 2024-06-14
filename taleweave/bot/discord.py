@@ -453,7 +453,7 @@ def embed_from_prompt(event: PromptEvent):
         )
 
         if user:
-            # TODO: use Discord user.mention to ping the user
+            # use Discord user.mention to ping the user
             if user in player_mentions:
                 user = player_mentions[user]
 

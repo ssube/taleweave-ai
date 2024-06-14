@@ -42,6 +42,7 @@ def action_examine(target: str) -> str:
             )
         )
 
+        # TODO: allow "the room" as a target
         if normalize_name(target) == normalize_name(action_room.name):
             broadcast(
                 format_prompt(
@@ -52,6 +53,7 @@ def action_examine(target: str) -> str:
             )
             return format_prompt("action_examine_result_room", target_room=action_room)
 
+        # TODO: allow "self" and "myself" as a target
         target_character = find_character_in_room(action_room, target)
         if target_character:
             broadcast(

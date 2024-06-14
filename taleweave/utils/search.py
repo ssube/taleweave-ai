@@ -62,7 +62,6 @@ def find_portal_in_room(room: Room, portal_name: str) -> Portal | None:
     return None
 
 
-# TODO: allow item or str
 def find_item(
     world: World,
     item: Item | str,

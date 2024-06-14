@@ -170,9 +170,9 @@ def format_logic(
     return " ".join(labels)
 
 
-def load_logic(filename: str):
+def load_logic(filename: str, name_prefix: str = "logic") -> GameSystem:
     basename = path.splitext(path.basename(filename))[0]
-    system_name = f"logic_{basename}"
+    system_name = f"{name_prefix}_{basename}"
     logger.info("loading logic from file %s as system %s", filename, system_name)
 
     with open(filename) as file:

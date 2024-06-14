@@ -183,7 +183,7 @@ def simulate_planning(world: World, turn: int, data: Any | None = None):
         set_current_character(character)
 
         # decrement effects on the character and remove any that have expired
-        expire_events(character, turn)  # TODO: move to planning
+        expire_events(character, turn)
 
         # give the character a chance to think and check their planner
         if agent.memory and len(agent.memory) > 0:

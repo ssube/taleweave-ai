@@ -101,11 +101,12 @@ def prompt_character_action(
                     pass
 
         try:
-            result = world_result_parser(value, **kwargs)
-
             # TODO: try to avoid parsing the JSON twice
             event = ActionEvent.from_json(value, room, character)
+            # TODO: decide if invalid actions should be broadcast
             broadcast(event)
+
+            result = world_result_parser(value, **kwargs)
 
             return result
         except ToolError as e:

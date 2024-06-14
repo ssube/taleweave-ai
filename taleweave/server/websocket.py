@@ -346,6 +346,9 @@ async def server_main():
 
 
 def server_system(world: World, turn: int, data: Any | None = None):
+    """
+    TODO: this should be replaced with a snapshot event listener
+    """
     global last_snapshot
     id = uuid4().hex  # TODO: should a server be allowed to generate event IDs?
     json_state = {

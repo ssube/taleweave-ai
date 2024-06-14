@@ -43,10 +43,6 @@ AttributeEffectPattern = (
 
 @dataclass
 class EffectPattern:
-    """
-    TODO: should this be an EffectTemplate?
-    """
-
     name: str
     description: str
     application: Literal["permanent", "temporary"]
