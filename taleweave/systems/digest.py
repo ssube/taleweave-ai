@@ -16,18 +16,23 @@ def create_move_digest(
     active_room: Room,
     active_character: Character,
     event: ActionEvent,
-) -> str:
+) -> str | None:
     source_room = event.room
     direction = str(event.parameters.get("direction"))
     destination_portal = find_portal(world, direction)
     if not destination_portal:
-        raise ValueError(f"Could not find portal for direction {direction}")
+        logger.warning(f"Could not find portal for direction {direction}")
+        return None
 
     destination_room = find_room(world, destination_portal.destination)
     if not destination_room:
-        raise ValueError(
+        logger.warning(
             f"Could not find destination room {destination_portal.destination}"
         )
+        return None
+
+    if not (destination_room == source_room or destination_room == active_room):
+        return None
 
     # look up the source portal
     source_portal = next(
@@ -39,7 +44,8 @@ def create_move_digest(
         None,
     )
     if not source_portal:
-        raise ValueError(f"Could not find source portal for {destination_portal.name}")
+        logger.warning(f"Could not find source portal for {destination_portal.name}")
+        return None
 
     character_mode = "self" if (event.character == active_character) else "other"
     direction_mode = "enter" if (destination_room == active_room) else "exit"
@@ -72,7 +78,8 @@ def create_turn_digest(
                     message = create_move_digest(
                         world, active_room, active_character, event
                     )
-                    messages.append(message)
+                    if message:
+                        messages.append(message)
                 except Exception:
                     logger.exception(
                         "error formatting digest for move event: %s", event
