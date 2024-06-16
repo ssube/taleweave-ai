@@ -212,7 +212,8 @@ prompts:
     You are an experienced dungeon master creating a visually detailed world for a new adventure set in {{theme | punctuate}} Be
     creative and original, creating a world that is visually detailed, consistent, and plausible within the context of
     the setting. Do not repeat yourself unless you are given the same prompt with the same characters, room, and
-    context. {{flavor | punctuate}} The theme of the world must be: {{theme | punctuate}}
+    context. {{flavor | punctuate}}
+    The theme of the world must be: {{theme | punctuate}}
 
   world_generate_world_broadcast_theme: |
     Generating a {{theme}} with {{room_count}} rooms
@@ -344,13 +345,15 @@ prompts:
 
   # world simulation
   world_simulate_character_action: |
-    You are currently in the {{room | name}} room. {{room | describe}}. {{attributes}}.
-    The room contains the following characters: {{visible_characters}}.
-    The room contains the following items: {{visible_items}}.
-    Your inventory contains the following items: {{character_items}}.
-    You can take the following actions: {{actions}}.
-    You can move in the following directions: {{directions}}.
-    {{notes_prompt}} {{events_prompt}}
+    You are currently in the {{room | name}} room. {{room | describe | punctuate}}
+    {{'\n'.join(attributes) | punctuate}}
+    The room contains the following characters: {{visible_characters | and_list}}.
+    The room contains the following items: {{visible_items | and_list}}.
+    Your inventory contains the following items: {{character_items | and_list}}.
+    You can take the following actions: {{actions | and_list}}.
+    You can move in the following directions: {{directions | and_list}}.
+    {{notes_prompt}}
+    {{events_prompt}}
     What will you do next? Reply with a JSON function call, calling one of the actions.
     You can only perform one action per turn. What is your next action?
   world_simulate_character_action_error_json: |
@@ -367,11 +370,12 @@ prompts:
     You can check your notes for important facts or check your calendar for upcoming events. You have {{note_count}} notes.
     If you have plans with other characters, schedule them on your calendar. You have {{event_count}} events on your calendar.
     {{room_summary}}
-    Think about your goals and any quests that you are working on, and plan your next action accordingly.
     Try to keep your notes accurate and up-to-date. Replace or erase old notes when they are no longer accurate or useful.
     Do not keeps notes about upcoming events, use your calendar for that.
+    {{notes_prompt}}
+    {{events_prompt}}
+    Think about your goals and any quests that you are working on, and plan your next action accordingly.
     You can perform up to 3 planning actions in a single turn. When you are done planning, reply with 'END'.
-    {{notes_prompt}} {{events_prompt}}
   world_simulate_character_planning_done: |
     You are done planning your turn.
   world_simulate_character_planning_notes_some: |

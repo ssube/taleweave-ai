@@ -122,12 +122,12 @@ def digest_listener(event: GameEvent):
 def format_digest(
     entity: WorldEntity,
     perspective: FormatPerspective = FormatPerspective.SECOND_PERSON,
-) -> str:
+) -> List[str]:
     if not isinstance(entity, Character):
-        return ""
+        return []
 
     if perspective != FormatPerspective.SECOND_PERSON:
-        return ""
+        return []
 
     buffer = character_buffers[entity.name]
 
@@ -140,7 +140,7 @@ def format_digest(
         raise ValueError("Character not found in any room")
 
     digest = create_turn_digest(world, room, entity, buffer)
-    return "\n".join(digest)
+    return digest
 
 
 def generate_digest(agent: Any, world: World, entity: WorldEntity):

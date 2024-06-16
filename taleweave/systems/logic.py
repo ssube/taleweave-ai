@@ -152,7 +152,7 @@ def format_logic(
     entity: WorldEntity,
     rules: LogicTable,
     perspective: FormatPerspective = FormatPerspective.SECOND_PERSON,
-) -> str:
+) -> List[str]:
     labels = []
 
     for label in rules.labels:
@@ -167,7 +167,7 @@ def format_logic(
     if len(labels) > 0:
         logger.debug("adding attribute labels: %s", labels)
 
-    return " ".join(labels)
+    return labels
 
 
 def load_logic(filename: str, name_prefix: str = "logic") -> GameSystem:

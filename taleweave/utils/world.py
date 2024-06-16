@@ -1,4 +1,5 @@
 from logging import getLogger
+from typing import List
 
 from taleweave.context import get_game_systems
 from taleweave.game_system import FormatPerspective
@@ -25,7 +26,8 @@ def describe_character(
     else:
         raise ValueError(f"Perspective {perspective} is not implemented")
 
-    return f"{character_description} {attribute_descriptions}"
+    # TODO: use template
+    return f"{character_description} {'. '.join(attribute_descriptions)}"
 
 
 def describe_static(entity: WorldEntity) -> str:
@@ -35,7 +37,9 @@ def describe_static(entity: WorldEntity) -> str:
         entity.name,
         attribute_descriptions,
     )
-    return f"{entity.description} {attribute_descriptions}"
+
+    # TODO: use template
+    return f"{entity.description} {'. '.join(attribute_descriptions)}"
 
 
 def describe_entity(
@@ -51,20 +55,22 @@ def describe_entity(
 def format_attributes(
     entity: WorldEntity,
     perspective: FormatPerspective = FormatPerspective.SECOND_PERSON,
-) -> str:
+) -> List[str]:
     systems = get_game_systems()
-    attribute_descriptions = [
-        system.format(entity, perspective=perspective)
-        for system in systems
-        if system.format
-    ]
+    attribute_descriptions = []
+    for system in systems:
+        if system.format:
+            attribute_descriptions.extend(
+                system.format(entity, perspective=perspective)
+            )
+
     attribute_descriptions = [
         description
         for description in attribute_descriptions
         if len(description.strip()) > 0
     ]
 
-    return f"{'. '.join(attribute_descriptions)}"
+    return attribute_descriptions
 
 
 def name_entity(

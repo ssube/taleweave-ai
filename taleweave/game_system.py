@@ -1,5 +1,5 @@
 from enum import Enum
-from typing import Any, Callable, Protocol
+from typing import Any, Callable, List, Protocol
 
 from packit.agent import Agent
 
@@ -17,8 +17,12 @@ class SystemFormat(Protocol):
         self,
         entity: WorldEntity,
         perspective: FormatPerspective = FormatPerspective.SECOND_PERSON,
-    ) -> str:
-        # TODO: should this return a list?
+    ) -> List[str]:
+        """
+        Format the given world entity for the given perspective.
+
+        Returns a list of phrases or lines that should be added to the entity's description.
+        """
         ...
 
 
