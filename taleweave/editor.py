@@ -1,8 +1,12 @@
 import argparse
-from os import path
+from os import environ, path
 from typing import List, Tuple
 
+from dotenv import load_dotenv
+from packit.utils import logger_with_colors
+
 from taleweave.context import get_dungeon_master, get_game_systems, set_game_systems
+from taleweave.engine import load_or_initialize_system_data
 from taleweave.game_system import GameSystem
 from taleweave.generate import (
     generate_character,
@@ -11,7 +15,7 @@ from taleweave.generate import (
     generate_room,
     link_rooms,
 )
-from taleweave.main import load_or_initialize_system_data
+from taleweave.main import load_prompt_library
 from taleweave.models.base import dump_model
 from taleweave.models.entity import World, WorldState
 from taleweave.plugins import load_plugin
@@ -30,9 +34,16 @@ from taleweave.utils.world import describe_entity
 
 ENTITY_TYPES = ["room", "portal", "item", "character"]
 
+logger = logger_with_colors(__name__)
+
+
+# load environment variables before anything else
+load_dotenv(environ.get("TALEWEAVE_ENV", ".env"), override=True)
+
 
 def parse_args():
     parser = argparse.ArgumentParser(description="Taleweave Editor")
+    parser.add_argument("--prompts", type=str, nargs="*", help="Prompt files to load")
     parser.add_argument("--state", type=str, help="State file to edit")
     parser.add_argument("--world", type=str, help="World file to edit")
     parser.add_argument("--systems", type=str, nargs="*", help="Game systems to load")
@@ -41,11 +52,9 @@ def parse_args():
     subparsers.required = True
 
     # Set up the 'list' command
-    list_parser = subparsers.add_parser(
-        "list", help="List all entities or entities of a specific type"
-    )
+    list_parser = subparsers.add_parser("list", help="List entities of a specific type")
     list_parser.add_argument(
-        "type", help="Type of entity to list", choices=ENTITY_TYPES, nargs="?"
+        "type", help="Type of entity to list", choices=ENTITY_TYPES
     )
 
     # Set up the 'describe' command
@@ -107,7 +116,7 @@ def parse_args():
 
 
 def load_world(state_file, world_file) -> Tuple[World, WorldState | None]:
-    systems = []
+    systems = get_game_systems()
 
     if state_file and path.exists(state_file):
         with open(state_file, "r") as f:
@@ -129,14 +138,19 @@ def load_world(state_file, world_file) -> Tuple[World, WorldState | None]:
 
 
 def save_world(state_file, world_file, world: World, state: WorldState | None):
+    """
+    Save the world to the given files.
+
+    This is intentionally a noop stub until the editor is more stable.
+    """
     if state:
-        print(f"Saving world {world.name} to {state_file}")
+        logger.warning(f"Saving world {world.name} to {state_file}")
         return
 
         with open(state_file, "w") as f:
             save_yaml(f, dump_model(WorldState, state))
     else:
-        print(f"Saving world {world.name} to {world_file}")
+        logger.warning(f"Saving world {world.name} to {world_file}")
         return
 
         with open(world_file, "w") as f:
@@ -144,47 +158,45 @@ def save_world(state_file, world_file, world: World, state: WorldState | None):
 
 
 def command_list(args):
-    print(f"Listing {args.type}s")
     world, _ = load_world(args.state, args.world)
-    print(world.name)
+    logger.info(f"Listing {args.type}s from world {world.name}")
 
     if args.type == "room":
         for room in list_rooms(world):
-            print(room.name)
+            logger.info(room.name)
 
     if args.type == "portal":
         for portal in list_portals(world):
-            print(portal.name)
+            logger.info(portal.name)
 
     if args.type == "item":
         for item in list_items(
             world, include_character_inventory=True, include_item_inventory=True
         ):
-            print(item.name)
+            logger.info(item.name)
 
     if args.type == "character":
         for character in list_characters(world):
-            print(character.name)
+            logger.info(character.name)
 
 
 def command_describe(args):
-    print(f"Describing {args.entity}")
     world, _ = load_world(args.state, args.world)
-    print(world.name)
+    logger.info(f"Describing {args.entity} from world {world.name}")
 
     if args.type == "room":
         room = find_room(world, args.entity)
         if not room:
-            print(f"Room {args.entity} not found")
+            logger.error(f"Room {args.entity} not found")
         else:
-            print(describe_entity(room))
+            logger.info(describe_entity(room))
 
     if args.type == "portal":
         portal = find_portal(world, args.entity)
         if not portal:
-            print(f"Portal {args.entity} not found")
+            logger.error(f"Portal {args.entity} not found")
         else:
-            print(describe_entity(portal))
+            logger.info(describe_entity(portal))
 
     if args.type == "item":
         item = find_item(
@@ -194,22 +206,21 @@ def command_describe(args):
             include_item_inventory=True,
         )
         if not item:
-            print(f"Item {args.entity} not found")
+            logger.error(f"Item {args.entity} not found")
         else:
-            print(describe_entity(item))
+            logger.info(describe_entity(item))
 
     if args.type == "character":
         character = find_character(world, args.entity)
         if not character:
-            print(f"Character {args.entity} not found")
+            logger.error(f"Character {args.entity} not found")
         else:
-            print(describe_entity(character))
+            logger.info(describe_entity(character))
 
 
 def command_create(args):
-    print(f"Create {args.type} named {args.name}")
     world, state = load_world(args.state, args.world)
-    print(world.name)
+    logger.info(f"Create {args.type} named {args.name} in world {world.name}")
 
     # TODO: Create the entity
 
@@ -217,9 +228,10 @@ def command_create(args):
 
 
 def command_generate(args):
-    print(f"Generate {args.type} with prompt: {args.prompt}")
     world, state = load_world(args.state, args.world)
-    print(world.name)
+    logger.info(
+        f"Generating {args.type} for world {world.name} using prompt: {args.prompt}"
+    )
 
     dungeon_master = get_dungeon_master()
     systems = get_game_systems()
@@ -231,12 +243,12 @@ def command_generate(args):
     if args.type == "portal":
         source_room = find_room(world, args.room)
         if not source_room:
-            print(f"Room {args.room} not found")
+            logger.error(f"Room {args.room} not found")
             return
 
         destination_room = find_room(world, args.dest_room)
         if not destination_room:
-            print(f"Room {args.dest_room} not found")
+            logger.error(f"Room {args.dest_room} not found")
             return
 
         outgoing_portal, incoming_portal = generate_portals(
@@ -249,7 +261,7 @@ def command_generate(args):
         # TODO: add item to character or container inventory
         room = find_room(world, args.room)
         if not room:
-            print(f"Room {args.room} not found")
+            logger.error(f"Room {args.room} not found")
             return
 
         item = generate_item(dungeon_master, world, systems)
@@ -258,7 +270,7 @@ def command_generate(args):
     if args.type == "character":
         room = find_room(world, args.room)
         if not room:
-            print(f"Room {args.room} not found")
+            logger.error(f"Room {args.room} not found")
             return
 
         character = generate_character(
@@ -270,9 +282,8 @@ def command_generate(args):
 
 
 def command_delete(args):
-    print(f"Delete {args.entity}")
     world, state = load_world(args.state, args.world)
-    print(world.name)
+    logger.info(f"Delete {args.entity} from world {world.name}")
 
     # TODO: Delete the entity
 
@@ -280,23 +291,22 @@ def command_delete(args):
 
 
 def command_update(args):
-    print(f"Update {args.entity}")
     world, state = load_world(args.state, args.world)
-    print(world.name)
+    logger.info(f"Update {args.entity} in world {world.name}")
 
     if args.type == "room":
         room = find_room(world, args.entity)
         if not room:
-            print(f"Room {args.entity} not found")
+            logger.error(f"Room {args.entity} not found")
         else:
-            print(describe_entity(room))
+            logger.info(describe_entity(room))
 
     if args.type == "portal":
         portal = find_portal(world, args.entity)
         if not portal:
-            print(f"Portal {args.entity} not found")
+            logger.error(f"Portal {args.entity} not found")
         else:
-            print(describe_entity(portal))
+            logger.info(describe_entity(portal))
 
     if args.type == "item":
         item = find_item(
@@ -306,14 +316,14 @@ def command_update(args):
             include_item_inventory=True,
         )
         if not item:
-            print(f"Item {args.entity} not found")
+            logger.error(f"Item {args.entity} not found")
         else:
-            print(describe_entity(item))
+            logger.info(describe_entity(item))
 
     if args.type == "character":
         character = find_character(world, args.entity)
         if not character:
-            print(f"Character {args.entity} not found")
+            logger.error(f"Character {args.entity} not found")
         else:
             if args.backstory:
                 character.backstory = args.backstory
@@ -321,15 +331,14 @@ def command_update(args):
             if args.description:
                 character.description = args.description
 
-            print(describe_entity(character))
+            logger.info(describe_entity(character))
 
     save_world(args.state, args.world, world, state)
 
 
 def command_link(args):
-    print(f"Linking rooms {args.rooms}")
     world, state = load_world(args.state, args.world)
-    print(world.name)
+    logger.info(f"Linking rooms {args.rooms} in world {world.name}")
 
     dungeon_master = get_dungeon_master()
     systems = get_game_systems()
@@ -352,14 +361,16 @@ COMMAND_TABLE = {
 
 def main():
     args = parse_args()
-    print(args)
+    logger.debug(f"running with args: {args}")
+
+    load_prompt_library(args)
 
     # load game systems before executing commands
     systems: List[GameSystem] = []
     for system_name in args.systems or []:
-        print(f"loading extra systems from {system_name}")
+        logger.info(f"loading extra systems from {system_name}")
         module_systems = load_plugin(system_name)
-        print(f"loaded extra systems: {module_systems}")
+        logger.info(f"loaded extra systems: {module_systems}")
         systems.extend(module_systems)
 
     set_game_systems(systems)

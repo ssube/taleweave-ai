@@ -2,6 +2,7 @@ from logging import getLogger
 
 from taleweave.context import (
     action_context,
+    add_extra_actions,
     broadcast,
     get_agent_for_character,
     get_character_agent_for_name,
@@ -10,6 +11,7 @@ from taleweave.context import (
     world_context,
 )
 from taleweave.errors import ActionError
+from taleweave.systems.action import ACTION_SYSTEM_NAME
 from taleweave.utils.conversation import loop_conversation
 from taleweave.utils.search import (
     find_character_in_room,
@@ -337,3 +339,18 @@ def action_drop(item: str) -> str:
         action_room.items.append(action_item)
 
         return format_prompt("action_drop_result", item=item)
+
+
+def init():
+    return add_extra_actions(
+        ACTION_SYSTEM_NAME,
+        [
+            action_examine,
+            action_move,
+            action_take,
+            action_tell,
+            action_ask,
+            action_give,
+            action_drop,
+        ],
+    )

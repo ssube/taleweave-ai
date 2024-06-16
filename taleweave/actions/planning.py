@@ -1,5 +1,6 @@
 from taleweave.context import (
     action_context,
+    add_extra_actions,
     get_agent_for_character,
     get_current_turn,
     get_game_config,
@@ -7,6 +8,7 @@ from taleweave.context import (
 )
 from taleweave.errors import ActionError
 from taleweave.models.planning import CalendarEvent
+from taleweave.systems.planning import PLANNING_SYSTEM_NAME
 from taleweave.utils.planning import get_recent_notes
 from taleweave.utils.template import format_prompt
 
@@ -194,3 +196,18 @@ def check_calendar(count: int):
                 for event in events
             ]
         )
+
+
+def init():
+    return add_extra_actions(
+        PLANNING_SYSTEM_NAME,
+        [
+            take_note,
+            read_notes,
+            erase_notes,
+            edit_note,
+            summarize_notes,
+            schedule_event,
+            check_calendar,
+        ],
+    )

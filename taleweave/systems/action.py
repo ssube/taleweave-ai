@@ -7,20 +7,12 @@ from packit.loops import loop_retry
 from packit.results import function_result
 from packit.toolbox import Toolbox
 
-from taleweave.actions.base import (
-    action_ask,
-    action_examine,
-    action_give,
-    action_move,
-    action_take,
-    action_tell,
-)
 from taleweave.context import (
     broadcast,
+    get_action_group,
     get_character_agent_for_name,
     get_character_for_agent,
     get_current_world,
-    get_extra_actions,
     set_current_character,
     set_current_room,
 )
@@ -34,6 +26,8 @@ from taleweave.utils.template import format_prompt
 from taleweave.utils.world import format_attributes
 
 from .planning import get_notes_events
+
+ACTION_SYSTEM_NAME = "action"
 
 logger = getLogger(__name__)
 
@@ -172,18 +166,7 @@ action_tools: Toolbox | None = None
 def initialize_action(world: World):
     global action_tools
 
-    extra_actions = get_extra_actions()
-    action_tools = Toolbox(
-        [
-            action_ask,
-            action_give,
-            action_examine,
-            action_move,
-            action_take,
-            action_tell,
-            *extra_actions,
-        ]
-    )
+    action_tools = Toolbox(get_action_group(ACTION_SYSTEM_NAME))
 
 
 def simulate_action(world: World, turn: int, data: Any | None = None):
@@ -215,5 +198,7 @@ def simulate_action(world: World, turn: int, data: Any | None = None):
 
 def init_action():
     return [
-        GameSystem("action", initialize=initialize_action, simulate=simulate_action)
+        GameSystem(
+            ACTION_SYSTEM_NAME, initialize=initialize_action, simulate=simulate_action
+        )
     ]

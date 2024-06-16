@@ -5,6 +5,7 @@ from packit.agent import Agent, agent_easy_connect
 
 from taleweave.context import (
     action_context,
+    add_extra_actions,
     broadcast,
     get_agent_for_character,
     get_current_turn,
@@ -21,6 +22,7 @@ from taleweave.generate import (
     generate_room,
     link_rooms,
 )
+from taleweave.systems.action import ACTION_SYSTEM_NAME
 from taleweave.utils.effect import apply_effects, is_effect_ready
 from taleweave.utils.search import find_character_in_room
 from taleweave.utils.string import normalize_name
@@ -256,8 +258,11 @@ def init_optional() -> List[Callable]:
     """
     Initialize the custom actions.
     """
-    return [
-        action_explore,
-        action_search,
-        action_use,
-    ]
+    return add_extra_actions(
+        ACTION_SYSTEM_NAME,
+        [
+            action_explore,
+            action_search,
+            action_use,
+        ],
+    )

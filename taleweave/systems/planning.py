@@ -9,17 +9,8 @@ from packit.loops import loop_retry
 from packit.results import function_result
 from packit.toolbox import Toolbox
 
-from taleweave.actions.planning import (
-    check_calendar,
-    edit_note,
-    erase_notes,
-    get_recent_notes,
-    read_notes,
-    schedule_event,
-    summarize_notes,
-    take_note,
-)
 from taleweave.context import (
+    get_action_group,
     get_character_agent_for_name,
     get_current_turn,
     get_game_config,
@@ -31,24 +22,26 @@ from taleweave.errors import ActionError
 from taleweave.game_system import GameSystem
 from taleweave.models.entity import Character, Room, World
 from taleweave.utils.conversation import make_keyword_condition, summarize_room
-from taleweave.utils.planning import expire_events, get_upcoming_events
+from taleweave.utils.planning import (
+    expire_events,
+    get_recent_notes,
+    get_upcoming_events,
+)
 from taleweave.utils.search import find_containing_room
 from taleweave.utils.template import format_prompt
 
 logger = getLogger(__name__)
 
+PLANNING_SYSTEM_NAME = "planning"
+
 # build a toolbox for the planners
-planner_toolbox = Toolbox(
-    [
-        check_calendar,
-        erase_notes,
-        read_notes,
-        edit_note,
-        schedule_event,
-        summarize_notes,
-        take_note,
-    ]
-)
+planning_tools: Toolbox | None = None
+
+
+def initialize_planning(world: World):
+    global planning_tools
+
+    planning_tools = Toolbox(get_action_group(PLANNING_SYSTEM_NAME))
 
 
 def get_notes_events(character: Character, current_turn: int):
@@ -87,7 +80,7 @@ def prompt_character_planning(
     room: Room,
     character: Character,
     agent: Agent,
-    planner_toolbox: Toolbox,
+    toolbox: Toolbox,
     current_turn: int,
     max_steps: int | None = None,
 ) -> str:
@@ -121,14 +114,14 @@ def prompt_character_planning(
                 raise ActionError(
                     format_prompt(
                         "world_simulate_character_planning_error_unknown_tool",
-                        actions=planner_toolbox.list_tools(),
+                        actions=toolbox.list_tools(),
                     )
                 )
             else:
                 raise ActionError(
                     format_prompt(
                         "world_simulate_character_planning_error_json",
-                        actions=planner_toolbox.list_tools(),
+                        actions=toolbox.list_tools(),
                     )
                 )
 
@@ -155,7 +148,7 @@ def prompt_character_planning(
             ),
             result_parser=result_parser,
             stop_condition=stop_condition,
-            toolbox=planner_toolbox,
+            toolbox=toolbox,
         )
 
         if agent.memory:
@@ -189,7 +182,7 @@ def simulate_planning(world: World, turn: int, data: Any | None = None):
         if agent.memory and len(agent.memory) > 0:
             try:
                 thoughts = prompt_character_planning(
-                    room, character, agent, planner_toolbox, turn
+                    room, character, agent, planning_tools, turn
                 )
                 logger.debug(f"{character.name} thinks: {thoughts}")
             except Exception:

@@ -34,10 +34,10 @@ current_character: Character | None = None
 dungeon_master: Agent | None = None
 
 # game context
-# TODO: wrap this into a class that can be passed around
+# TODO: wrap these into a class that can be passed around
+action_groups: Dict[str, List[Callable[..., str]]] = {}
 character_agents: Dict[str, Tuple[Character, Agent]] = {}
 event_emitter = EventEmitter()
-extra_actions: List[Callable[..., str]] = []
 game_config: Config = DEFAULT_CONFIG
 game_systems: List[GameSystem] = []
 prompt_library: PromptLibrary = PromptLibrary(prompts={})
@@ -186,8 +186,8 @@ def get_system_data(system: str) -> Any | None:
     return system_data.get(system)
 
 
-def get_extra_actions() -> List[Callable[..., str]]:
-    return extra_actions
+def get_action_group(name: str) -> List[Callable[..., str]]:
+    return action_groups.get(name, [])
 
 
 # endregion
@@ -242,9 +242,9 @@ def set_system_data(system: str, data: Any):
     system_data[system] = data
 
 
-def set_extra_actions(actions: List[Callable[..., str]]):
-    global extra_actions
-    extra_actions = actions
+def add_extra_actions(group: str, actions: List[Callable[..., str]]):
+    action_groups.setdefault(group, []).extend(actions)
+    return group, actions
 
 
 # endregion
