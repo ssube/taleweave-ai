@@ -42,13 +42,11 @@ def world_result_parser(value, agent, **kwargs):
     logger.debug(f"parsing action for {agent.name}: {value}")
 
     current_character = get_character_for_agent(agent)
-    current_room = next(
-        (room for room in current_world.rooms if current_character in room.characters),
-        None,
-    )
+    if current_character:
+        current_room = find_containing_room(current_world, current_character)
 
-    set_current_room(current_room)
-    set_current_character(current_character)
+        set_current_room(current_room)
+        set_current_character(current_character)
 
     return function_result(value, agent=agent, **kwargs)
 
@@ -66,7 +64,7 @@ def prompt_character_action(
     room_directions = [portal.name for portal in room.portals]
 
     character_attributes = format_attributes(character)
-    # character_effects = [effect.name for effect in character.active_effects]
+    character_effects = [effect.name for effect in character.active_effects]
     character_items = [item.name for item in character.items]
 
     # set up a result parser for the agent
@@ -140,6 +138,7 @@ def prompt_character_action(
         format_prompt(
             "world_simulate_character_action",
             actions=action_names,
+            character_effects=character_effects,
             character_items=character_items,
             attributes=character_attributes,
             directions=room_directions,

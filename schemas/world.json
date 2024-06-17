@@ -1,0 +1,1000 @@
+{
+  "$defs": {
+    "BooleanEffectPattern": {
+      "properties": {
+        "name": {
+          "title": "Name",
+          "type": "string"
+        },
+        "set": {
+          "anyOf": [
+            {
+              "type": "boolean"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Set"
+        },
+        "toggle": {
+          "anyOf": [
+            {
+              "type": "boolean"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Toggle"
+        }
+      },
+      "required": [
+        "name"
+      ],
+      "title": "BooleanEffectPattern",
+      "type": "object"
+    },
+    "BooleanEffectResult": {
+      "properties": {
+        "name": {
+          "title": "Name",
+          "type": "string"
+        },
+        "set": {
+          "anyOf": [
+            {
+              "type": "boolean"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Set"
+        },
+        "toggle": {
+          "anyOf": [
+            {
+              "type": "boolean"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Toggle"
+        }
+      },
+      "required": [
+        "name"
+      ],
+      "title": "BooleanEffectResult",
+      "type": "object"
+    },
+    "Calendar": {
+      "properties": {
+        "events": {
+          "items": {
+            "$ref": "#/$defs/CalendarEvent"
+          },
+          "title": "Events",
+          "type": "array"
+        }
+      },
+      "title": "Calendar",
+      "type": "object"
+    },
+    "CalendarEvent": {
+      "properties": {
+        "name": {
+          "title": "Name",
+          "type": "string"
+        },
+        "turn": {
+          "title": "Turn",
+          "type": "integer"
+        }
+      },
+      "required": [
+        "name",
+        "turn"
+      ],
+      "title": "CalendarEvent",
+      "type": "object"
+    },
+    "Character": {
+      "properties": {
+        "name": {
+          "title": "Name",
+          "type": "string"
+        },
+        "backstory": {
+          "title": "Backstory",
+          "type": "string"
+        },
+        "description": {
+          "title": "Description",
+          "type": "string"
+        },
+        "planner": {
+          "$ref": "#/$defs/Planner"
+        },
+        "active_effects": {
+          "items": {
+            "$ref": "#/$defs/EffectResult"
+          },
+          "title": "Active Effects",
+          "type": "array"
+        },
+        "attributes": {
+          "additionalProperties": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "number"
+              },
+              {
+                "type": "integer"
+              },
+              {
+                "type": "string"
+              }
+            ]
+          },
+          "title": "Attributes",
+          "type": "object"
+        },
+        "items": {
+          "items": {
+            "$ref": "#/$defs/Item"
+          },
+          "title": "Items",
+          "type": "array"
+        },
+        "id": {
+          "title": "Id",
+          "type": "string"
+        },
+        "type": {
+          "const": "character",
+          "default": "character",
+          "enum": [
+            "character"
+          ],
+          "title": "Type",
+          "type": "string"
+        }
+      },
+      "required": [
+        "name",
+        "backstory",
+        "description"
+      ],
+      "title": "Character",
+      "type": "object"
+    },
+    "EffectPattern": {
+      "properties": {
+        "name": {
+          "title": "Name",
+          "type": "string"
+        },
+        "description": {
+          "title": "Description",
+          "type": "string"
+        },
+        "application": {
+          "enum": [
+            "permanent",
+            "temporary"
+          ],
+          "title": "Application",
+          "type": "string"
+        },
+        "attributes": {
+          "items": {
+            "anyOf": [
+              {
+                "$ref": "#/$defs/StringEffectPattern"
+              },
+              {
+                "$ref": "#/$defs/FloatEffectPattern"
+              },
+              {
+                "$ref": "#/$defs/IntEffectPattern"
+              },
+              {
+                "$ref": "#/$defs/BooleanEffectPattern"
+              }
+            ]
+          },
+          "title": "Attributes",
+          "type": "array"
+        },
+        "cooldown": {
+          "anyOf": [
+            {
+              "type": "integer"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Cooldown"
+        },
+        "duration": {
+          "anyOf": [
+            {
+              "type": "integer"
+            },
+            {
+              "$ref": "#/$defs/IntRange"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Duration"
+        },
+        "last_used": {
+          "anyOf": [
+            {
+              "type": "integer"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Last Used"
+        },
+        "uses": {
+          "anyOf": [
+            {
+              "type": "integer"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Uses"
+        },
+        "id": {
+          "title": "Id",
+          "type": "string"
+        },
+        "type": {
+          "const": "effect_pattern",
+          "default": "effect_pattern",
+          "enum": [
+            "effect_pattern"
+          ],
+          "title": "Type",
+          "type": "string"
+        }
+      },
+      "required": [
+        "name",
+        "description",
+        "application"
+      ],
+      "title": "EffectPattern",
+      "type": "object"
+    },
+    "EffectResult": {
+      "properties": {
+        "name": {
+          "title": "Name",
+          "type": "string"
+        },
+        "description": {
+          "title": "Description",
+          "type": "string"
+        },
+        "attributes": {
+          "items": {
+            "anyOf": [
+              {
+                "$ref": "#/$defs/BooleanEffectResult"
+              },
+              {
+                "$ref": "#/$defs/FloatEffectResult"
+              },
+              {
+                "$ref": "#/$defs/IntEffectResult"
+              },
+              {
+                "$ref": "#/$defs/StringEffectResult"
+              }
+            ]
+          },
+          "title": "Attributes",
+          "type": "array"
+        },
+        "duration": {
+          "anyOf": [
+            {
+              "type": "integer"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Duration"
+        },
+        "id": {
+          "title": "Id",
+          "type": "string"
+        },
+        "type": {
+          "const": "effect_result",
+          "default": "effect_result",
+          "enum": [
+            "effect_result"
+          ],
+          "title": "Type",
+          "type": "string"
+        }
+      },
+      "required": [
+        "name",
+        "description"
+      ],
+      "title": "EffectResult",
+      "type": "object"
+    },
+    "FloatEffectPattern": {
+      "properties": {
+        "name": {
+          "title": "Name",
+          "type": "string"
+        },
+        "set": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "$ref": "#/$defs/FloatRange"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Set"
+        },
+        "offset": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "$ref": "#/$defs/FloatRange"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Offset"
+        },
+        "multiply": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "$ref": "#/$defs/FloatRange"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Multiply"
+        }
+      },
+      "required": [
+        "name"
+      ],
+      "title": "FloatEffectPattern",
+      "type": "object"
+    },
+    "FloatEffectResult": {
+      "properties": {
+        "name": {
+          "title": "Name",
+          "type": "string"
+        },
+        "set": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Set"
+        },
+        "offset": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Offset"
+        },
+        "multiply": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Multiply"
+        }
+      },
+      "required": [
+        "name"
+      ],
+      "title": "FloatEffectResult",
+      "type": "object"
+    },
+    "FloatRange": {
+      "properties": {
+        "min": {
+          "title": "Min",
+          "type": "number"
+        },
+        "max": {
+          "title": "Max",
+          "type": "number"
+        },
+        "interval": {
+          "default": 1.0,
+          "title": "Interval",
+          "type": "number"
+        }
+      },
+      "required": [
+        "min",
+        "max"
+      ],
+      "title": "FloatRange",
+      "type": "object"
+    },
+    "IntEffectPattern": {
+      "properties": {
+        "name": {
+          "title": "Name",
+          "type": "string"
+        },
+        "set": {
+          "anyOf": [
+            {
+              "type": "integer"
+            },
+            {
+              "$ref": "#/$defs/IntRange"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Set"
+        },
+        "offset": {
+          "anyOf": [
+            {
+              "type": "integer"
+            },
+            {
+              "$ref": "#/$defs/IntRange"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Offset"
+        },
+        "multiply": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "$ref": "#/$defs/FloatRange"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Multiply"
+        }
+      },
+      "required": [
+        "name"
+      ],
+      "title": "IntEffectPattern",
+      "type": "object"
+    },
+    "IntEffectResult": {
+      "properties": {
+        "name": {
+          "title": "Name",
+          "type": "string"
+        },
+        "set": {
+          "anyOf": [
+            {
+              "type": "integer"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Set"
+        },
+        "offset": {
+          "anyOf": [
+            {
+              "type": "integer"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Offset"
+        },
+        "multiply": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Multiply"
+        }
+      },
+      "required": [
+        "name"
+      ],
+      "title": "IntEffectResult",
+      "type": "object"
+    },
+    "IntRange": {
+      "properties": {
+        "min": {
+          "title": "Min",
+          "type": "integer"
+        },
+        "max": {
+          "title": "Max",
+          "type": "integer"
+        },
+        "interval": {
+          "default": 1,
+          "title": "Interval",
+          "type": "integer"
+        }
+      },
+      "required": [
+        "min",
+        "max"
+      ],
+      "title": "IntRange",
+      "type": "object"
+    },
+    "Item": {
+      "properties": {
+        "name": {
+          "title": "Name",
+          "type": "string"
+        },
+        "description": {
+          "title": "Description",
+          "type": "string"
+        },
+        "active_effects": {
+          "items": {
+            "$ref": "#/$defs/EffectResult"
+          },
+          "title": "Active Effects",
+          "type": "array"
+        },
+        "attributes": {
+          "additionalProperties": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "number"
+              },
+              {
+                "type": "integer"
+              },
+              {
+                "type": "string"
+              }
+            ]
+          },
+          "title": "Attributes",
+          "type": "object"
+        },
+        "effects": {
+          "items": {
+            "$ref": "#/$defs/EffectPattern"
+          },
+          "title": "Effects",
+          "type": "array"
+        },
+        "items": {
+          "items": {
+            "$ref": "#/$defs/Item"
+          },
+          "title": "Items",
+          "type": "array"
+        },
+        "id": {
+          "title": "Id",
+          "type": "string"
+        },
+        "type": {
+          "const": "item",
+          "default": "item",
+          "enum": [
+            "item"
+          ],
+          "title": "Type",
+          "type": "string"
+        }
+      },
+      "required": [
+        "name",
+        "description"
+      ],
+      "title": "Item",
+      "type": "object"
+    },
+    "Planner": {
+      "properties": {
+        "calendar": {
+          "$ref": "#/$defs/Calendar"
+        },
+        "notes": {
+          "items": {
+            "type": "string"
+          },
+          "title": "Notes",
+          "type": "array"
+        }
+      },
+      "title": "Planner",
+      "type": "object"
+    },
+    "Portal": {
+      "properties": {
+        "name": {
+          "title": "Name",
+          "type": "string"
+        },
+        "description": {
+          "title": "Description",
+          "type": "string"
+        },
+        "destination": {
+          "title": "Destination",
+          "type": "string"
+        },
+        "attributes": {
+          "additionalProperties": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "number"
+              },
+              {
+                "type": "integer"
+              },
+              {
+                "type": "string"
+              }
+            ]
+          },
+          "title": "Attributes",
+          "type": "object"
+        },
+        "id": {
+          "title": "Id",
+          "type": "string"
+        },
+        "type": {
+          "const": "portal",
+          "default": "portal",
+          "enum": [
+            "portal"
+          ],
+          "title": "Type",
+          "type": "string"
+        }
+      },
+      "required": [
+        "name",
+        "description",
+        "destination"
+      ],
+      "title": "Portal",
+      "type": "object"
+    },
+    "Room": {
+      "properties": {
+        "name": {
+          "title": "Name",
+          "type": "string"
+        },
+        "description": {
+          "title": "Description",
+          "type": "string"
+        },
+        "characters": {
+          "items": {
+            "$ref": "#/$defs/Character"
+          },
+          "title": "Characters",
+          "type": "array"
+        },
+        "active_effects": {
+          "items": {
+            "$ref": "#/$defs/EffectResult"
+          },
+          "title": "Active Effects",
+          "type": "array"
+        },
+        "attributes": {
+          "additionalProperties": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "number"
+              },
+              {
+                "type": "integer"
+              },
+              {
+                "type": "string"
+              }
+            ]
+          },
+          "title": "Attributes",
+          "type": "object"
+        },
+        "items": {
+          "items": {
+            "$ref": "#/$defs/Item"
+          },
+          "title": "Items",
+          "type": "array"
+        },
+        "portals": {
+          "items": {
+            "$ref": "#/$defs/Portal"
+          },
+          "title": "Portals",
+          "type": "array"
+        },
+        "id": {
+          "title": "Id",
+          "type": "string"
+        },
+        "type": {
+          "const": "room",
+          "default": "room",
+          "enum": [
+            "room"
+          ],
+          "title": "Type",
+          "type": "string"
+        }
+      },
+      "required": [
+        "name",
+        "description"
+      ],
+      "title": "Room",
+      "type": "object"
+    },
+    "StringEffectPattern": {
+      "properties": {
+        "name": {
+          "title": "Name",
+          "type": "string"
+        },
+        "append": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "items": {
+                "type": "string"
+              },
+              "type": "array"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Append"
+        },
+        "prepend": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "items": {
+                "type": "string"
+              },
+              "type": "array"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Prepend"
+        },
+        "set": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "items": {
+                "type": "string"
+              },
+              "type": "array"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Set"
+        }
+      },
+      "required": [
+        "name"
+      ],
+      "title": "StringEffectPattern",
+      "type": "object"
+    },
+    "StringEffectResult": {
+      "properties": {
+        "name": {
+          "title": "Name",
+          "type": "string"
+        },
+        "append": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Append"
+        },
+        "prepend": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Prepend"
+        },
+        "set": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Set"
+        }
+      },
+      "required": [
+        "name"
+      ],
+      "title": "StringEffectResult",
+      "type": "object"
+    }
+  },
+  "properties": {
+    "name": {
+      "title": "Name",
+      "type": "string"
+    },
+    "order": {
+      "items": {
+        "type": "string"
+      },
+      "title": "Order",
+      "type": "array"
+    },
+    "rooms": {
+      "items": {
+        "$ref": "#/$defs/Room"
+      },
+      "title": "Rooms",
+      "type": "array"
+    },
+    "theme": {
+      "title": "Theme",
+      "type": "string"
+    },
+    "id": {
+      "title": "Id",
+      "type": "string"
+    },
+    "type": {
+      "const": "world",
+      "default": "world",
+      "enum": [
+        "world"
+      ],
+      "title": "Type",
+      "type": "string"
+    }
+  },
+  "required": [
+    "name",
+    "order",
+    "rooms",
+    "theme"
+  ],
+  "title": "World",
+  "type": "object"
+}

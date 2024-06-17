@@ -5,8 +5,15 @@ from typing import List, Tuple
 from dotenv import load_dotenv
 from packit.utils import logger_with_colors
 
-from taleweave.context import get_dungeon_master, get_game_systems, set_game_systems
-from taleweave.engine import load_or_initialize_system_data
+from taleweave.context import (
+    get_dungeon_master,
+    get_game_config,
+    get_game_systems,
+    set_game_config,
+    set_game_systems,
+    subscribe,
+)
+from taleweave.engine import load_or_generate_world, load_or_initialize_system_data
 from taleweave.game_system import GameSystem
 from taleweave.generate import (
     generate_character,
@@ -15,9 +22,11 @@ from taleweave.generate import (
     generate_room,
     link_rooms,
 )
-from taleweave.main import load_prompt_library
+from taleweave.main import get_world_prompt, load_prompt_library
 from taleweave.models.base import dump_model
+from taleweave.models.config import DEFAULT_CONFIG, Config
 from taleweave.models.entity import World, WorldState
+from taleweave.models.event import GenerateEvent
 from taleweave.plugins import load_plugin
 from taleweave.utils.file import load_yaml, save_yaml
 from taleweave.utils.search import (
@@ -41,8 +50,19 @@ logger = logger_with_colors(__name__)
 load_dotenv(environ.get("TALEWEAVE_ENV", ".env"), override=True)
 
 
+def generate_listener(event: GenerateEvent):
+    if event.entity:
+        logger.info(f"Generating {event.entity.type} named {event.entity.name}")
+    else:
+        logger.info(event.name)
+
+
+subscribe(GenerateEvent, generate_listener)
+
+
 def parse_args():
-    parser = argparse.ArgumentParser(description="Taleweave Editor")
+    parser = argparse.ArgumentParser(description="TaleWeave AI Editor")
+    parser.add_argument("--config", type=str, help="Configuration file to load")
     parser.add_argument("--prompts", type=str, nargs="*", help="Prompt files to load")
     parser.add_argument("--state", type=str, help="State file to edit")
     parser.add_argument("--world", type=str, help="World file to edit")
@@ -50,6 +70,28 @@ def parse_args():
 
     subparsers = parser.add_subparsers(dest="command", help="Command to execute")
     subparsers.required = True
+
+    # Set up the 'new' command
+    new_parser = subparsers.add_parser("new", help="Create a new world")
+    new_parser.add_argument("name", type=str, help="Name of the new world")
+    new_parser.add_argument("--rooms", type=int, help="Number of rooms to generate")
+    new_parser.add_argument(
+        "--world-flavor",
+        type=str,
+        default="",
+        help="Some additional flavor text for the generated world",
+    )
+    new_parser.add_argument(
+        "--world-template",
+        type=str,
+        help="The template file to load the world prompt from",
+    )
+    new_parser.add_argument(
+        "--world-theme",
+        type=str,
+        default="fantasy",
+        help="The theme of the generated world",
+    )
 
     # Set up the 'list' command
     list_parser = subparsers.add_parser("list", help="List entities of a specific type")
@@ -155,6 +197,19 @@ def save_world(state_file, world_file, world: World, state: WorldState | None):
 
         with open(world_file, "w") as f:
             save_yaml(f, dump_model(World, world))
+
+
+def command_new(args):
+    logger.info(f"Creating new world {args.name}")
+
+    config = get_game_config()
+    systems = get_game_systems()
+
+    prompt = get_world_prompt(args)
+    world, state_file, _ = load_or_generate_world(
+        args.name, args.state, config, [], systems, prompt, room_count=args.rooms
+    )
+    save_world(state_file, args.name, world, None)
 
 
 def command_list(args):
@@ -349,6 +404,7 @@ def command_link(args):
 
 
 COMMAND_TABLE = {
+    "new": command_new,
     "list": command_list,
     "describe": command_describe,
     "create": command_create,
@@ -364,6 +420,14 @@ def main():
     logger.debug(f"running with args: {args}")
 
     load_prompt_library(args)
+
+    if args.config:
+        with open(args.config, "r") as f:
+            config = Config(**load_yaml(f))
+    else:
+        config = DEFAULT_CONFIG
+
+    set_game_config(config)
 
     # load game systems before executing commands
     systems: List[GameSystem] = []

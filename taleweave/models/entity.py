@@ -13,7 +13,7 @@ Actions = Dict[str, Callable]
 class Item(BaseModel):
     name: str
     description: str
-    actions: Actions = Field(default_factory=dict)
+    # actions: Actions = Field(default_factory=dict)
     active_effects: List[EffectResult] = Field(default_factory=list)
     attributes: Attributes = Field(default_factory=dict)
     effects: List[EffectPattern] = Field(default_factory=list)
@@ -28,7 +28,7 @@ class Character(BaseModel):
     backstory: str
     description: str
     planner: Planner = Field(default_factory=Planner)
-    actions: Actions = Field(default_factory=dict)
+    # actions: Actions = Field(default_factory=dict)
     active_effects: List[EffectResult] = Field(default_factory=list)
     attributes: Attributes = Field(default_factory=dict)
     items: List[Item] = Field(default_factory=list)
@@ -41,7 +41,7 @@ class Portal(BaseModel):
     name: str
     description: str
     destination: str
-    actions: Actions = Field(default_factory=dict)
+    # actions: Actions = Field(default_factory=dict)
     attributes: Attributes = Field(default_factory=dict)
     id: str = Field(default_factory=uuid)
     type: Literal["portal"] = "portal"
@@ -52,7 +52,7 @@ class Room(BaseModel):
     name: str
     description: str
     characters: List[Character] = Field(default_factory=list)
-    actions: Actions = Field(default_factory=dict)
+    # actions: Actions = Field(default_factory=dict)
     active_effects: List[EffectResult] = Field(default_factory=list)
     attributes: Attributes = Field(default_factory=dict)
     items: List[Item] = Field(default_factory=list)
