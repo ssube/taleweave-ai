@@ -36,7 +36,7 @@ TaleWeave AI can:
 - Be run locally - does not require any cloud services, but does play nicely with them
 - Connect to your data - game systems can fetch data for RAG
 - Export training data for fine tuning character models
-- Plug in to your workflow - run step by step in notebook as a Python library
+- Plug in to your workflow - run the simulation step by step in Jupyter notebooks as a Python library
 - Connect to your server and vice versa - the Discord bot is a plugin and can be replaced with your favorite chat platform
 
 ## Contents

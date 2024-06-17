@@ -193,4 +193,8 @@ def simulate_planning(world: World, turn: int, data: Any | None = None):
 
 def init_planning():
     # TODO: add format method that renders the recent notes and upcoming events
-    return [GameSystem("planning", simulate=simulate_planning)]
+    return [
+        GameSystem(
+            "planning", initialize=initialize_planning, simulate=simulate_planning
+        )
+    ]
