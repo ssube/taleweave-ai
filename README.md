@@ -79,6 +79,7 @@ please check out to [the documentation folder](./docs).
 Detailed guides are available for:
 
 - [admins](./docs/guides/admin.md)
+- [game developers](./docs/guides/developer.md)
 - [players](./docs/guides/player.md)
 
 ## Contributing
