@@ -7,7 +7,7 @@ TaleWeave AI is an open-source game engine designed for creating rich, immersive
 
 ## Features
 
-TaleWeave AI offers a range of features for gamers, developers, and researchers. It is a:
+TaleWeave AI is meant for gamers, developers, and researchers. It is a:
 
 - multiplayer text adventure
 - Discord role-playing game
@@ -19,7 +19,7 @@ TaleWeave AI offers a range of features for gamers, developers, and researchers.
 - human-machine interface
 - multi-user dungeon
 - cross-platform gaming experience
-- behavior experiment
+- behavioral experiment
 
 TaleWeave AI does a few things out of the box:
 
@@ -32,11 +32,11 @@ TaleWeave AI does a few things out of the box:
 
 TaleWeave AI can:
 
-- Be modified in almost every way - everything is a plugin, including the planning-action loop that drives the simulation
+- Be modified in almost every way - everything is a plugin, including the planning and action stages that drive the simulation
 - Be run locally - does not require any cloud services, but does play nicely with them
-- Connect to your data - game systems can fetch data for RAG
-- Export training data for fine tuning character models
-- Plug in to your workflow - run the simulation step by step in Jupyter notebooks as a Python library
+- Connect to your data - game systems can fetch data for RAG, making responses richer and more consistent
+- Export training data - for analysis and fine tuning of character models
+- Plug in to your workflow - run the simulation step by step in Jupyter notebooks using the TaleWeave AI engine as a Python library
 - Connect to your server and vice versa - the Discord bot is a plugin and can be replaced with your favorite chat platform
 
 ## Contents
@@ -56,6 +56,8 @@ TaleWeave AI can:
 
 - Python 3.10
 - Ollama, vLLM, or another OpenAI-compatible LLM API (including OpenAI)
+
+While TaleWeave AI can be run entirely on CPU, one or more GPUs are highly recommended.
 
 ### Recommended
 
