@@ -7,6 +7,6 @@ RUN pip install --no-cache-dir -r requirements/base.txt
 
 COPY taleweave/ /taleweave/taleweave/
 COPY prompts/ /taleweave/prompts/
-COPY config.yml /taleweave/config.yml
+COPY config.yaml /taleweave/config.yaml
 
 CMD ["python", "-m", "taleweave.main"]

@@ -303,7 +303,7 @@ DISCORD_TOKEN=YOUR_TOKEN
 
 ### Configure the Discord bot
 
-Copy the `config.yml` file to a file named `custom_config.yml` and edit the `bot` section to use your desired
+Copy the `config.yaml` file to a file named `custom_config.yaml` and edit the `bot` section to use your desired
 parameters for the Discord bot. Make sure the list of `channels` includes one or more valid channels in the servers
 to which you invited the bot. By default, this is a channel named `taleweave`.
 
@@ -323,7 +323,7 @@ The `name_*` fields are used by the bot to refer to itself in messages.
 _Note:_ This step is _required_ if you are using the `--render` or `--render-generated` command-line arguments. If you
 launched ComfyUI, do this step too.
 
-In your `custom_config.yml`, edit the `render` section to use your desired parameters for image generation. Make sure
+In your `custom_config.yaml`, edit the `render` section to use your desired parameters for image generation. Make sure
 the `checkpoints` are valid file names in your checkpoints folder. If you provide more than one checkpoint, one will be
 randomly selected for each batch of images. Adjust the `sizes` as needed to match the checkpoint and control your memory
 usage.
@@ -356,7 +356,7 @@ render:
 
 _Note:_ You only need to do this step if you want to change the host or port where the websocket server will listen.
 
-In your `custom_config.yml`, edit the `server` section to change the host and port where the websocket server will
+In your `custom_config.yaml`, edit the `server` section to change the host and port where the websocket server will
 listen for connections:
 
 ```yaml
@@ -373,7 +373,7 @@ front of the websocket server.
 
 _Note:_ You only need to do this step if you want to change the size of the world during generation.
 
-In your `custom_config.yml`, edit the `world` section to change the size of the rooms and character inventory while
+In your `custom_config.yaml`, edit the `world` section to change the size of the rooms and character inventory while
 generating the world.
 
 ```yaml
@@ -432,7 +432,7 @@ world:
 The world prompt has two parts: the main theme and the secondary flavor text used by the dungeon master and world
 builder to make a more unique and interesting world.
 
-Some world templates are provided in the [`taleweave/prompts.yml` file](../../taleweave/prompts.yml), which you can
+Some world templates are provided in the [`taleweave/worlds.yaml` file](../../taleweave/worlds.yaml), which you can
 use to get started, or create your own prompt and generate a unique world.
 
 Example world templates include:
@@ -468,10 +468,10 @@ server:
 ```bash
 # Start the TaleWeave AI engine
 python3 -m taleweave.main \
-  --config config.yml \
-  --prompts prompts/llama-base.yml prompts/llama-quest.yml prompts/discord-en-us.yml \
+  --config config.yaml \
+  --prompts prompts/llama-*.yaml prompts/discord-en-us.yaml \
   --world worlds/outback-animals-1 \
-  --world-template ./worlds.yml:outback-animals \
+  --world-template ./worlds.yaml:outback-animals \
   --discord  \
   --render \
   --render-generated \
@@ -479,8 +479,8 @@ python3 -m taleweave.main \
   --rooms 3 \
   --turns 30 \
   --optional-actions \
-  --actions taleweave.systems.sim:init_actions \
-  --systems taleweave.systems.sim:init_logic
+  --actions taleweave.actions.core taleweave.actions.optional taleweave.systems.sim:init_actions \
+  --systems taleweave.systems.core taleweave.systems.sim:init_logic
 ```
 
 This will generate a relatively small world with 3 rooms or areas, run for 30 steps, then save the game and shut down.
@@ -490,7 +490,7 @@ another file named `worlds/outback-animals-1.state.json`. The world can be stopp
 although the step in progress will be lost. The saved state can be resumed and played for any number of additional
 steps by running the server again with the same arguments.
 
-> Note: `module.name:function_name` and `path/filename.yml:key` are patterns you will see repeated throughout TaleWeave AI.
+> Note: `module.name:function_name` and `path/filename.yaml:key` are patterns you will see repeated throughout TaleWeave AI.
 > They indicate a Python module and function within it, or a data file and key within it, respectively.
 
 The optional actions are actions that allow characters to explore and expand the world during the game,

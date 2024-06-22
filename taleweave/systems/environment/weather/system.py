@@ -1,5 +1,6 @@
 from functools import partial
 from logging import getLogger
+from os import path
 from typing import List
 
 from packit.agent import Agent
@@ -17,7 +18,7 @@ logger = getLogger(__name__)
 
 
 LOGIC_FILES = [
-    "./taleweave/systems/environment/weather/logic.yaml",
+    path.join(".", "taleweave", "systems", "environment", "weather", "logic.yaml"),
 ]
 
 

@@ -113,18 +113,28 @@ def parse_args():
         type=str,
         nargs="*",
         help="Extra actions to include in the simulation",
+        default=[
+            "taleweave.actions.core",
+        ],
     )
     parser.add_argument(
         "--prompts",
         type=str,
         nargs="*",
         help="The file to load game prompts from",
+        default=[
+            "prompts/discord-en-us.yaml",
+            "prompts/llama-*.yaml",
+        ],
     )
     parser.add_argument(
         "--systems",
         type=str,
         nargs="*",
         help="Extra systems to run in the simulation",
+        default=[
+            "taleweave.systems.core",
+        ],
     )
 
     # generation arguments
