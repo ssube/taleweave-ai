@@ -1,0 +1,33 @@
+rules:
+  - group: rpg.health
+    match:
+      type: character
+    rule: |
+      "health" in attributes and attributes&.health <= 0
+    set:
+      active: false
+      dead: true
+
+  - group: rpg.health
+    match:
+      type: character
+    rule: |
+      "bleeding" in attributes and attributes&.bleeding > 0
+    chance: 0.5
+    trigger: [taleweave.systems.rpg.health.triggers:character_bleeding]
+
+labels:
+  - match:
+      type: character
+      dead: true
+    backstory: You are dead.
+    description: They are dead.
+  - match:
+      type: character
+      bleeding: true
+    backstory: You are bleeding.
+    description: They are bleeding.
+  - match:
+      type: room
+      bloody: true
+    description: The room is covered in blood.

@@ -1,6 +1,6 @@
 rules:
   # weather logic
-  - group: weather
+  - group: environment.weather
     match:
       type: room
       environment: outdoor
@@ -9,7 +9,7 @@ rules:
     set:
       weather: clouds
 
-  - group: weather
+  - group: environment.weather
     match:
       type: room
       environment: outdoor
@@ -18,7 +18,7 @@ rules:
     set:
       weather: rain
 
-  - group: weather
+  - group: environment.weather
     match:
       type: room
       environment: outdoor
@@ -27,7 +27,7 @@ rules:
     set:
       weather: clear
 
-  - group: weather
+  - group: environment.weather
     match:
       type: room
       environment: outdoor
@@ -37,7 +37,7 @@ rules:
       weather: clear
 
 # weather initial state
-  - group: weather
+  - group: environment.weather
     match:
       type: room
       environment: outdoor

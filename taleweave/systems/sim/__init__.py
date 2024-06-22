@@ -3,7 +3,7 @@ from os import path
 from taleweave.systems.generic.logic import load_logic
 
 from .hunger.actions import action_cook, action_eat
-from .hygiene.hygiene_actions import action_wash
+from .hygiene.actions import action_wash
 from .sleeping.actions import action_sleep
 
 

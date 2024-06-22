@@ -264,7 +264,7 @@ def main():
         logger.info(f"loading extra actions from {action_name}")
         action_group, module_actions = load_plugin(action_name)
         logger.info(
-            f"loaded extra actions to group '{action_group}': {[action.__name__ for action in module_actions]}"
+            f"added actions to group '{action_group}': {[action.__name__ for action in module_actions]}"
         )
 
     # set up the game systems
@@ -274,17 +274,18 @@ def main():
 
     # load extra systems from plugins
     for system_name in args.systems or []:
-        logger.info(f"loading extra systems from {system_name}")
+        logger.info(f"loading systems from {system_name}")
         module_systems = load_plugin(system_name)
-        logger.info(f"loaded extra systems: {module_systems}")
+        logger.info(f"loaded game systems: {module_systems}")
         systems.extend(module_systems)
 
     # make sure the server system runs after any updates
     if args.server:
         from taleweave.server.websocket import server_system
 
-        systems.append(GameSystem(name="server", simulate=server_system))
+        systems.append(GameSystem(name="websocket_server", simulate=server_system))
 
+    logger.info(f"running with {len(systems)} game systems: {systems}")
     set_game_systems(systems)
 
     # load or generate the world

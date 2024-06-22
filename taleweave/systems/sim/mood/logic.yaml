@@ -1,6 +1,6 @@
 rules:
   # mood logic
-  - group: mood
+  - group: sim.mood
     match:
       type: character
       mood: happy
@@ -8,7 +8,7 @@ rules:
     set:
       mood: sad
 
-  - group: mood
+  - group: sim.mood
     match:
       type: character
       mood: happy
@@ -16,7 +16,7 @@ rules:
     set:
       mood: neutral
 
-  - group: mood
+  - group: sim.mood
     match:
       type: character
       mood: angry
@@ -24,7 +24,7 @@ rules:
     set:
       mood: neutral
 
-  - group: mood
+  - group: sim.mood
     match:
       type: character
       mood: neutral
@@ -32,7 +32,7 @@ rules:
     set:
       mood: happy
 
-  - group: mood
+  - group: sim.mood
     match:
       type: character
       mood: neutral
@@ -40,7 +40,7 @@ rules:
     set:
       mood: sad
 
-  - group: mood
+  - group: sim.mood
     match:
       type: character
       mood: sad
@@ -48,7 +48,7 @@ rules:
     set:
       mood: angry
 
-  - group: mood
+  - group: sim.mood
     match:
       type: character
       mood: sad
@@ -57,7 +57,7 @@ rules:
       mood: neutral
 
   # mood interactions with other systems
-  - group: mood
+  - group: sim.mood
     match:
       type: character
       mood: sad
@@ -66,7 +66,7 @@ rules:
     set:
       sleep: tired
 
-  - group: mood
+  - group: sim.mood
     match:
       type: character
       hunger: hungry
@@ -74,7 +74,7 @@ rules:
     set:
       mood: angry
 
-  - group: mood
+  - group: sim.mood
     match:
       type: character
       mood: angry
@@ -83,7 +83,7 @@ rules:
     set:
       mood: neutral
 
-  - group: mood
+  - group: sim.mood
     match:
       type: character
       mood: neutral
@@ -92,7 +92,7 @@ rules:
     set:
       mood: happy
 
-  - group: mood
+  - group: sim.mood
     match:
       type: character
       mood: happy
@@ -101,7 +101,7 @@ rules:
     set:
       mood: neutral
 
-  - group: mood
+  - group: sim.mood
     match:
       type: character
       mood: neutral
@@ -111,7 +111,7 @@ rules:
       mood: sad
 
   # mood initialization
-  - group: mood
+  - group: sim.mood
     rule: |
       "mood" not in attributes
     set:

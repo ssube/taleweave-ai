@@ -1,6 +1,6 @@
 rules:
   # wet/dry logic
-  - group: environment-moisture
+  - group: environment.moisture
     match:
       type: character
       wet: true
@@ -8,7 +8,7 @@ rules:
     set:
       wet: false
 
-  - group: environment-moisture
+  - group: environment.moisture
     match:
       type: character
       wet: true
@@ -16,20 +16,6 @@ rules:
     chance: 0.2
     set:
       wet: false
-
-  - group: environment-temperature
-    match:
-      type: room
-      temperature: hot
-    chance: 0.2
-    trigger: [taleweave.systems.sim.environment_triggers:hot_room]
-
-  - group: environment-temperature
-    match:
-      type: room
-      temperature: cold
-    chance: 0.2
-    trigger: [taleweave.systems.sim.environment_triggers:cold_room]
 
 labels:
   - match:

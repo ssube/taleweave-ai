@@ -1,6 +1,6 @@
 rules:
   # cooking logic
-  - group: cooking
+  - group: sim.cooking
     match:
       type: item
       edible: true
@@ -9,7 +9,7 @@ rules:
     set:
       spoiled: true
 
-  - group: cooking
+  - group: sim.cooking
     match:
       type: item
       edible: true
@@ -19,7 +19,7 @@ rules:
       spoiled: true
 
   # hunger logic
-  - group: hunger
+  - group: sim.hunger
     match:
       type: character
       hunger: full
@@ -28,14 +28,14 @@ rules:
       hunger: hungry
 
   # hunger initialization
-  - group: hunger
+  - group: sim.hunger
     rule: |
       "hunger" not in attributes
     set:
       hunger: full
 
   # thirst logic
-  - group: thirst
+  - group: sim.thirst
     match:
       type: character
       thirst: hydrated
@@ -44,7 +44,7 @@ rules:
       thirst: thirsty
 
   # thirst initialization
-  - group: thirst
+  - group: sim.thirst
     rule: |
       "thirst" not in attributes
     set:

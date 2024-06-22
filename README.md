@@ -73,14 +73,15 @@ TaleWeave AI has in-game actions for:
 
 TaleWeave AI has game systems for:
 
-| Core     | Life Sim        | RPG    | Environment |
-| -------- | --------------- | ------ | ----------- |
-| Acting   | Hunger & Thirst | Health | Humidity    |
-| Planning | Hygiene         | Quests | Temperature |
-| Summary  | Mood            |        | Time of day |
-|          | Sleeping        |        | Weather     |
+| Core     | Life Sim        | RPG    | Environment | Generic |
+| -------- | --------------- | ------ | ----------- | ------- |
+| Acting   | Hunger & Thirst | Health | Humidity    | Logic   |
+| Planning | Hygiene         | Quests | Temperature |         |
+| Summary  | Mood            |        | Time of day |         |
+|          | Sleeping        |        | Weather     |         |
 
 1. The core summary system provides character with a summary of actions taken by other characters in between turns.
+2. The generic systems are driven by data files and can be used to implement new systems without writing any code.
 
 All of the game systems are optional, including the core systems, so you can configure a world where characters only
 plan and never act, or vice versa.

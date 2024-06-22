@@ -187,7 +187,7 @@ def load_logic(filename: str, name_prefix: str = "logic") -> GameSystem:
                     )
                     logic_triggers[trigger] = get_plugin_function(function_name)
 
-    logger.info("initialized logic system")
+    logger.info("initialized logic system with %d rules", len(logic_rules.rules))
     system_format = wraps(format_logic)(partial(format_logic, rules=logic_rules))
     system_initialize = wraps(update_logic)(
         partial(update_logic, turn=0, rules=logic_rules, triggers=logic_triggers)
