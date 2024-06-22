@@ -11,6 +11,7 @@ from yaml import Loader, load
 from taleweave.game_system import FormatPerspective, GameSystem
 from taleweave.models.entity import Attributes, World, WorldEntity, dataclass
 from taleweave.plugins import get_plugin_function
+from taleweave.utils.template import format_str
 
 logger = getLogger(__name__)
 
@@ -158,9 +159,11 @@ def format_logic(
     for label in rules.labels:
         if match_logic(entity, label):
             if perspective == FormatPerspective.SECOND_PERSON and label.backstory:
-                labels.append(label.backstory)
+                backstory = format_str(label.backstory, entity=entity)
+                labels.append(backstory)
             elif perspective == FormatPerspective.THIRD_PERSON and label.description:
-                labels.append(label.description)
+                description = format_str(label.description, entity=entity)
+                labels.append(description)
             else:
                 logger.debug("label has no relevant description: %s", label)
 

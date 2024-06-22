@@ -195,7 +195,7 @@ def simulate_action(world: World, turn: int, data: Any | None = None):
             logger.exception(f"error during action for character {character.name}")
 
 
-def init_action():
+def init():
     return [
         GameSystem(
             ACTION_SYSTEM_NAME, initialize=initialize_action, simulate=simulate_action

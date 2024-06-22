@@ -75,7 +75,7 @@ TaleWeave AI has game systems for:
 
 | Core     | Life Sim        | RPG    | Environment | Generic |
 | -------- | --------------- | ------ | ----------- | ------- |
-| Acting   | Hunger & Thirst | Health | Humidity    | Logic   |
+| Acting   | Hunger & Thirst | Health | Moisture    | Logic   |
 | Planning | Hygiene         | Quests | Temperature |         |
 | Summary  | Mood            |        | Time of day |         |
 |          | Sleeping        |        | Weather     |         |

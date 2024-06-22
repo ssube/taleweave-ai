@@ -60,8 +60,6 @@ if True:
     from taleweave.models.prompt import PromptLibrary
     from taleweave.plugins import load_plugin
     from taleweave.state import save_world_state
-    from taleweave.systems.core.action import init_action
-    from taleweave.systems.core.planning import init_planning
 
 
 def int_or_inf(value: str) -> float | int:
@@ -269,10 +267,6 @@ def main():
 
     # set up the game systems
     systems: List[GameSystem] = []
-    systems.extend(init_planning())
-    systems.extend(init_action())
-
-    # load extra systems from plugins
     for system_name in args.systems or []:
         logger.info(f"loading systems from {system_name}")
         module_systems = load_plugin(system_name)
