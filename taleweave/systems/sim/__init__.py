@@ -1,15 +1,21 @@
-from taleweave.systems.logic import load_logic
+from os import path
 
-from .hunger_actions import action_cook, action_eat
-from .hygiene_actions import action_wash
-from .sleeping_actions import action_sleep
+from taleweave.systems.generic.logic import load_logic
 
-LOGIC_FILES = [
-    "./taleweave/systems/sim/environment_logic.yaml",
-    "./taleweave/systems/sim/hunger_logic.yaml",
-    "./taleweave/systems/sim/hygiene_logic.yaml",
-    "./taleweave/systems/sim/mood_logic.yaml",
-    "./taleweave/systems/sim/sleeping_logic.yaml",
+from .hunger.actions import action_cook, action_eat
+from .hygiene.hygiene_actions import action_wash
+from .sleeping.actions import action_sleep
+
+
+def logic_path(system: str) -> str:
+    return path.join(".", "taleweave", "systems", "sim", system, "logic.yaml")
+
+
+SYSTEM_NAMES = [
+    "hunger",
+    "hygiene",
+    "mood",
+    "sleeping",
 ]
 
 
@@ -26,4 +32,10 @@ def init_actions():
 
 
 def init_logic():
-    return [load_logic(filename) for filename in LOGIC_FILES]
+    systems = []
+    for system_name in SYSTEM_NAMES:
+        logic_file = logic_path(system_name)
+        if path.exists(logic_file):
+            systems.append(load_logic(logic_file, name_prefix=system_name))
+
+    return systems

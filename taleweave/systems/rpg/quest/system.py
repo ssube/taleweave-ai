@@ -15,7 +15,7 @@ from taleweave.models.entity import (
     World,
     WorldEntity,
 )
-from taleweave.systems.logic import match_logic
+from taleweave.systems.generic.logic import match_logic
 from taleweave.utils.search import (
     find_entity_reference,
     find_item_in_container,

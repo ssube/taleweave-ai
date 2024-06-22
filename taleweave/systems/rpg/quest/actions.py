@@ -1,14 +1,15 @@
 from taleweave.context import action_context, get_system_data
 from taleweave.errors import ActionError
-from taleweave.systems.quest import (
+from taleweave.utils.search import find_character_in_room
+from taleweave.utils.template import format_prompt
+
+from .system import (
     QUEST_SYSTEM,
     complete_quest,
     get_active_quest,
     get_quests_for_character,
     set_active_quest,
 )
-from taleweave.utils.search import find_character_in_room
-from taleweave.utils.template import format_prompt
 
 
 def accept_quest(character: str, quest: str) -> str:

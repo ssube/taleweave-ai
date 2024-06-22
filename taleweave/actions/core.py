@@ -11,7 +11,7 @@ from taleweave.context import (
     world_context,
 )
 from taleweave.errors import ActionError
-from taleweave.systems.action import ACTION_SYSTEM_NAME
+from taleweave.systems.core.action import ACTION_SYSTEM_NAME
 from taleweave.utils.conversation import loop_conversation
 from taleweave.utils.search import (
     find_character_in_room,

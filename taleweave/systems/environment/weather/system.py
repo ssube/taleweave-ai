@@ -10,14 +10,14 @@ from taleweave.context import get_dungeon_master
 from taleweave.game_system import GameSystem
 from taleweave.models.base import dataclass
 from taleweave.models.entity import Room, World, WorldEntity
-from taleweave.systems.logic import load_logic
+from taleweave.systems.generic.logic import load_logic
 from taleweave.utils.string import or_list
 
 logger = getLogger(__name__)
 
 
 LOGIC_FILES = [
-    "./taleweave/systems/weather/weather_logic.yaml",
+    "./taleweave/systems/environment/weather/logic.yaml",
 ]
 
 

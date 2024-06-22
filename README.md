@@ -5,6 +5,21 @@ TaleWeave AI is an open-source game engine designed for creating rich, immersive
 
 ![TaleWeave AI logo with glowing sunrise over angular castle](https://docs-cdn.taleweave.ai/taleweave-github-1280.png)
 
+## Contents
+
+- [TaleWeave AI](#taleweave-ai)
+  - [Contents](#contents)
+  - [Features](#features)
+    - [Game Actions](#game-actions)
+    - [Game Systems](#game-systems)
+  - [Requirements](#requirements)
+    - [Recommended](#recommended)
+  - [Setup](#setup)
+  - [Documentation](#documentation)
+  - [Contributing](#contributing)
+  - [Support and Community](#support-and-community)
+  - [License](#license)
+
 ## Features
 
 TaleWeave AI is meant for gamers, developers, and researchers. It is a:
@@ -26,7 +41,7 @@ TaleWeave AI does a few things out of the box:
 - Generate a world from a brief text prompt
 - Simulate the actions of characters in that world
 - Allow humans to interact with each other and with NPCs
-- Track detailed status for each entity: mood, hunger, thirst, hygiene, time of day, weather, etc
+- Track detailed status for each entity: mood, hunger, thirst, hygiene, weather, and more
 - Summarize the environment into LLM prompts
 - Foster emergent behavior through action digests, shared environment, and note taking
 
@@ -35,27 +50,45 @@ TaleWeave AI can:
 - Be modified in almost every way - everything is a plugin, including the planning and action stages that drive the simulation
 - Be run locally - does not require any cloud services, but does play nicely with them
 - Connect to your data - game systems can fetch data for RAG, making responses richer and more consistent
-- Export training data - for analysis and fine tuning of character models
+- Export training data - for analysis, visualization, and fine tuning of character models
 - Plug in to your workflow - run the simulation step by step in Jupyter notebooks using the TaleWeave AI engine as a Python library
 - Connect to your server and vice versa - the Discord bot is a plugin and can be replaced with your favorite chat platform
 
-## Contents
+### Game Actions
 
-- [TaleWeave AI](#taleweave-ai)
-  - [Features](#features)
-  - [Contents](#contents)
-  - [Requirements](#requirements)
-    - [Recommended](#recommended)
-  - [Setup](#setup)
-  - [Documentation](#documentation)
-  - [Contributing](#contributing)
-  - [Support and Community](#support-and-community)
-  - [License](#license)
+TaleWeave AI has in-game actions for:
+
+| Core         | Life Sim        | RPG       |
+| ------------ | --------------- | --------- |
+| Planning     | Hunger & Thirst | Combat    |
+| Conversation | Hygiene         | Crafting  |
+| Movement     | Sleeping        | Magic     |
+| Exploration  |                 | Movement* |
+|              |                 | Writing   |
+
+1. The core exploration actions provide ways for characters to expand the world by finding new rooms and items.
+2. The RPG movement actions provide additional situational movement like crawling, climbing, and jumping.
+
+### Game Systems
+
+TaleWeave AI has game systems for:
+
+| Core     | Life Sim        | RPG    | Environment |
+| -------- | --------------- | ------ | ----------- |
+| Acting   | Hunger & Thirst | Health | Humidity    |
+| Planning | Hygiene         | Quests | Temperature |
+| Summary  | Mood            |        | Time of day |
+|          | Sleeping        |        | Weather     |
+
+1. The core summary system provides character with a summary of actions taken by other characters in between turns.
+
+All of the game systems are optional, including the core systems, so you can configure a world where characters only
+plan and never act, or vice versa.
 
 ## Requirements
 
-- Python 3.10
-- Ollama, vLLM, or another OpenAI-compatible LLM API (including OpenAI)
+- Python 3.10+
+- Ollama or an OpenAI-compatible LLM API like llama.cpp, vLLM, or OpenAI
 
 While TaleWeave AI can be run entirely on CPU, one or more GPUs are highly recommended.
 

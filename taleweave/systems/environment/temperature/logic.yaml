@@ -1,0 +1,40 @@
+rules:
+  # wet/dry logic
+  - group: environment-moisture
+    match:
+      type: character
+      wet: true
+    chance: 0.1
+    set:
+      wet: false
+
+  - group: environment-moisture
+    match:
+      type: character
+      wet: true
+      temperature: hot
+    chance: 0.2
+    set:
+      wet: false
+
+  - group: environment-temperature
+    match:
+      type: room
+      temperature: hot
+    chance: 0.2
+    trigger: [taleweave.systems.sim.environment_triggers:hot_room]
+
+  - group: environment-temperature
+    match:
+      type: room
+      temperature: cold
+    chance: 0.2
+    trigger: [taleweave.systems.sim.environment_triggers:cold_room]
+
+labels:
+  - match:
+      type: character
+      wet: true
+    backstory: You are soaking wet.
+    description: They are soaking wet and dripping water.
+    # false intentionally omitted

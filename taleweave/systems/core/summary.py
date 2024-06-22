@@ -159,7 +159,7 @@ def init():
     subscribe(GameEvent, digest_listener)
     return [
         GameSystem(
-            "digest",
+            "summary",
             format=format_digest,
             generate=generate_digest,
             initialize=initialize_digest,

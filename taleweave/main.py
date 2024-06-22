@@ -60,8 +60,8 @@ if True:
     from taleweave.models.prompt import PromptLibrary
     from taleweave.plugins import load_plugin
     from taleweave.state import save_world_state
-    from taleweave.systems.action import init_action
-    from taleweave.systems.planning import init_planning
+    from taleweave.systems.core.action import init_action
+    from taleweave.systems.core.planning import init_planning
 
 
 def int_or_inf(value: str) -> float | int:

@@ -8,7 +8,7 @@ from taleweave.context import (
 )
 from taleweave.errors import ActionError
 from taleweave.models.planning import CalendarEvent
-from taleweave.systems.planning import PLANNING_SYSTEM_NAME
+from taleweave.systems.core.planning import PLANNING_SYSTEM_NAME
 from taleweave.utils.planning import get_recent_notes
 from taleweave.utils.template import format_prompt
 

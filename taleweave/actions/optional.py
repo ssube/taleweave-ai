@@ -1,5 +1,4 @@
 from logging import getLogger
-from typing import Callable, List
 
 from packit.agent import Agent, agent_easy_connect
 
@@ -22,7 +21,7 @@ from taleweave.generate import (
     generate_room,
     link_rooms,
 )
-from taleweave.systems.action import ACTION_SYSTEM_NAME
+from taleweave.systems.core.action import ACTION_SYSTEM_NAME
 from taleweave.utils.effect import apply_effects, is_effect_ready
 from taleweave.utils.search import find_character_in_room
 from taleweave.utils.string import normalize_name
@@ -254,7 +253,7 @@ def action_use(item: str, target: str) -> str:
         return outcome
 
 
-def init_optional() -> List[Callable]:
+def init():
     """
     Initialize the custom actions.
     """
